@@ -1,0 +1,99 @@
+Saya mahu bina satu sistem web dashboard yang ada 3 form dan satu halaman dashboard yang papar data. Semua data akan disimpan ke Google Sheet melalui Google Apps Script Web App.
+
+
+
+🔧 Struktur Projek Yang Saya Mahu:
+
+wasm
+
+CopyEdit
+
+/dashboard-project/
+
+├── index.html → Paparan dashboard (papar data)
+
+├── ecommerce.html → Borang untuk eCommerce
+
+├── marketing.html → Borang untuk Marketing
+
+├── salesteam.html → Borang untuk Sales Team
+
+├── /css/
+
+│ └── style.css → CSS global untuk semua halaman (atau boleh guna Tailwind)
+
+├── /js/
+
+│ ├── ecommerce.js → Submit data eCommerce ke Google Sheet
+
+│ ├── marketing.js → Submit data Marketing ke Google Sheet
+
+│ ├── salesteam.js → Submit data Sales Team ke Google Sheet
+
+│ └── dashboard.js → Fetch dan papar data dari Google Sheet dalam bentuk jadual + graf
+
+🧾 Form Data (Submit ke Google Sheet):
+
+Guna Web App URL berikut untuk submit data melalui fetch() POST:
+
+
+
+bash
+
+CopyEdit
+
+https://script.google.com/macros/s/AKfycbyqJEWrzOljzhd8aI0og7Ese6GVuMav3leHmpjrFt5otByOVybwFdlDYCpOxpgxosm-RQ/exec
+
+eCommerce Form (hantar ke tab 'eCommerce'):
+
+tarikh
+
+sales
+
+order
+
+avg_order
+
+channel
+
+Marketing Form (hantar ke tab 'Marketing'):
+
+tarikh
+
+spend
+
+roas
+
+impressions
+
+Sales Team Form (hantar ke tab 'SalesTeam'):
+
+tarikh
+
+agent
+
+leads
+
+close_rate
+
+sales
+
+📊 Dashboard Page (index.html) Perlu Papar:
+
+Total keseluruhan Sales
+
+ROAS purata
+
+Leads per agent
+
+Jadual semua data dari sheet (boleh pilih sheet)
+
+Graf bar dan pie chart menggunakan Chart.js atau Google Charts
+
+✅ Gaya Reka Bentuk:
+
+Gunakan Tailwind CSS (jika mudah), atau buat style.css sendiri yang minimal dan responsive
+
+Letakkan navigasi ringkas di semua page untuk link antara form dan dashboard
+
+Saya mahu semua fail disediakan secara berasingan dan bukan inline. Sila hasilkan setiap fail satu per satu.
