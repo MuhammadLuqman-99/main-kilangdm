@@ -1,0 +1,665 @@
+/* ==========================================
+   DASHBOARD STYLES - style.css
+   ========================================== */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ==========================================
+   BASE STYLES
+   ========================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #111827; /* bg-gray-900 */
+    color: #f9fafb; /* text-white */
+    line-height: 1.6;
+}
+
+/* ==========================================
+   CONTAINER & LAYOUT
+   ========================================== */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+}
+
+@media (min-width: 768px) {
+    .container {
+        padding: 2rem;
+    }
+}
+
+/* ==========================================
+   NAVIGATION STYLES
+   ========================================== */
+.nav-container {
+    background-color: #1f2937; /* bg-gray-800 */
+    padding: 1rem;
+    border-radius: 0.75rem; /* rounded-xl */
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.nav-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    list-style: none;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .nav-list {
+        gap: 1.5rem;
+    }
+}
+
+.nav-link {
+    color: #d1d5db; /* text-gray-300 */
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #f9fafb; /* text-white */
+    background-color: #374151; /* bg-gray-700 */
+}
+
+.nav-link.active {
+    color: #f9fafb; /* text-white */
+    background-color: #374151; /* bg-gray-700 */
+    font-weight: 600;
+}
+
+/* ==========================================
+   HEADER STYLES
+   ========================================== */
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-subtitle {
+    color: #9ca3af; /* text-gray-400 */
+    font-size: 1.1rem;
+}
+
+/* ==========================================
+   CARD STYLES
+   ========================================== */
+.card {
+    background-color: #1f2937; /* bg-gray-800 */
+    border-radius: 0.75rem; /* rounded-xl */
+    padding: 1.5rem;
+    border: 1px solid #374151; /* border-gray-700 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* KPI Cards */
+.kpi-card {
+    text-align: center;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+}
+
+.kpi-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #9ca3af; /* text-gray-400 */
+    margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 0.5rem 0;
+}
+
+.kpi-value.sales {
+    color: #10b981; /* text-green-400 */
+}
+
+.kpi-value.roas {
+    color: #3b82f6; /* text-blue-400 */
+}
+
+.kpi-value.leads {
+    color: #8b5cf6; /* text-purple-400 */
+}
+
+.kpi-count {
+    font-size: 0.875rem;
+    color: #6b7280; /* text-gray-500 */
+}
+
+/* ==========================================
+   FILTER SECTION STYLES
+   ========================================== */
+.filter-section {
+    background-color: #1f2937;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid #374151;
+    margin-bottom: 2rem;
+}
+
+.filter-header {
+    display: flex;
+    align-items: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.filter-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.5rem;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+    .filter-grid {
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+    }
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 0.25rem;
+}
+
+.filter-input,
+.filter-select {
+    background-color: #374151; /* bg-gray-700 */
+    border: 1px solid #4b5563; /* border-gray-600 */
+    color: #f9fafb;
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    padding: 0.625rem;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    ring-color: #3b82f6; /* focus:ring-blue-500 */
+    border-color: #3b82f6; /* focus:border-blue-500 */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.date-range-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.btn {
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background-color: #3b82f6; /* bg-blue-600 */
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb; /* hover:bg-blue-700 */
+}
+
+.btn-secondary {
+    background-color: #4b5563; /* bg-gray-600 */
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #374151; /* hover:bg-gray-700 */
+}
+
+/* Active Filters */
+.active-filters {
+    margin-top: 1rem;
+}
+
+.active-filters.hidden {
+    display: none;
+}
+
+.active-filters-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+
+.filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-tag {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* ==========================================
+   GRID LAYOUTS
+   ========================================== */
+.grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+    .grid-cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ==========================================
+   TABLE STYLES
+   ========================================== */
+.table-section {
+    background-color: #1f2937;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid #374151;
+    margin-bottom: 2rem;
+}
+
+.table-header {
+    display: flex;
+    align-items: center;
+    justify-content: between;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.table-title {
+    display: flex;
+    align-items: center;
+}
+
+.table-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-right: 0.75rem;
+}
+
+.table-badge.ecommerce {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.table-badge.marketing {
+    background-color: #8b5cf6;
+    color: white;
+}
+
+.table-badge.salesteam {
+    background-color: #10b981;
+    color: white;
+}
+
+.table-count {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+
+.table-count.all {
+    background-color: #374151;
+}
+
+.table-count.ecommerce {
+    background-color: rgba(59, 130, 246, 0.3);
+}
+
+.table-count.marketing {
+    background-color: rgba(139, 92, 246, 0.3);
+}
+
+.table-count.salesteam {
+    background-color: rgba(16, 185, 129, 0.3);
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 0.5rem;
+}
+
+.table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+}
+
+.table thead {
+    background-color: #374151; /* bg-gray-700 */
+}
+
+.table thead.ecommerce {
+    background-color: rgba(59, 130, 246, 0.3);
+}
+
+.table thead.marketing {
+    background-color: rgba(139, 92, 246, 0.3);
+}
+
+.table thead.salesteam {
+    background-color: rgba(16, 185, 129, 0.3);
+}
+
+.table th,
+.table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #374151;
+}
+
+.table th {
+    font-weight: 600;
+    color: #f9fafb;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #374151; /* hover:bg-gray-700 */
+}
+
+.table tbody tr:hover.ecommerce {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.table tbody tr:hover.marketing {
+    background-color: rgba(139, 92, 246, 0.1);
+}
+
+.table tbody tr:hover.salesteam {
+    background-color: rgba(16, 185, 129, 0.1);
+}
+
+/* Empty State */
+.table-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.table-loading {
+    text-align: center;
+    padding: 2rem;
+    color: #3b82f6;
+}
+
+.table-error {
+    text-align: center;
+    padding: 2rem;
+    color: #ef4444;
+}
+
+/* ==========================================
+   CHART CONTAINER STYLES
+   ========================================== */
+.chart-container {
+    background-color: #1f2937;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid #374151;
+    height: 400px;
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #f9fafb;
+}
+
+.chart-canvas {
+    width: 100% !important;
+    height: 350px !important;
+}
+
+/* ==========================================
+   RESPONSIVE UTILITIES
+   ========================================== */
+.hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .header-title {
+        font-size: 2rem;
+    }
+    
+    .nav-list {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        margin-top: 1rem;
+    }
+    
+    .kpi-value {
+        font-size: 2rem;
+    }
+    
+    .table-container {
+        font-size: 0.875rem;
+    }
+}
+
+/* ==========================================
+   UTILITY CLASSES
+   ========================================== */
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.mb-8 {
+    margin-bottom: 2rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.p-4 {
+    padding: 1rem;
+}
+
+.p-6 {
+    padding: 1.5rem;
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ==========================================
+   SCROLLBAR STYLING
+   ========================================== */
+.table-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #374151;
+    border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #6b7280;
+    border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ==========================================
+   PRINT STYLES
+   ========================================== */
+@media print {
+    body {
+        background-color: white;
+        color: black;
+    }
+    
+    .nav-container,
+    .filter-section {
+        display: none;
+    }
+    
+    .card,
+    .table-section {
+        border: 1px solid #ccc;
+        background-color: white;
+        break-inside: avoid;
+    }
+}
