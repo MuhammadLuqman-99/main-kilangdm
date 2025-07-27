@@ -22,6 +22,7 @@ function initFormSubmission(db) {
 
     const formData = {
       tarikh: form.tarikh.value,
+      nama_team_sale: form.nama_team_sale.value,
       sales: parseFloat(form.sales.value),
       order: parseInt(form.order.value),
       avg_order: parseFloat(form.avg_order.value),

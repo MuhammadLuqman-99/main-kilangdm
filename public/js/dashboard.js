@@ -214,7 +214,7 @@ function formatDate(dateString) {
 function showLoadingState() {
     const loadingMessage = '<tr><td colspan="8" class="text-center p-8 text-blue-500">Memuatkan data...</td></tr>';
     document.getElementById('data-table-body').innerHTML = loadingMessage;
-    document.getElementById('ecommerce-table-body').innerHTML = '<tr><td colspan="5" class="text-center p-8 text-blue-500">Memuatkan data eCommerce...</td></tr>';
+    document.getElementById('ecommerce-table-body').innerHTML = '<tr><td colspan="6" class="text-center p-8 text-blue-500">Memuatkan data eCommerce...</td></tr>';
     document.getElementById('marketing-table-body').innerHTML = '<tr><td colspan="5" class="text-center p-8 text-blue-500">Memuatkan data Marketing...</td></tr>';
     document.getElementById('salesteam-table-body').innerHTML = '<tr><td colspan="7" class="text-center p-8 text-blue-500">Memuatkan data Sales Team...</td></tr>';
 }
@@ -222,7 +222,7 @@ function showLoadingState() {
 function showErrorState() {
     const errorMessage = '<tr><td colspan="8" class="text-center p-8 text-red-500">Gagal memuatkan data. Rujuk konsol untuk ralat.</td></tr>';
     document.getElementById('data-table-body').innerHTML = errorMessage;
-    document.getElementById('ecommerce-table-body').innerHTML = '<tr><td colspan="5" class="text-center p-8 text-red-500">Gagal memuatkan data eCommerce.</td></tr>';
+    document.getElementById('ecommerce-table-body').innerHTML = '<tr><td colspan="6" class="text-center p-8 text-red-500">Gagal memuatkan data eCommerce.</td></tr>';
     document.getElementById('marketing-table-body').innerHTML = '<tr><td colspan="5" class="text-center p-8 text-red-500">Gagal memuatkan data Marketing.</td></tr>';
     document.getElementById('salesteam-table-body').innerHTML = '<tr><td colspan="7" class="text-center p-8 text-red-500">Gagal memuatkan data Sales Team.</td></tr>';
 }
@@ -289,11 +289,11 @@ function populateAllDataTable(ecomData, marketData, salesTeamData) {
         
         if (item.type === 'eCommerce') {
             cells += `<td class="p-3"><span class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs">eCommerce</span></td>`;
+            cells += `<td class="p-3">Team: ${item.nama_team_sale || 'N/A'}</td>`;
             cells += `<td class="p-3">Sales: RM ${item.sales.toFixed(2)}</td>`;
             cells += `<td class="p-3">Orders: ${item.order}</td>`;
             cells += `<td class="p-3">AOV: RM ${item.avg_order.toFixed(2)}</td>`;
             cells += `<td class="p-3">Channel: ${item.channel}</td>`;
-            cells += `<td class="p-3">-</td>`; // Empty for Metrik 5
             cells += `<td class="p-3">-</td>`; // Empty for Metrik 6
         } else if (item.type === 'Marketing') {
             cells += `<td class="p-3"><span class="bg-purple-500 text-white px-2 py-1 rounded-full text-xs">Marketing</span></td>`;
@@ -326,7 +326,7 @@ function populateEcommerceTable(ecomData) {
     document.getElementById('ecommerce-data-count').textContent = `${ecomData.length} entri`;
 
     if (ecomData.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-gray-500">Tiada data eCommerce untuk dipaparkan dengan filter yang dipilih.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-500">Tiada data eCommerce untuk dipaparkan dengan filter yang dipilih.</td></tr>`;
         return;
     }
 
@@ -339,6 +339,7 @@ function populateEcommerceTable(ecomData) {
         
         row.innerHTML = `
             <td class="p-3">${item.tarikh}</td>
+            <td class="p-3">${item.nama_team_sale || 'N/A'}</td>
             <td class="p-3">RM ${item.sales.toFixed(2)}</td>
             <td class="p-3">${item.order}</td>
             <td class="p-3">RM ${item.avg_order.toFixed(2)}</td>
