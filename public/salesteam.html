@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borang Data Sales Team</title>
+    <title>Sales Team - Borang Lead & Power Metrics</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .form-input {
+        .form-input, .form-select {
             background-color: #374151; /* bg-gray-700 */
             border: 1px solid #4B5563; /* border-gray-600 */
             color: white;
@@ -17,10 +17,14 @@
             padding: 0.75rem 1rem; /* px-4 py-3 */
             width: 100%;
         }
-        .form-input:focus {
+        .form-input:focus, .form-select:focus {
             outline: none;
             border-color: #3B82F6; /* focus:border-blue-500 */
             box-shadow: 0 0 0 2px #1E40AF; /* focus:ring-blue-500 */
+        }
+        .form-select option {
+            background-color: #374151;
+            color: white;
         }
     </style>
 </head>
@@ -38,43 +42,93 @@
             </ul>
         </nav>
 
-        <main class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl border border-gray-700">
-            <h1 class="text-3xl font-bold mb-6 text-center">Borang Data Sales Team</h1>
-            <form id="salesteam-form" class="space-y-6">
-                <div>
-                    <label for="tarikh" class="block mb-2 font-medium">Tarikh</label>
-                    <input type="date" id="tarikh" name="tarikh" class="form-input" required>
-                </div>
-                <div>
-                    <label for="agent" class="block mb-2 font-medium">Nama Agent</label>
-                    <input type="text" id="agent" name="agent" class="form-input" placeholder="e.g., Ali" required>
-                </div>
-                <div>
-                    <label for="leads" class="block mb-2 font-medium">Jumlah Leads</label>
-                    <input type="number" id="leads" name="leads" class="form-input" placeholder="e.g., 20" required>
-                </div>
-                <div>
-                    <label for="close_rate" class="block mb-2 font-medium">Close Rate (%)</label>
-                    <input type="number" id="close_rate" name="close_rate" step="0.1" class="form-input" placeholder="e.g., 15.5" required>
-                </div>
-                <div>
-                    <label for="sales" class="block mb-2 font-medium">Sales (RM)</label>
-                    <input type="number" id="sales" name="sales" step="0.01" class="form-input" placeholder="e.g., 5000.00" required>
-                </div>
-                <div>
-                    <label for="warm" class="block mb-2 font-medium">Warm (RM)</label>
-                    <input type="number" id="warm" name="warm" step="0.01" class="form-input" placeholder="e.g., 20" required>
-                </div>
-                <div>
-                    <label for="cold" class="block mb-2 font-medium">Warm (RM)</label>
-                    <input type="number" id="cold" name="cold" step="0.01" class="form-input" placeholder="e.g., 20" required>
-                </div>
-                <div>
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Data</button>
-                </div>
-            </form>
-            <div id="feedback-message" class="mt-4 text-center"></div>
-        </main>
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Borang Lead -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <h2 class="text-2xl font-bold mb-6 text-center text-blue-400">Borang Lead</h2>
+                <form id="lead-form" class="space-y-4">
+                    <div>
+                        <label for="lead-tarikh" class="block mb-2 font-medium">Tarikh</label>
+                        <input type="date" id="lead-tarikh" name="tarikh" class="form-input" required>
+                    </div>
+                    <div>
+                        <label for="lead-masa" class="block mb-2 font-medium">Masa</label>
+                        <select id="lead-masa" name="masa" class="form-select" required>
+                            <option value="">Pilih Masa</option>
+                            <option value="9.00am">9.00am</option>
+                            <option value="2.30pm">2.30pm</option>
+                            <option value="4.00pm">4.00pm</option>
+                            <option value="8.30pm">8.30pm</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="lead-team" class="block mb-2 font-medium">Nama Team Sale</label>
+                        <select id="lead-team" name="team" class="form-select" required>
+                            <option value="">Pilih Team</option>
+                            <option value="Qilah">Qilah</option>
+                            <option value="Wiyah">Wiyah</option>
+                            <option value="Nisya">Nisya</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="lead-total" class="block mb-2 font-medium">Total Lead</label>
+                        <input type="number" id="lead-total" name="total_lead" class="form-input" placeholder="e.g., 20" required>
+                    </div>
+                    <div>
+                        <label for="lead-cold" class="block mb-2 font-medium">Cold</label>
+                        <input type="number" id="lead-cold" name="cold" class="form-input" placeholder="e.g., 10" required>
+                    </div>
+                    <div>
+                        <label for="lead-warm" class="block mb-2 font-medium">Warm</label>
+                        <input type="number" id="lead-warm" name="warm" class="form-input" placeholder="e.g., 8" required>
+                    </div>
+                    <div>
+                        <label for="lead-hot" class="block mb-2 font-medium">Hot</label>
+                        <input type="number" id="lead-hot" name="hot" class="form-input" placeholder="e.g., 2" required>
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Data Lead</button>
+                    </div>
+                </form>
+                <div id="lead-feedback" class="mt-4 text-center"></div>
+            </div>
+
+            <!-- Borang Power Metrics -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                <h2 class="text-2xl font-bold mb-6 text-center text-green-400">Borang Power Metrics</h2>
+                <form id="metrics-form" class="space-y-4">
+                    <div>
+                        <label for="metrics-tarikh" class="block mb-2 font-medium">Tarikh</label>
+                        <input type="date" id="metrics-tarikh" name="tarikh" class="form-input" required>
+                    </div>
+                    <div>
+                        <label for="metrics-team" class="block mb-2 font-medium">Nama Team Sale</label>
+                        <select id="metrics-team" name="team" class="form-select" required>
+                            <option value="">Pilih Team</option>
+                            <option value="Qilah">Qilah</option>
+                            <option value="Wiyah">Wiyah</option>
+                            <option value="Nisya">Nisya</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="metrics-total-lead" class="block mb-2 font-medium">Total Lead Bulan Ini</label>
+                        <input type="number" id="metrics-total-lead" name="total_lead_bulan" class="form-input" placeholder="e.g., 150" required>
+                    </div>
+                    <div>
+                        <label for="metrics-total-close" class="block mb-2 font-medium">Total Close Bulan Ini</label>
+                        <input type="number" id="metrics-total-close" name="total_close_bulan" class="form-input" placeholder="e.g., 25" required>
+                    </div>
+                    <div>
+                        <label for="metrics-total-sale" class="block mb-2 font-medium">Total Sale Bulan Ini (RM)</label>
+                        <input type="number" id="metrics-total-sale" name="total_sale_bulan" step="0.01" class="form-input" placeholder="e.g., 15000.00" required>
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Power Metrics</button>
+                    </div>
+                </form>
+                <div id="metrics-feedback" class="mt-4 text-center"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -82,6 +136,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
             authDomain: "kilangdm-v1.firebaseapp.com",
@@ -91,16 +146,19 @@
             appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
             measurementId: "G-C02S0CPE63"
         };
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        
         onAuthStateChanged(auth, (user) => {
             if (!user) { signInAnonymously(auth); }
         });
+        
         window.db = db;
     </script>
 
-    <!-- Skrip Borang Sales Team -->
+    <!-- Sales Team JavaScript -->
     <script type="module" src="js/salesteam.js"></script>
 
 </body>
