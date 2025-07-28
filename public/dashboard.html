@@ -23,6 +23,19 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .chart-container canvas {
+            max-height: 100% !important;
+        }
+        .small-chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
@@ -114,12 +127,14 @@
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-semibold">Revenue Trend</h3>
                     <div class="flex space-x-2">
-                        <button class="text-xs bg-blue-600 text-white px-3 py-1 rounded">7D</button>
-                        <button class="text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded">30D</button>
-                        <button class="text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded">90D</button>
+                        <button class="text-xs bg-blue-600 text-white px-3 py-1 rounded" onclick="updatePeriod('7D')">7D</button>
+                        <button class="text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded" onclick="updatePeriod('30D')">30D</button>
+                        <button class="text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded" onclick="updatePeriod('90D')">90D</button>
                     </div>
                 </div>
-                <canvas id="revenueChart" height="300"></canvas>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
             </div>
 
             <!-- Sales Channel Performance -->
@@ -130,7 +145,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                 </div>
-                <canvas id="channelChart" height="300"></canvas>
+                <div class="chart-container">
+                    <canvas id="channelChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -139,19 +156,25 @@
             <!-- Lead Funnel -->
             <div class="glass-card p-6 rounded-xl">
                 <h3 class="text-xl font-semibold mb-6">Lead Funnel</h3>
-                <canvas id="funnelChart" height="400"></canvas>
+                <div class="small-chart-container">
+                    <canvas id="funnelChart"></canvas>
+                </div>
             </div>
 
             <!-- Team Performance -->
             <div class="glass-card p-6 rounded-xl">
                 <h3 class="text-xl font-semibold mb-6">Team Performance</h3>
-                <canvas id="teamChart" height="400"></canvas>
+                <div class="small-chart-container">
+                    <canvas id="teamChart"></canvas>
+                </div>
             </div>
 
             <!-- Marketing Spend vs Revenue -->
             <div class="glass-card p-6 rounded-xl">
                 <h3 class="text-xl font-semibold mb-6">Marketing ROI</h3>
-                <canvas id="roiChart" height="400"></canvas>
+                <div class="small-chart-container">
+                    <canvas id="roiChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -160,13 +183,17 @@
             <!-- Order Types Distribution -->
             <div class="glass-card p-6 rounded-xl">
                 <h3 class="text-xl font-semibold mb-6">Order Types Distribution</h3>
-                <canvas id="orderTypesChart" height="300"></canvas>
+                <div class="chart-container">
+                    <canvas id="orderTypesChart"></canvas>
+                </div>
             </div>
 
             <!-- Follow-up Activities -->
             <div class="glass-card p-6 rounded-xl">
                 <h3 class="text-xl font-semibold mb-6">Follow-up Activities</h3>
-                <canvas id="followupChart" height="300"></canvas>
+                <div class="chart-container">
+                    <canvas id="followupChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -200,6 +227,30 @@
     </div>
 
     <script>
+        // Global chart instances
+        let charts = {};
+        
+        // Sample data for different periods
+        const sampleData = {
+            '7D': {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                ecommerce: [12000, 15000, 18000, 14000, 22000, 25000, 28000],
+                direct: [8000, 12000, 15000, 11000, 16000, 19000, 21000]
+            },
+            '30D': {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                ecommerce: [85000, 92000, 88000, 95000],
+                direct: [62000, 68000, 65000, 72000]
+            },
+            '90D': {
+                labels: ['Month 1', 'Month 2', 'Month 3'],
+                ecommerce: [320000, 350000, 380000],
+                direct: [245000, 260000, 285000]
+            }
+        };
+
+        let currentPeriod = '7D';
+
         // Initialize charts when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeCharts();
@@ -212,39 +263,87 @@
             document.getElementById('current-time').textContent = now.toLocaleString('ms-MY');
         }
 
+        function updatePeriod(period) {
+            currentPeriod = period;
+            
+            // Update button states
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.textContent === period) {
+                    btn.className = 'text-xs bg-blue-600 text-white px-3 py-1 rounded';
+                } else if (btn.textContent.match(/^\d+D$/)) {
+                    btn.className = 'text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded';
+                }
+            });
+            
+            // Update revenue chart
+            updateRevenueChart();
+        }
+
+        function updateRevenueChart() {
+            const data = sampleData[currentPeriod];
+            
+            if (charts.revenue) {
+                charts.revenue.data.labels = data.labels;
+                charts.revenue.data.datasets[0].data = data.ecommerce;
+                charts.revenue.data.datasets[1].data = data.direct;
+                charts.revenue.update('none');
+            }
+        }
+
         function initializeCharts() {
+            // Chart.js default configuration
+            Chart.defaults.color = '#D1D5DB';
+            Chart.defaults.borderColor = 'rgba(75, 85, 99, 0.3)';
+
             // Revenue Trend Chart
             const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-            new Chart(revenueCtx, {
+            charts.revenue = new Chart(revenueCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    labels: sampleData[currentPeriod].labels,
                     datasets: [{
                         label: 'eCommerce',
-                        data: [12000, 15000, 18000, 14000, 22000, 25000, 28000],
+                        data: sampleData[currentPeriod].ecommerce,
                         borderColor: '#3B82F6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        borderWidth: 3
                     }, {
                         label: 'Direct Sales',
-                        data: [8000, 12000, 15000, 11000, 16000, 19000, 21000],
+                        data: sampleData[currentPeriod].direct,
                         borderColor: '#10B981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        borderWidth: 3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
                     plugins: {
-                        legend: { labels: { color: '#D1D5DB' } }
+                        legend: { 
+                            labels: { 
+                                color: '#D1D5DB',
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
                     },
                     scales: {
                         y: { 
                             beginAtZero: true,
-                            ticks: { color: '#9CA3AF' },
+                            ticks: { 
+                                color: '#9CA3AF',
+                                callback: function(value) {
+                                    return 'RM ' + value.toLocaleString();
+                                }
+                            },
                             grid: { color: 'rgba(75, 85, 99, 0.3)' }
                         },
                         x: { 
@@ -257,7 +356,7 @@
 
             // Channel Performance Chart
             const channelCtx = document.getElementById('channelChart').getContext('2d');
-            new Chart(channelCtx, {
+            charts.channel = new Chart(channelCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Shopee', 'Lazada', 'Direct', 'Instagram', 'Facebook'],
@@ -266,7 +365,8 @@
                         backgroundColor: [
                             '#FF6B35', '#F7931E', '#3B82F6', '#E1306C', '#1877F2'
                         ],
-                        borderWidth: 0
+                        borderWidth: 0,
+                        hoverOffset: 10
                     }]
                 },
                 options: {
@@ -275,7 +375,18 @@
                     plugins: {
                         legend: { 
                             position: 'bottom',
-                            labels: { color: '#D1D5DB', padding: 20 }
+                            labels: { 
+                                color: '#D1D5DB', 
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
                         }
                     }
                 }
@@ -283,16 +394,17 @@
 
             // Lead Funnel Chart
             const funnelCtx = document.getElementById('funnelChart').getContext('2d');
-            new Chart(funnelCtx, {
+            charts.funnel = new Chart(funnelCtx, {
                 type: 'bar',
                 data: {
-                    labels: ['Total Leads', 'Qualified', 'Proposal', 'Negotiation', 'Closed'],
+                    labels: ['Total\nLeads', 'Qualified', 'Proposal', 'Negotiation', 'Closed'],
                     datasets: [{
                         data: [1000, 650, 420, 280, 185],
                         backgroundColor: [
                             '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE'
                         ],
-                        borderRadius: 4
+                        borderRadius: 8,
+                        borderSkipped: false
                     }]
                 },
                 options: {
@@ -300,11 +412,18 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.x + ' leads';
+                                }
+                            }
+                        }
                     },
                     scales: {
                         y: { 
-                            ticks: { color: '#9CA3AF' },
+                            ticks: { color: '#9CA3AF', font: { size: 11 } },
                             grid: { display: false }
                         },
                         x: { 
@@ -317,28 +436,43 @@
 
             // Team Performance Chart
             const teamCtx = document.getElementById('teamChart').getContext('2d');
-            new Chart(teamCtx, {
+            charts.team = new Chart(teamCtx, {
                 type: 'radar',
                 data: {
                     labels: ['Ahmad', 'Siti', 'Rahman', 'Aina', 'Fariz'],
                     datasets: [{
-                        label: 'Sales Performance',
+                        label: 'Performance Score',
                         data: [85, 92, 78, 88, 95],
                         backgroundColor: 'rgba(34, 197, 94, 0.2)',
                         borderColor: '#22C55E',
-                        pointBackgroundColor: '#22C55E'
+                        pointBackgroundColor: '#22C55E',
+                        pointBorderColor: '#22C55E',
+                        pointRadius: 6,
+                        borderWidth: 3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { labels: { color: '#D1D5DB' } }
+                        legend: { 
+                            labels: { color: '#D1D5DB' },
+                            display: false
+                        }
                     },
                     scales: {
                         r: {
-                            ticks: { color: '#9CA3AF' },
-                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { 
+                                color: '#9CA3AF',
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' },
+                            pointLabels: { color: '#D1D5DB', font: { size: 11 } }
                         }
                     }
                 }
@@ -346,7 +480,7 @@
 
             // Marketing ROI Chart
             const roiCtx = document.getElementById('roiChart').getContext('2d');
-            new Chart(roiCtx, {
+            charts.roi = new Chart(roiCtx, {
                 type: 'line',
                 data: {
                     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -356,19 +490,34 @@
                         borderColor: '#F59E0B',
                         backgroundColor: 'rgba(245, 158, 11, 0.1)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#F59E0B'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { labels: { color: '#D1D5DB' } }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'ROAS: ' + context.parsed.y + 'x';
+                                }
+                            }
+                        }
                     },
                     scales: {
                         y: { 
                             beginAtZero: true,
-                            ticks: { color: '#9CA3AF' },
+                            ticks: { 
+                                color: '#9CA3AF',
+                                callback: function(value) {
+                                    return value + 'x';
+                                }
+                            },
                             grid: { color: 'rgba(75, 85, 99, 0.3)' }
                         },
                         x: { 
@@ -381,14 +530,15 @@
 
             // Order Types Chart
             const orderTypesCtx = document.getElementById('orderTypesChart').getContext('2d');
-            new Chart(orderTypesCtx, {
+            charts.orderTypes = new Chart(orderTypesCtx, {
                 type: 'pie',
                 data: {
                     labels: ['Kain Batik', 'Kain Songket', 'Kain Cotton', 'Kain Silk'],
                     datasets: [{
                         data: [40, 25, 20, 15],
                         backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#22C55E'],
-                        borderWidth: 0
+                        borderWidth: 0,
+                        hoverOffset: 15
                     }]
                 },
                 options: {
@@ -397,7 +547,18 @@
                     plugins: {
                         legend: { 
                             position: 'bottom',
-                            labels: { color: '#D1D5DB', padding: 15 }
+                            labels: { 
+                                color: '#D1D5DB', 
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
                         }
                     }
                 }
@@ -405,7 +566,7 @@
 
             // Follow-up Activities Chart
             const followupCtx = document.getElementById('followupChart').getContext('2d');
-            new Chart(followupCtx, {
+            charts.followup = new Chart(followupCtx, {
                 type: 'bar',
                 data: {
                     labels: ['Call', 'WhatsApp', 'Email', 'Visit'],
@@ -413,14 +574,22 @@
                         label: 'Activities',
                         data: [45, 32, 18, 12],
                         backgroundColor: '#8B5CF6',
-                        borderRadius: 4
+                        borderRadius: 8,
+                        borderSkipped: false
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' activities';
+                                }
+                            }
+                        }
                     },
                     scales: {
                         y: { 
