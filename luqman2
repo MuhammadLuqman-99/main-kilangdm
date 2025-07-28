@@ -437,3 +437,174 @@
             // Team Performance Chart
             const teamCtx = document.getElementById('teamChart').getContext('2d');
             charts.team = new Chart(teamCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Ahmad', 'Siti', 'Rahman', 'Aina', 'Fariz'],
+                    datasets: [{
+                        label: 'Performance Score',
+                        data: [85, 92, 78, 88, 95],
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderColor: '#22C55E',
+                        pointBackgroundColor: '#22C55E',
+                        pointBorderColor: '#22C55E',
+                        pointRadius: 6,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            labels: { color: '#D1D5DB' },
+                            display: false
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { 
+                                color: '#9CA3AF',
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' },
+                            pointLabels: { color: '#D1D5DB', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // Marketing ROI Chart
+            const roiCtx = document.getElementById('roiChart').getContext('2d');
+            charts.roi = new Chart(roiCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'ROAS',
+                        data: [3.2, 3.8, 4.1, 4.5],
+                        borderColor: '#F59E0B',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#F59E0B'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'ROAS: ' + context.parsed.y + 'x';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { 
+                                color: '#9CA3AF',
+                                callback: function(value) {
+                                    return value + 'x';
+                                }
+                            },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        },
+                        x: { 
+                            ticks: { color: '#9CA3AF' },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        }
+                    }
+                }
+            });
+
+            // Order Types Chart
+            const orderTypesCtx = document.getElementById('orderTypesChart').getContext('2d');
+            charts.orderTypes = new Chart(orderTypesCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Kain Batik', 'Kain Songket', 'Kain Cotton', 'Kain Silk'],
+                    datasets: [{
+                        data: [40, 25, 20, 15],
+                        backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#22C55E'],
+                        borderWidth: 0,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { 
+                                color: '#D1D5DB', 
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Follow-up Activities Chart
+            const followupCtx = document.getElementById('followupChart').getContext('2d');
+            charts.followup = new Chart(followupCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Call', 'WhatsApp', 'Email', 'Visit'],
+                    datasets: [{
+                        label: 'Activities',
+                        data: [45, 32, 18, 12],
+                        backgroundColor: '#8B5CF6',
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' activities';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { color: '#9CA3AF' },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        },
+                        x: { 
+                            ticks: { color: '#9CA3AF' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
