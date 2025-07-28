@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borang Data Marketing</title>
+    <title>Marketing - Lead Semasa & Detail Ads</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .form-input {
+        .form-input, .form-select {
             background-color: #374151; /* bg-gray-700 */
             border: 1px solid #4B5563; /* border-gray-600 */
             color: white;
@@ -17,10 +17,14 @@
             padding: 0.75rem 1rem; /* px-4 py-3 */
             width: 100%;
         }
-        .form-input:focus {
+        .form-input:focus, .form-select:focus {
             outline: none;
             border-color: #3B82F6; /* focus:border-blue-500 */
             box-shadow: 0 0 0 2px #1E40AF; /* focus:ring-blue-500 */
+        }
+        .form-select option {
+            background-color: #374151;
+            color: white;
         }
     </style>
 </head>
@@ -38,31 +42,163 @@
             </ul>
         </nav>
 
-        <main class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl border border-gray-700">
-            <h1 class="text-3xl font-bold mb-6 text-center">Borang Data Marketing</h1>
-            <form id="marketing-form" class="space-y-6">
+        <!-- Borang Lead Semasa - Top Section -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 mb-8">
+            <h2 class="text-2xl font-bold mb-6 text-center text-purple-400">Borang Lead Semasa</h2>
+            <form id="lead-semasa-form" class="grid md:grid-cols-4 gap-4">
                 <div>
-                    <label for="tarikh" class="block mb-2 font-medium">Tarikh</label>
-                    <input type="date" id="tarikh" name="tarikh" class="form-input" required>
+                    <label for="lead-tarikh" class="block mb-2 font-medium">Tarikh</label>
+                    <input type="date" id="lead-tarikh" name="tarikh" class="form-input" required>
                 </div>
                 <div>
-                    <label for="spend" class="block mb-2 font-medium">Spend (RM)</label>
-                    <input type="number" id="spend" name="spend" step="0.01" class="form-input" placeholder="e.g., 500.00" required>
+                    <label for="lead-masa" class="block mb-2 font-medium">Masa</label>
+                    <select id="lead-masa" name="masa" class="form-select" required>
+                        <option value="">Pilih Masa</option>
+                        <option value="9.00am">9.00am</option>
+                        <option value="2.30pm">2.30pm</option>
+                        <option value="4.00pm">4.00pm</option>
+                        <option value="8.30pm">8.30pm</option>
+                    </select>
                 </div>
                 <div>
-                    <label for="roas" class="block mb-2 font-medium">ROAS (Return on Ad Spend)</label>
-                    <input type="number" id="roas" name="roas" step="0.01" class="form-input" placeholder="e.g., 4.5" required>
+                    <label for="lead-spend" class="block mb-2 font-medium">Spend (RM)</label>
+                    <input type="number" id="lead-spend" name="spend" step="0.01" class="form-input" placeholder="e.g., 500.00" required>
                 </div>
                 <div>
-                    <label for="impressions" class="block mb-2 font-medium">Impressions</label>
-                    <input type="number" id="impressions" name="impressions" class="form-input" placeholder="e.g., 100000" required>
+                    <label for="lead-team" class="block mb-2 font-medium">Team Sale</label>
+                    <select id="lead-team" name="team_sale" class="form-select" required>
+                        <option value="">Pilih Team Sale</option>
+                        <option value="Qilah">Qilah</option>
+                        <option value="Wiyah">Wiyah</option>
+                        <option value="Nisya">Nisya</option>
+                    </select>
                 </div>
-                <div>
-                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Data</button>
+                <div class="md:col-span-4">
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Lead Semasa</button>
                 </div>
             </form>
-            <div id="feedback-message" class="mt-4 text-center"></div>
-        </main>
+            <div id="lead-feedback" class="mt-4 text-center"></div>
+        </div>
+
+        <!-- Borang Detail Ads - Bottom Section (Horizontal Layout) -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+            <h2 class="text-2xl font-bold mb-6 text-center text-orange-400">Borang Detail Ads</h2>
+            <form id="detail-ads-form" class="space-y-6">
+                <!-- Row 1: Basic Info -->
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="ads-tarikh" class="block mb-2 font-medium">Tarikh</label>
+                        <input type="date" id="ads-tarikh" name="tarikh" class="form-input" required>
+                    </div>
+                    <div>
+                        <label for="ads-team" class="block mb-2 font-medium">Team Sale</label>
+                        <select id="ads-team" name="team_sale" class="form-select" required>
+                            <option value="">Pilih Team Sale</option>
+                            <option value="Qilah">Qilah</option>
+                            <option value="Wiyah">Wiyah</option>
+                            <option value="Nisya">Nisya</option>
+                            <option value="Tiktok">Tiktok</option>
+                            <option value="Shopee">Shopee</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="campaign-name" class="block mb-2 font-medium">Campaign Name</label>
+                        <input type="text" id="campaign-name" name="campaign_name" class="form-input" placeholder="e.g., Raya Campaign 2024" required>
+                    </div>
+                </div>
+
+                <!-- Row 2: Campaign Details -->
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="ads-setname" class="block mb-2 font-medium">Ads Set Name</label>
+                        <input type="text" id="ads-setname" name="ads_setname" class="form-input" placeholder="e.g., Targeting Women 25-45" required>
+                    </div>
+                    <div>
+                        <label for="audience" class="block mb-2 font-medium">Audience</label>
+                        <input type="text" id="audience" name="audience" class="form-input" placeholder="e.g., Women 25-45, KL" required>
+                    </div>
+                    <div>
+                        <label for="jenis-video" class="block mb-2 font-medium">Jenis Video</label>
+                        <input type="text" id="jenis-video" name="jenis_video" class="form-input" placeholder="e.g., Product Demo" required>
+                    </div>
+                </div>
+
+                <!-- Row 3: Content Details -->
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="cta-video" class="block mb-2 font-medium">CTA Video</label>
+                        <input type="text" id="cta-video" name="cta_video" class="form-input" placeholder="e.g., Shop Now" required>
+                    </div>
+                    <div>
+                        <label for="jenis-kain" class="block mb-2 font-medium">Jenis Kain Dalam Video</label>
+                        <input type="text" id="jenis-kain" name="jenis_kain" class="form-input" placeholder="e.g., Batik, Cotton" required>
+                    </div>
+                    <div>
+                        <label for="impressions" class="block mb-2 font-medium">Impressions</label>
+                        <input type="number" id="impressions" name="impressions" class="form-input" placeholder="e.g., 50000" required>
+                    </div>
+                </div>
+
+                <!-- Row 4: Engagement Metrics -->
+                <div class="grid md:grid-cols-4 gap-4">
+                    <div>
+                        <label for="link-click" class="block mb-2 font-medium">Link Click</label>
+                        <input type="number" id="link-click" name="link_click" class="form-input" placeholder="e.g., 500" required>
+                    </div>
+                    <div>
+                        <label for="unique-link-click" class="block mb-2 font-medium">Unique Link Click</label>
+                        <input type="number" id="unique-link-click" name="unique_link_click" class="form-input" placeholder="e.g., 450" required>
+                    </div>
+                    <div>
+                        <label for="reach" class="block mb-2 font-medium">Reach</label>
+                        <input type="number" id="reach" name="reach" class="form-input" placeholder="e.g., 30000" required>
+                    </div>
+                    <div>
+                        <label for="frequency" class="block mb-2 font-medium">Frequency</label>
+                        <input type="number" id="frequency" name="frequency" step="0.01" class="form-input" placeholder="e.g., 1.67" required>
+                    </div>
+                </div>
+
+                <!-- Row 5: Performance Metrics -->
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="ctr" class="block mb-2 font-medium">CTR (%)</label>
+                        <input type="number" id="ctr" name="ctr" step="0.01" class="form-input" placeholder="e.g., 1.25" required>
+                    </div>
+                    <div>
+                        <label for="cpc" class="block mb-2 font-medium">CPC (RM)</label>
+                        <input type="number" id="cpc" name="cpc" step="0.01" class="form-input" placeholder="e.g., 0.50" required>
+                    </div>
+                    <div>
+                        <label for="cpm" class="block mb-2 font-medium">CPM (RM)</label>
+                        <input type="number" id="cpm" name="cpm" step="0.01" class="form-input" placeholder="e.g., 5.00" required>
+                    </div>
+                </div>
+
+                <!-- Row 6: Cost & Results -->
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="cost" class="block mb-2 font-medium">Cost (RM)</label>
+                        <input type="number" id="cost" name="cost" step="0.01" class="form-input" placeholder="e.g., 250.00" required>
+                    </div>
+                    <div>
+                        <label for="lead-team-sale" class="block mb-2 font-medium">Lead Dari Team Sale</label>
+                        <input type="number" id="lead-team-sale" name="lead_dari_team_sale" class="form-input" placeholder="e.g., 25" required>
+                    </div>
+                    <div>
+                        <label for="amount-spent" class="block mb-2 font-medium">Amount Spent (RM)</label>
+                        <input type="number" id="amount-spent" name="amount_spent" step="0.01" class="form-input" placeholder="e.g., 245.50" required>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div>
+                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Detail Ads</button>
+                </div>
+            </form>
+            <div id="ads-feedback" class="mt-4 text-center"></div>
+        </div>
+    </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -70,7 +206,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-         const firebaseConfig = {
+        
+        const firebaseConfig = {
             apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
             authDomain: "kilangdm-v1.firebaseapp.com",
             projectId: "kilangdm-v1",
@@ -79,17 +216,20 @@
             appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
             measurementId: "G-C02S0CPE63"
         };
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        
         onAuthStateChanged(auth, (user) => {
             if (!user) { signInAnonymously(auth); }
         });
+        
         window.db = db;
     </script>
 
-    <!-- Skrip Borang Marketing -->
-    <script type="module" src="/js/marketing.js"></script>
+    <!-- Marketing JavaScript -->
+    <script type="module" src="js/marketing.js"></script>
 
 </body>
 </html>
