@@ -1,50 +1,50 @@
-// ecommerce.js
+// Import fungsi yang diperlukan dari Firestore SDK
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-  const checkDbReady = setInterval(() => {
     if (window.db) {
-      clearInterval(checkDbReady); // hentikan loop
-      initFormSubmission(window.db); // jalan fungsi utama
+        const db = window.db;
+        const form = document.getElementById('order-form');
+        const feedbackMessage = document.getElementById('feedback-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            feedbackMessage.textContent = 'Menghantar data order...';
+            feedbackMessage.className = 'text-blue-400';
+
+            const orderData = {
+                tarikh: form.tarikh.value,
+                code_kain: form.code_kain.value,
+                nombor_po_invoice: form.nombor_po_invoice.value,
+                nama_customer: form.nama_customer.value,
+                team_sale: form.team_sale.value,
+                nombor_phone: form.nombor_phone.value,
+                jenis_order: form.jenis_order.value,
+                total_rm: parseFloat(form.total_rm.value),
+                platform: form.platform.value,
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                const docRef = await addDoc(collection(db, "orderData"), orderData);
+                console.log("Order document written with ID: ", docRef.id);
+                
+                feedbackMessage.textContent = 'Data order berjaya dihantar!';
+                feedbackMessage.className = 'text-green-400';
+                form.reset();
+
+            } catch (error) {
+                console.error("Error adding order document: ", error);
+                feedbackMessage.textContent = 'Gagal menghantar data order. Sila cuba lagi.';
+                feedbackMessage.className = 'text-red-400';
+            }
+
+            setTimeout(() => {
+                feedbackMessage.textContent = '';
+            }, 3000);
+        });
+    } else {
+        console.error("Firestore 'db' instance not found.");
     }
-  }, 100);
 });
-
-function initFormSubmission(db) {
-  const form = document.getElementById('ecommerce-form');
-  const feedbackMessage = document.getElementById('feedback-message');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    feedbackMessage.textContent = 'Menghantar data...';
-    feedbackMessage.className = 'mt-4 text-center text-blue-400';
-
-    const formData = {
-      tarikh: form.tarikh.value,
-      nama_team_sale: form.nama_team_sale.value,
-      sales: parseFloat(form.sales.value),
-      order: parseInt(form.order.value),
-      avg_order: parseFloat(form.avg_order.value),
-      channel: form.channel.value,
-      userId: window.userId || "unknown",
-      createdAt: serverTimestamp()
-    };
-
-    try {
-      const docRef = await addDoc(collection(db, "ecommerceData"), formData);
-      console.log("Document written with ID:", docRef.id);
-      feedbackMessage.textContent = 'Data berjaya dihantar!';
-      feedbackMessage.className = 'mt-4 text-center text-green-400';
-      form.reset();
-    } catch (error) {
-      console.error("Error adding document:", error);
-      feedbackMessage.textContent = 'Gagal menghantar data.';
-      feedbackMessage.className = 'mt-4 text-center text-red-400';
-    }
-
-    setTimeout(() => {
-      feedbackMessage.textContent = '';
-    }, 3000);
-  });
-}

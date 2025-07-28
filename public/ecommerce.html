@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borang Data eCommerce</title>
-    <!-- Tailwind CSS CDN (untuk pembangunan, pertimbangkan PostCSS untuk produksi) -->
+    <title>Borang Order</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .form-input {
+        .form-input, .form-select {
             background-color: #374151; /* bg-gray-700 */
             border: 1px solid #4B5563; /* border-gray-600 */
             color: white;
@@ -17,10 +17,14 @@
             padding: 0.75rem 1rem; /* px-4 py-3 */
             width: 100%;
         }
-        .form-input:focus {
+        .form-input:focus, .form-select:focus {
             outline: none;
             border-color: #3B82F6; /* focus:border-blue-500 */
             box-shadow: 0 0 0 2px #1E40AF; /* focus:ring-blue-500 */
+        }
+        .form-select option {
+            background-color: #374151;
+            color: white;
         }
     </style>
 </head>
@@ -31,41 +35,74 @@
         <nav class="bg-gray-800 p-4 rounded-xl mb-8">
             <ul class="flex items-center justify-center space-x-4 md:space-x-6">
                 <li><a href="index.html" class="text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md">Dashboard</a></li>
-                <li><a href="ecommerce.html" class="text-white font-bold bg-gray-700 px-3 py-2 rounded-md">eCommerce</a></li>
+                <li><a href="ecommerce.html" class="text-white font-bold bg-gray-700 px-3 py-2 rounded-md">Borang Order</a></li>
                 <li><a href="marketing.html" class="text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md">Marketing</a></li>
                 <li><a href="salesteam.html" class="text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md">Sales Team</a></li>
                 <li><a href="followup.html" class="text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md">Follow Up</a></li>
+            </ul>
         </nav>
 
         <main class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl border border-gray-700">
-            <h1 class="text-3xl font-bold mb-6 text-center">Borang Data eCommerce</h1>
-            <form id="ecommerce-form" class="space-y-6">
+            <h1 class="text-3xl font-bold mb-6 text-center">Borang Order</h1>
+            <form id="order-form" class="space-y-6">
                 <div>
                     <label for="tarikh" class="block mb-2 font-medium">Tarikh</label>
                     <input type="date" id="tarikh" name="tarikh" class="form-input" required>
                 </div>
+                
                 <div>
-                    <label for="nama_team_sale" class="block mb-2 font-medium">Nama Team Sale</label>
-                    <input type="text" id="nama_team_sale" name="nama_team_sale" class="form-input" placeholder="e.g., Ahmad Rizal, Team A" required>
+                    <label for="code_kain" class="block mb-2 font-medium">Code Kain</label>
+                    <input type="text" id="code_kain" name="code_kain" class="form-input" placeholder="e.g., KD001, BATIK123" required>
                 </div>
+
                 <div>
-                    <label for="sales" class="block mb-2 font-medium">Sales (RM)</label>
-                    <input type="number" id="sales" name="sales" step="0.01" class="form-input" placeholder="e.g., 1500.50" required>
+                    <label for="nombor_po_invoice" class="block mb-2 font-medium">Nombor PO / Invoice</label>
+                    <input type="text" id="nombor_po_invoice" name="nombor_po_invoice" class="form-input" placeholder="e.g., PO2024001, INV001" required>
                 </div>
+
                 <div>
-                    <label for="order" class="block mb-2 font-medium">Jumlah Order</label>
-                    <input type="number" id="order" name="order" class="form-input" placeholder="e.g., 50" required>
+                    <label for="nama_customer" class="block mb-2 font-medium">Nama Customer</label>
+                    <input type="text" id="nama_customer" name="nama_customer" class="form-input" placeholder="e.g., Siti Aminah" required>
                 </div>
+
                 <div>
-                    <label for="avg_order" class="block mb-2 font-medium">Avg. Order Value (RM)</label>
-                    <input type="number" id="avg_order" name="avg_order" step="0.01" class="form-input" placeholder="e.g., 30.01" required>
+                    <label for="team_sale" class="block mb-2 font-medium">Team Sale</label>
+                    <select id="team_sale" name="team_sale" class="form-select" required>
+                        <option value="">Pilih Team Sale</option>
+                        <option value="Qilah">Qilah</option>
+                        <option value="Wiyah">Wiyah</option>
+                        <option value="Nisya">Nisya</option>
+                        <option value="Tiktok">Tiktok</option>
+                        <option value="Shopee">Shopee</option>
+                    </select>
                 </div>
+
                 <div>
-                    <label for="channel" class="block mb-2 font-medium">Channel</label>
-                    <input type="text" id="channel" name="channel" class="form-input" placeholder="e.g., Facebook Ads, Organic" required>
+                    <label for="nombor_phone" class="block mb-2 font-medium">Nombor Phone Customer</label>
+                    <input type="tel" id="nombor_phone" name="nombor_phone" class="form-input" placeholder="e.g., 012-3456789" required>
                 </div>
+
                 <div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Data</button>
+                    <label for="jenis_order" class="block mb-2 font-medium">Jenis Order</label>
+                    <input type="text" id="jenis_order" name="jenis_order" class="form-input" placeholder="e.g., Baju Kurung, Kain Batik" required>
+                </div>
+
+                <div>
+                    <label for="total_rm" class="block mb-2 font-medium">Total (RM)</label>
+                    <input type="number" id="total_rm" name="total_rm" step="0.01" class="form-input" placeholder="e.g., 150.00" required>
+                </div>
+
+                <div>
+                    <label for="platform" class="block mb-2 font-medium">Platform</label>
+                    <select id="platform" name="platform" class="form-select" required>
+                        <option value="">Pilih Platform</option>
+                        <option value="Website">Website</option>
+                        <option value="Manual">Manual</option>
+                    </select>
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Order</button>
                 </div>
             </form>
             <div id="feedback-message" class="mt-4 text-center"></div>
@@ -76,9 +113,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        // Konfigurasi Firebase yang diminta oleh pengguna
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
             authDomain: "kilangdm-v1.firebaseapp.com",
@@ -88,51 +124,20 @@
             appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
             measurementId: "G-C02S0CPE63"
         };
-        // Dapatkan appId dari pembolehubah global Canvas (jika ada) atau gunakan fallback
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
-        // Fungsi untuk menginisialisasi autentikasi
-        async function initializeAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                    console.log("Signed in with custom token.");
-                } else {
-                    await signInAnonymously(auth);
-                    console.log("Signed in anonymously.");
-                }
-            } catch (error) {
-                console.error("Error during initial authentication:", error);
-                document.getElementById('feedback-message').textContent = `Ralat pengesahan: ${error.message}`;
-                document.getElementById('feedback-message').className = 'mt-4 text-center text-red-500';
-            }
-        }
-
-        // Panggil fungsi inisialisasi autentikasi
-        initializeAuth();
-
-        // Dengar perubahan status autentikasi (untuk log dan pengurusan UI)
+        
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                console.log("Auth state changed: User is signed in.", user.uid);
-                window.userId = user.uid; // Tetapkan userId setelah pengguna log masuk
-            } else {
-                console.log("Auth state changed: No user signed in.");
-                window.userId = crypto.randomUUID(); // Jana ID rawak jika tiada pengguna log masuk
-            }
-            // Jadikan db, auth, userId, dan appId tersedia secara global untuk skrip lain
-            window.db = db;
-            window.auth = auth;
-            window.appId = appId; // Sediakan appId secara global
+            if (!user) { signInAnonymously(auth); }
         });
+        
+        window.db = db;
     </script>
 
-    <!-- Skrip Borang eCommerce (Laluan dibetulkan) -->
-    <script type="module" src="/js/ecommerce.js"></script>
+    <!-- Order JavaScript -->
+    <script type="module" src="js/ecommerce.js"></script>
 
 </body>
 </html>
