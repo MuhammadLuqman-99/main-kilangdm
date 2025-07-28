@@ -1,4 +1,4 @@
-// dashboard-enhanced.js
+// dashboard-enhanced.js - COMPLETE FIXED VERSION
 import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Global variables
@@ -19,14 +19,27 @@ let currentFilters = {
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing dashboard...');
+    
     // Setup mobile menu
     setupMobileMenu();
     
-    // Wait for Firebase to be ready
+    // Wait for Firebase to be ready with better error handling
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
     const checkFirebase = setInterval(() => {
+        attempts++;
+        console.log(`Checking Firebase... Attempt ${attempts}`);
+        
         if (window.db) {
+            console.log('Firebase ready, initializing dashboard...');
             clearInterval(checkFirebase);
             initializeDashboard();
+        } else if (attempts >= maxAttempts) {
+            console.error('Firebase initialization timeout');
+            clearInterval(checkFirebase);
+            showErrorState();
         }
     }, 100);
 });
@@ -51,6 +64,8 @@ function setupMobileMenu() {
 
 async function initializeDashboard() {
     try {
+        console.log('Starting dashboard initialization...');
+        
         // Show loading state
         showLoadingState();
         
@@ -72,6 +87,8 @@ async function initializeDashboard() {
         // Setup real-time updates
         updateCurrentTime();
         setInterval(updateCurrentTime, 60000); // Update every minute
+        
+        console.log('Dashboard initialized successfully');
         
     } catch (error) {
         console.error('Error initializing dashboard:', error);
@@ -119,26 +136,47 @@ async function fetchAllData() {
     const db = window.db;
     
     try {
-        // Fetch all collections
-        const [ecomSnapshot, marketSnapshot, salesSnapshot, orderSnapshot] = await Promise.all([
-            getDocs(query(collection(db, "ecommerceData"), orderBy("createdAt", "desc"))),
-            getDocs(query(collection(db, "marketingData"), orderBy("createdAt", "desc"))),
-            getDocs(query(collection(db, "salesTeamData"), orderBy("createdAt", "desc"))),
-            getDocs(query(collection(db, "orderData"), orderBy("createdAt", "desc")))
-        ]);
+        console.log('Fetching data from Firestore...');
+        
+        // Fetch collections with error handling
+        const collections = ['ecommerceData', 'marketingData', 'salesTeamData', 'orderData'];
+        const results = {};
+        
+        for (const collectionName of collections) {
+            try {
+                console.log(`Fetching ${collectionName}...`);
+                const snapshot = await getDocs(collection(db, collectionName));
+                results[collectionName] = snapshot.docs.map(doc => ({ 
+                    id: doc.id, 
+                    ...doc.data() 
+                }));
+                console.log(`${collectionName}: ${results[collectionName].length} documents`);
+            } catch (error) {
+                console.warn(`Error fetching ${collectionName}:`, error);
+                results[collectionName] = [];
+            }
+        }
 
-        // Process data
-        allData.ecommerce = ecomSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        allData.marketing = marketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        allData.salesteam = salesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        allData.orders = orderSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Assign to global data
+        allData.ecommerce = results.ecommerceData || [];
+        allData.marketing = results.marketingData || [];
+        allData.salesteam = results.salesTeamData || [];
+        allData.orders = results.orderData || [];
 
-        console.log('Data fetched successfully:', {
+        console.log('Final data counts:', {
             ecommerce: allData.ecommerce.length,
             marketing: allData.marketing.length,
             salesteam: allData.salesteam.length,
             orders: allData.orders.length
         });
+
+        // Show message if no data
+        const totalRecords = allData.ecommerce.length + allData.marketing.length + 
+                           allData.salesteam.length + allData.orders.length;
+        
+        if (totalRecords === 0) {
+            showNoDataState();
+        }
 
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -710,7 +748,7 @@ function updateRecentActivity(data) {
         .slice(0, 10);
 
     if (recentActivities.length === 0) {
-        activityFeed.innerHTML = '<div class="text-center text-gray-500 py-8">Tiada aktiviti terkini</div>';
+        showNoDataState();
         return;
     }
 
@@ -728,6 +766,35 @@ function updateRecentActivity(data) {
             </div>
         `;
     }).join('');
+}
+
+function showNoDataState() {
+    // Update KPIs with no data message
+    document.getElementById('total-sales').textContent = 'RM 0.00';
+    document.getElementById('total-sales-count').textContent = '0 entri (Tiada data)';
+    document.getElementById('avg-roas').textContent = 'N/A';
+    document.getElementById('avg-roas-count').textContent = '0 entri (Tiada data)';
+    document.getElementById('leads-per-agent').textContent = 'N/A';
+    document.getElementById('leads-per-agent-count').textContent = '0 agent (Tiada data)';
+    document.getElementById('total-orders').textContent = '0';
+    document.getElementById('total-orders-count').textContent = '0 orders (Tiada data)';
+    
+    // Update activity feed
+    const activityFeed = document.getElementById('activity-feed');
+    activityFeed.innerHTML = `
+        <div class="text-center text-yellow-500 py-8">
+            <svg class="w-16 h-16 mx-auto mb-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h3 class="text-lg font-semibold mb-2">Tiada Data Tersedia</h3>
+            <p class="text-gray-400">Sila submit data melalui borang yang tersedia untuk melihat analytics.</p>
+            <div class="mt-4 space-x-2">
+                <a href="ecommerce.html" class="text-blue-400 hover:text-blue-300">Borang Order</a> |
+                <a href="marketing.html" class="text-blue-400 hover:text-blue-300">Marketing</a> |
+                <a href="salesteam.html" class="text-blue-400 hover:text-blue-300">Sales Team</a>
+            </div>
+        </div>
+    `;
 }
 
 // Utility functions
@@ -764,7 +831,7 @@ function showLoadingState() {
     document.getElementById('total-orders').textContent = 'Loading...';
     
     const activityFeed = document.getElementById('activity-feed');
-    activityFeed.innerHTML = '<div class="text-center text-blue-500 py-8">Memuatkan data...</div>';
+    activityFeed.innerHTML = '<div class="text-center text-blue-500 py-8"><div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>Memuatkan data...</div>';
 }
 
 function showErrorState() {
@@ -774,5 +841,13 @@ function showErrorState() {
     document.getElementById('total-orders').textContent = 'Error';
     
     const activityFeed = document.getElementById('activity-feed');
-    activityFeed.innerHTML = '<div class="text-center text-red-500 py-8">Gagal memuatkan data</div>';
+    activityFeed.innerHTML = `
+        <div class="text-center text-red-500 py-8">
+            <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <h3 class="text-lg font-semibold mb-2">Gagal Memuatkan Data</h3>
+            <p class="text-gray-400">Sila refresh halaman atau check console untuk error details.</p>
+        </div>
+    `;
 }
