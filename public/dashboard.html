@@ -269,7 +269,181 @@
                 </div>
             </div>
         </div>
+<!----   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  ------->  
+ <!-- Power Metrics Section - Add this to dashboard.html after KPI section -->
+<div class="glass-card p-6 rounded-xl mb-8">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-xl font-semibold">Power Metrics</h3>
+                <p class="text-gray-400 text-sm">KPI & Performance Tracking</p>
+            </div>
+        </div>
+        <div class="text-right">
+            <div class="text-xs text-gray-400">Sasaran Bulanan</div>
+            <div class="text-green-400 font-bold">RM 15,000</div>
+        </div>
+    </div>
 
+    <!-- Power Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- KPI Harian -->
+        <div class="bg-gradient-to-br from-blue-500/20 to-purple-500/20 p-4 rounded-lg border border-blue-500/30">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-8 h-8 bg-blue-500/30 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full" id="kpi-harian-status">Target</span>
+            </div>
+            <h4 class="text-xs text-gray-400 mb-1">KPI Harian</h4>
+            <p class="text-lg font-bold text-blue-400" id="kpi-harian">RM 0</p>
+            <p class="text-xs text-gray-500" id="kpi-harian-desc">per hari kerja</p>
+        </div>
+
+        <!-- KPI MTD -->
+        <div class="bg-gradient-to-br from-green-500/20 to-teal-500/20 p-4 rounded-lg border border-green-500/30">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-8 h-8 bg-green-500/30 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full" id="kpi-mtd-status">MTD</span>
+            </div>
+            <h4 class="text-xs text-gray-400 mb-1">KPI MTD</h4>
+            <p class="text-lg font-bold text-green-400" id="kpi-mtd">RM 0</p>
+            <p class="text-xs text-gray-500" id="kpi-mtd-desc">sasaran bulan ini</p>
+        </div>
+
+        <!-- Sale MTD -->
+        <div class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-4 rounded-lg border border-purple-500/30">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-8 h-8 bg-purple-500/30 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-purple-400 bg-purple-400/20 px-2 py-1 rounded-full" id="sale-mtd-trend">Actual</span>
+            </div>
+            <h4 class="text-xs text-gray-400 mb-1">Sale MTD</h4>
+            <p class="text-lg font-bold text-purple-400" id="sale-mtd">RM 0</p>
+            <p class="text-xs text-gray-500" id="sale-mtd-desc">jualan sebenar</p>
+        </div>
+
+        <!-- Balance Bulanan -->
+        <div class="bg-gradient-to-br from-orange-500/20 to-red-500/20 p-4 rounded-lg border border-orange-500/30">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-8 h-8 bg-orange-500/30 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full" id="balance-bulanan-status">Balance</span>
+            </div>
+            <h4 class="text-xs text-gray-400 mb-1">Balance Bulanan</h4>
+            <p class="text-lg font-bold text-orange-400" id="balance-bulanan">RM 0</p>
+            <p class="text-xs text-gray-500" id="balance-bulanan-desc">perlu dicapai</p>
+        </div>
+    </div>
+
+    <!-- Secondary Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        <!-- Balance MTD -->
+        <div class="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 p-4 rounded-lg border border-cyan-500/30">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-8 h-8 bg-cyan-500/30 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-cyan-400 bg-cyan-400/20 px-2 py-1 rounded-full" id="balance-mtd-status">Gap</span>
+            </div>
+            <h4 class="text-xs text-gray-400 mb-1">Balance MTD</h4>
+            <p class="text-lg font-bold text-cyan-400" id="balance-mtd">RM 0</p>
+            <p class="text-xs text-gray-500" id="balance-mtd-desc">gap sasaran</p>
+        </div>
+
+        <!-- Bilangan Terjual -->
+        <div class="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 p-4 rounded-lg border border-yellow-500/30">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-8 h-8 bg-yellow-500/30 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M8 11v6h8v-6M8 11H6a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2v-6a2 2 0 00-2-2h-2"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full" id="bilangan-terjual-trend">Sales</span>
+            </div>
+            <h4 class="text-xs text-gray-400 mb-1">Bilangan Terjual</h4>
+            <p class="text-lg font-bold text-yellow-400" id="bilangan-terjual">0</p>
+            <p class="text-xs text-gray-500" id="bilangan-terjual-desc">unit terjual</p>
+        </div>
+
+        <!-- Total Close % -->
+        <div class="bg-gradient-to-br from-emerald-500/20 to-green-500/20 p-4 rounded-lg border border-emerald-500/30">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-8 h-8 bg-emerald-500/30 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-emerald-400 bg-emerald-400/20 px-2 py-1 rounded-full" id="close-rate-status">Rate</span>
+            </div>
+            <h4 class="text-xs text-gray-400 mb-1">Total Close %</h4>
+            <p class="text-lg font-bold text-emerald-400" id="total-close-rate">0%</p>
+            <p class="text-xs text-gray-500" id="total-close-rate-desc">conversion rate</p>
+        </div>
+
+        <!-- Working Days Info -->
+        <div class="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-4 rounded-lg border border-indigo-500/30">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-8 h-8 bg-indigo-500/30 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <span class="text-xs text-indigo-400 bg-indigo-400/20 px-2 py-1 rounded-full" id="working-days-status">Days</span>
+            </div>
+            <h4 class="text-xs text-gray-400 mb-1">Hari Kerja</h4>
+            <p class="text-lg font-bold text-indigo-400" id="working-days-info">0 / 0</p>
+            <p class="text-xs text-gray-500" id="working-days-desc">hari ini / total</p>
+        </div>
+    </div>
+
+    <!-- Progress Bars -->
+    <div class="mt-6 space-y-4">
+        <!-- Monthly Progress -->
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-400">Progress Bulanan</span>
+                <span class="text-white" id="monthly-progress-text">0% (RM 0 / RM 15,000)</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2">
+                <div class="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300" 
+                     style="width: 0%" id="monthly-progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- MTD Progress -->
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-400">Progress MTD</span>
+                <span class="text-white" id="mtd-progress-text">0% (RM 0 / RM 0)</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2">
+                <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300" 
+                     style="width: 0%" id="mtd-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+    </div>
+ <!----   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  ------->   
         <!-- Recent Activity -->
         <div class="glass-card p-6 rounded-xl mb-8">
             <h3 class="text-xl font-semibold mb-6">Recent Activity</h3>
@@ -278,7 +452,7 @@
             </div>
         </div>
     </div>
-
+    
     <!-- Load Dashboard JavaScript -->
     <script type="module" src="js/dashboard.js"></script>
 </body>
