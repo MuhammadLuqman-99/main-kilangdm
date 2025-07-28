@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Dashboard - KilangDM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        .metric-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .chart-container canvas {
+            max-height: 100% !important;
+        }
+        .small-chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">K</span>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold">KilangDM Analytics</h1>
+                    <p class="text-gray-400">Comprehensive Business Dashboard</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-gray-400">Last Updated</div>
+                <div class="text-white font-medium" id="current-time">-</div>
+            </div>
+        </div>
+
+        <!-- Key Performance Indicators -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Revenue -->
+            <div class="metric-card p-6 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full">+12.5%</span>
+                </div>
+                <h3 class="text-sm text-gray-400 mb-1">Total Revenue</h3>
+                <p class="text-2xl font-bold">RM 125,480</p>
+                <p class="text-xs text-gray-500">348 orders</p>
+            </div>
+
+            <!-- Marketing ROI -->
+            <div class="metric-card p-6 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs text-purple-400 bg-purple-400/20 px-2 py-1 rounded-full">+8.2%</span>
+                </div>
+                <h3 class="text-sm text-gray-400 mb-1">Avg ROAS</h3>
+                <p class="text-2xl font-bold">4.2x</p>
+                <p class="text-xs text-gray-500">RM 28,450 spent</p>
+            </div>
+
+            <!-- Lead Conversion -->
+            <div class="metric-card p-6 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full">+15.3%</span>
+                </div>
+                <h3 class="text-sm text-gray-400 mb-1">Lead Conversion</h3>
+                <p class="text-2xl font-bold">23.8%</p>
+                <p class="text-xs text-gray-500">1,245 total leads</p>
+            </div>
+
+            <!-- Active Agents -->
+            <div class="metric-card p-6 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full">Active</span>
+                </div>
+                <h3 class="text-sm text-gray-400 mb-1">Active Agents</h3>
+                <p class="text-2xl font-bold">8</p>
+                <p class="text-xs text-gray-500">Team members</p>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Revenue Trend Chart -->
+            <div class="glass-card p-6 rounded-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold">Revenue Trend</h3>
+                    <div class="flex space-x-2">
+                        <button class="text-xs bg-blue-600 text-white px-3 py-1 rounded" onclick="updatePeriod('7D')">7D</button>
+                        <button class="text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded" onclick="updatePeriod('30D')">30D</button>
+                        <button class="text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded" onclick="updatePeriod('90D')">90D</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Sales Channel Performance -->
+            <div class="glass-card p-6 rounded-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold">Sales Channel Performance</h3>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <div class="chart-container">
+                    <canvas id="channelChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Lead Funnel -->
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="text-xl font-semibold mb-6">Lead Funnel</h3>
+                <div class="small-chart-container">
+                    <canvas id="funnelChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Team Performance -->
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="text-xl font-semibold mb-6">Team Performance</h3>
+                <div class="small-chart-container">
+                    <canvas id="teamChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Marketing Spend vs Revenue -->
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="text-xl font-semibold mb-6">Marketing ROI</h3>
+                <div class="small-chart-container">
+                    <canvas id="roiChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Order Types Distribution -->
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="text-xl font-semibold mb-6">Order Types Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="orderTypesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Follow-up Activities -->
+            <div class="glass-card p-6 rounded-xl">
+                <h3 class="text-xl font-semibold mb-6">Follow-up Activities</h3>
+                <div class="chart-container">
+                    <canvas id="followupChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Activity Feed -->
+        <div class="glass-card p-6 rounded-xl mb-8">
+            <h3 class="text-xl font-semibold mb-6">Recent Activity</h3>
+            <div class="space-y-4" id="activity-feed">
+                <div class="flex items-center space-x-4 p-3 bg-gray-800/50 rounded-lg">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <div class="flex-1">
+                        <p class="text-sm">New order received from Shopee - RM 450.00</p>
+                        <p class="text-xs text-gray-400">2 minutes ago</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 p-3 bg-gray-800/50 rounded-lg">
+                    <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <div class="flex-1">
+                        <p class="text-sm">Marketing campaign updated - ROAS improved to 4.8x</p>
+                        <p class="text-xs text-gray-400">15 minutes ago</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 p-3 bg-gray-800/50 rounded-lg">
+                    <div class="w-2 h-2 bg-purple-400 rounded-full"></div>
+                    <div class="flex-1">
+                        <p class="text-sm">Agent Ahmad closed 5 leads today</p>
+                        <p class="text-xs text-gray-400">1 hour ago</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global chart instances
+        let charts = {};
+        
+        // Sample data for different periods
+        const sampleData = {
+            '7D': {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                ecommerce: [12000, 15000, 18000, 14000, 22000, 25000, 28000],
+                direct: [8000, 12000, 15000, 11000, 16000, 19000, 21000]
+            },
+            '30D': {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                ecommerce: [85000, 92000, 88000, 95000],
+                direct: [62000, 68000, 65000, 72000]
+            },
+            '90D': {
+                labels: ['Month 1', 'Month 2', 'Month 3'],
+                ecommerce: [320000, 350000, 380000],
+                direct: [245000, 260000, 285000]
+            }
+        };
+
+        let currentPeriod = '7D';
+
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+        });
+
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString('ms-MY');
+        }
+
+        function updatePeriod(period) {
+            currentPeriod = period;
+            
+            // Update button states
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.textContent === period) {
+                    btn.className = 'text-xs bg-blue-600 text-white px-3 py-1 rounded';
+                } else if (btn.textContent.match(/^\d+D$/)) {
+                    btn.className = 'text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded';
+                }
+            });
+            
+            // Update revenue chart
+            updateRevenueChart();
+        }
+
+        function updateRevenueChart() {
+            const data = sampleData[currentPeriod];
+            
+            if (charts.revenue) {
+                charts.revenue.data.labels = data.labels;
+                charts.revenue.data.datasets[0].data = data.ecommerce;
+                charts.revenue.data.datasets[1].data = data.direct;
+                charts.revenue.update('none');
+            }
+        }
+
+        function initializeCharts() {
+            // Chart.js default configuration
+            Chart.defaults.color = '#D1D5DB';
+            Chart.defaults.borderColor = 'rgba(75, 85, 99, 0.3)';
+
+            // Revenue Trend Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            charts.revenue = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: sampleData[currentPeriod].labels,
+                    datasets: [{
+                        label: 'eCommerce',
+                        data: sampleData[currentPeriod].ecommerce,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3
+                    }, {
+                        label: 'Direct Sales',
+                        data: sampleData[currentPeriod].direct,
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: { 
+                            labels: { 
+                                color: '#D1D5DB',
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { 
+                                color: '#9CA3AF',
+                                callback: function(value) {
+                                    return 'RM ' + value.toLocaleString();
+                                }
+                            },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        },
+                        x: { 
+                            ticks: { color: '#9CA3AF' },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        }
+                    }
+                }
+            });
+
+            // Channel Performance Chart
+            const channelCtx = document.getElementById('channelChart').getContext('2d');
+            charts.channel = new Chart(channelCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Shopee', 'Lazada', 'Direct', 'Instagram', 'Facebook'],
+                    datasets: [{
+                        data: [35, 25, 20, 12, 8],
+                        backgroundColor: [
+                            '#FF6B35', '#F7931E', '#3B82F6', '#E1306C', '#1877F2'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { 
+                                color: '#D1D5DB', 
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Lead Funnel Chart
+            const funnelCtx = document.getElementById('funnelChart').getContext('2d');
+            charts.funnel = new Chart(funnelCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total\nLeads', 'Qualified', 'Proposal', 'Negotiation', 'Closed'],
+                    datasets: [{
+                        data: [1000, 650, 420, 280, 185],
+                        backgroundColor: [
+                            '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE'
+                        ],
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.x + ' leads';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            ticks: { color: '#9CA3AF', font: { size: 11 } },
+                            grid: { display: false }
+                        },
+                        x: { 
+                            ticks: { color: '#9CA3AF' },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        }
+                    }
+                }
+            });
+
+            // Team Performance Chart
+            const teamCtx = document.getElementById('teamChart').getContext('2d');
+            charts.team = new Chart(teamCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Ahmad', 'Siti', 'Rahman', 'Aina', 'Fariz'],
+                    datasets: [{
+                        label: 'Performance Score',
+                        data: [85, 92, 78, 88, 95],
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        borderColor: '#22C55E',
+                        pointBackgroundColor: '#22C55E',
+                        pointBorderColor: '#22C55E',
+                        pointRadius: 6,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            labels: { color: '#D1D5DB' },
+                            display: false
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { 
+                                color: '#9CA3AF',
+                                stepSize: 20,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' },
+                            pointLabels: { color: '#D1D5DB', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // Marketing ROI Chart
+            const roiCtx = document.getElementById('roiChart').getContext('2d');
+            charts.roi = new Chart(roiCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'ROAS',
+                        data: [3.2, 3.8, 4.1, 4.5],
+                        borderColor: '#F59E0B',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#F59E0B'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'ROAS: ' + context.parsed.y + 'x';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { 
+                                color: '#9CA3AF',
+                                callback: function(value) {
+                                    return value + 'x';
+                                }
+                            },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        },
+                        x: { 
+                            ticks: { color: '#9CA3AF' },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        }
+                    }
+                }
+            });
+
+            // Order Types Chart
+            const orderTypesCtx = document.getElementById('orderTypesChart').getContext('2d');
+            charts.orderTypes = new Chart(orderTypesCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Kain Batik', 'Kain Songket', 'Kain Cotton', 'Kain Silk'],
+                    datasets: [{
+                        data: [40, 25, 20, 15],
+                        backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#22C55E'],
+                        borderWidth: 0,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { 
+                                color: '#D1D5DB', 
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Follow-up Activities Chart
+            const followupCtx = document.getElementById('followupChart').getContext('2d');
+            charts.followup = new Chart(followupCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Call', 'WhatsApp', 'Email', 'Visit'],
+                    datasets: [{
+                        label: 'Activities',
+                        data: [45, 32, 18, 12],
+                        backgroundColor: '#8B5CF6',
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' activities';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { color: '#9CA3AF' },
+                            grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                        },
+                        x: { 
+                            ticks: { color: '#9CA3AF' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
