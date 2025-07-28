@@ -10,23 +10,28 @@
     
     <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
 
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
-            apiKey: "AIzaSyBw5Pb3lG8Q5QNmVqy3FNhEp9jqsGGJo4E",
-            authDomain: "kilangdm-2db43.firebaseapp.com",
-            projectId: "kilangdm-2db43",
-            storageBucket: "kilangdm-2db43.firebasestorage.app",
-            messagingSenderId: "294532120752",
-            appId: "1:294532120752:web:59b3a1d36fdb6c0a1c9e4a"
-        };
+            apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
+            authDomain: "kilangdm-v1.firebaseapp.com",
+            projectId: "kilangdm-v1",
+            storageBucket: "kilangdm-v1.firebasestorage.app",
+            messagingSenderId: "264191193800",
+            appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
+            measurementId: "G-C02S0CPE63"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        window.db = db;
-    </script>
-
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .glass-card {
