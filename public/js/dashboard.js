@@ -62,6 +62,7 @@ function setupMobileMenu() {
     }
 }
 
+// 3. UBAH function initializeDashboard() - tambah power metrics initialization
 async function initializeDashboard() {
     try {
         console.log('Starting dashboard initialization...');
@@ -83,6 +84,9 @@ async function initializeDashboard() {
         
         // Apply default filters and display data
         applyFilters();
+        
+        // ADD THIS LINE - Initialize Power Metrics
+        updatePowerMetricsDisplay(allData.salesteam);
         
         // Setup real-time updates
         updateCurrentTime();
@@ -200,6 +204,9 @@ function populateAgentFilter() {
     });
 }
 
+// FIXES UNTUK DASHBOARD.JS - Tambah/ubah bahagian ini sahaja
+
+// 1. UBAH function applyFilters() - tambah power metrics call
 function applyFilters() {
     // Get filter values
     const startDate = document.getElementById('start-date').value;
@@ -224,6 +231,9 @@ function applyFilters() {
     updateKPIs(filteredData);
     updateCharts(filteredData);
     updateRecentActivity(filteredData);
+    
+    // ADD THIS LINE - Update Power Metrics
+    updatePowerMetricsDisplay(filteredData.salesteam);
 }
 
 function filterByDate(data, startDate, endDate) {
@@ -284,6 +294,7 @@ function updateActiveFiltersDisplay() {
     }
 }
 
+// 2. UBAH function clearFilters() - tambah power metrics call
 function clearFilters() {
     document.getElementById('start-date').value = '';
     document.getElementById('end-date').value = '';
@@ -300,7 +311,11 @@ function clearFilters() {
     updateCharts(allData);
     updateRecentActivity(allData);
     updateActiveFiltersDisplay();
+    
+    // ADD THIS LINE - Update Power Metrics with all data
+    updatePowerMetricsDisplay(allData.salesteam);
 }
+
 
 function updateKPIs(data) {
     // Calculate Total Sales
@@ -859,10 +874,10 @@ function showErrorState() {
 // Configuration
 const MONTHLY_KPI = 15000; // RM 15,000 monthly target
 
-// Power Metrics Calculator Class
+// 4. GANTIKAN KESELURUHAN PowerMetricsCalculator class dengan dynamic version
 class PowerMetricsCalculator {
     constructor() {
-        this.monthlyKPI = MONTHLY_KPI;
+        this.monthlyKPI = 15000; // RM 15,000 monthly target (tetap)
         this.currentDate = new Date();
         this.currentMonth = this.currentDate.getMonth() + 1;
         this.currentYear = this.currentDate.getFullYear();
@@ -903,33 +918,68 @@ class PowerMetricsCalculator {
         return workingDays;
     }
 
-    // Calculate KPI Harian
-    calculateKPIHarian() {
+    // Calculate remaining working days in the month
+    getRemainingWorkingDays() {
+        const totalWorkingDays = this.getWorkingDaysInMonth();
+        const workingDaysToDate = this.getWorkingDaysToDate();
+        return Math.max(0, totalWorkingDays - workingDaysToDate);
+    }
+
+    // Calculate ORIGINAL KPI Harian (for reference)
+    calculateOriginalKPIHarian() {
         const totalWorkingDays = this.getWorkingDaysInMonth();
         return this.monthlyKPI / totalWorkingDays;
     }
 
-    // Calculate KPI MTD
-    calculateKPIMTD() {
-        const workingDaysToDate = this.getWorkingDaysToDate();
-        const kpiHarian = this.calculateKPIHarian();
-        return kpiHarian * workingDaysToDate;
+    // Calculate DYNAMIC KPI Harian (adjusted based on current sales and remaining days)
+    calculateDynamicKPIHarian(saleMTD) {
+        const remainingWorkingDays = this.getRemainingWorkingDays();
+        const remainingKPI = this.monthlyKPI - saleMTD;
+        
+        // Jika tiada hari kerja tinggal, return 0
+        if (remainingWorkingDays <= 0) {
+            return 0;
+        }
+        
+        // Dynamic KPI = Baki KPI ÷ Baki hari kerja
+        return remainingKPI / remainingWorkingDays;
     }
 
-    // Get Sale MTD from power metrics data
+    // Calculate KPI MTD (target sampai hari ini)
+    calculateKPIMTD() {
+        const workingDaysToDate = this.getWorkingDaysToDate();
+        const originalKpiHarian = this.calculateOriginalKPIHarian();
+        return originalKpiHarian * workingDaysToDate;
+    }
+
+    // Get Sale MTD from power metrics data - FIXED
     getSaleMTD(salesTeamData) {
         const currentMonth = this.currentMonth;
         const currentYear = this.currentYear;
         
         return salesTeamData
             .filter(item => {
+                // Check if item is power_metrics type
                 if (item.type !== 'power_metrics') return false;
                 
-                const itemDate = new Date(item.tarikh || item.createdAt?.toDate?.() || item.createdAt);
+                let itemDate;
+                // Handle different date formats
+                if (item.tarikh) {
+                    itemDate = new Date(item.tarikh);
+                } else if (item.createdAt) {
+                    // Handle Firestore timestamp
+                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                } else {
+                    return false;
+                }
+                
                 return itemDate.getMonth() + 1 === currentMonth && 
                        itemDate.getFullYear() === currentYear;
             })
-            .reduce((total, item) => total + (parseFloat(item.total_sale_bulan) || 0), 0);
+            .reduce((total, item) => {
+                const saleAmount = parseFloat(item.total_sale_bulan) || 0;
+                return total + saleAmount;
+            }, 0);
     }
 
     // Calculate Balance Bulanan
@@ -952,11 +1002,22 @@ class PowerMetricsCalculator {
             .filter(item => {
                 if (item.type !== 'power_metrics') return false;
                 
-                const itemDate = new Date(item.tarikh || item.createdAt?.toDate?.() || item.createdAt);
+                let itemDate;
+                if (item.tarikh) {
+                    itemDate = new Date(item.tarikh);
+                } else if (item.createdAt) {
+                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                } else {
+                    return false;
+                }
+                
                 return itemDate.getMonth() + 1 === currentMonth && 
                        itemDate.getFullYear() === currentYear;
             })
-            .reduce((total, item) => total + (parseInt(item.total_close_bulan) || 0), 0);
+            .reduce((total, item) => {
+                const closeCount = parseInt(item.total_close_bulan) || 0;
+                return total + closeCount;
+            }, 0);
     }
 
     // Get Total Lead Count from power metrics
@@ -968,11 +1029,22 @@ class PowerMetricsCalculator {
             .filter(item => {
                 if (item.type !== 'power_metrics') return false;
                 
-                const itemDate = new Date(item.tarikh || item.createdAt?.toDate?.() || item.createdAt);
+                let itemDate;
+                if (item.tarikh) {
+                    itemDate = new Date(item.tarikh);
+                } else if (item.createdAt) {
+                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                } else {
+                    return false;
+                }
+                
                 return itemDate.getMonth() + 1 === currentMonth && 
                        itemDate.getFullYear() === currentYear;
             })
-            .reduce((total, item) => total + (parseInt(item.total_lead_bulan) || 0), 0);
+            .reduce((total, item) => {
+                const leadCount = parseInt(item.total_lead_bulan) || 0;
+                return total + leadCount;
+            }, 0);
     }
 
     // Calculate Total Close Percentage
@@ -984,174 +1056,230 @@ class PowerMetricsCalculator {
         return (totalClose / totalLead) * 100;
     }
 
-    // Calculate all metrics
+    // Calculate Performance Status
+    getPerformanceStatus(saleMTD) {
+        const kpiMTD = this.calculateKPIMTD();
+        const monthlyProgress = (saleMTD / this.monthlyKPI) * 100;
+        const mtdProgress = kpiMTD > 0 ? (saleMTD / kpiMTD) * 100 : 0;
+        
+        const workingDaysToDate = this.getWorkingDaysToDate();
+        const totalWorkingDays = this.getWorkingDaysInMonth();
+        const expectedProgress = (workingDaysToDate / totalWorkingDays) * 100;
+        
+        return {
+            monthlyProgress,
+            mtdProgress,
+            expectedProgress,
+            isAhead: monthlyProgress >= expectedProgress,
+            isOnTrack: mtdProgress >= 90, // 90% of MTD target
+            performanceGap: monthlyProgress - expectedProgress
+        };
+    }
+
+    // Calculate all metrics with dynamic adjustment
     calculateAllMetrics(salesTeamData) {
         const saleMTD = this.getSaleMTD(salesTeamData);
-        const kpiHarian = this.calculateKPIHarian();
+        const originalKpiHarian = this.calculateOriginalKPIHarian();
+        const dynamicKpiHarian = this.calculateDynamicKPIHarian(saleMTD);
         const kpiMTD = this.calculateKPIMTD();
         const balanceBulanan = this.calculateBalanceBulanan(saleMTD);
         const balanceMTD = this.calculateBalanceMTD(saleMTD);
         const totalCloseRate = this.calculateTotalCloseRate(salesTeamData);
         const totalWorkingDays = this.getWorkingDaysInMonth();
         const workingDaysToDate = this.getWorkingDaysToDate();
+        const remainingWorkingDays = this.getRemainingWorkingDays();
+        const performanceStatus = this.getPerformanceStatus(saleMTD);
 
         return {
-            kpiHarian: kpiHarian,
+            // KPI Values - USE DYNAMIC KPI HARIAN
+            originalKpiHarian: originalKpiHarian,
+            dynamicKpiHarian: dynamicKpiHarian,
             kpiMTD: kpiMTD,
             saleMTD: saleMTD,
             balanceBulanan: balanceBulanan,
             balanceMTD: balanceMTD,
+            
+            // Performance Metrics
             bilanganTerjual: this.getTotalCloseCount(salesTeamData),
             totalCloseRate: totalCloseRate,
+            
+            // Day Calculations
             totalWorkingDays: totalWorkingDays,
             workingDaysToDate: workingDaysToDate,
-            monthlyProgress: (saleMTD / this.monthlyKPI) * 100,
-            mtdProgress: kpiMTD > 0 ? (saleMTD / kpiMTD) * 100 : 0
+            remainingWorkingDays: remainingWorkingDays,
+            
+            // Progress Indicators
+            monthlyProgress: performanceStatus.monthlyProgress,
+            mtdProgress: performanceStatus.mtdProgress,
+            expectedProgress: performanceStatus.expectedProgress,
+            performanceGap: performanceStatus.performanceGap,
+            
+            // Status Flags
+            isAhead: performanceStatus.isAhead,
+            isOnTrack: performanceStatus.isOnTrack,
+            
+            // Additional Info
+            kpiAdjustment: dynamicKpiHarian - originalKpiHarian,
+            adjustmentPercentage: originalKpiHarian > 0 ? ((dynamicKpiHarian - originalKpiHarian) / originalKpiHarian) * 100 : 0
         };
     }
 }
 
-// Update Power Metrics Display
+// 5. GANTIKAN function updatePowerMetricsDisplay() dengan dynamic version
 function updatePowerMetricsDisplay(salesTeamData) {
     const calculator = new PowerMetricsCalculator();
     const metrics = calculator.calculateAllMetrics(salesTeamData);
 
-    // Update KPI displays
-    document.getElementById('kpi-harian').textContent = `RM ${metrics.kpiHarian.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    document.getElementById('kpi-mtd').textContent = `RM ${metrics.kpiMTD.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    document.getElementById('sale-mtd').textContent = `RM ${metrics.saleMTD.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    
-    // Update Balance displays
-    document.getElementById('balance-bulanan').textContent = `RM ${metrics.balanceBulanan.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    document.getElementById('balance-mtd').textContent = `RM ${metrics.balanceMTD.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    
-    // Update other metrics
-    document.getElementById('bilangan-terjual').textContent = metrics.bilanganTerjual.toString();
-    document.getElementById('total-close-rate').textContent = `${metrics.totalCloseRate.toFixed(1)}%`;
-    document.getElementById('working-days-info').textContent = `${metrics.workingDaysToDate} / ${metrics.totalWorkingDays}`;
+    // Helper function untuk update element
+    const updateElement = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        } else {
+            console.warn(`Element with ID '${id}' not found`);
+        }
+    };
+
+    // Update KPI displays - GUNAKAN DYNAMIC KPI HARIAN
+    updateElement('kpi-harian', `RM ${metrics.dynamicKpiHarian.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
+    updateElement('kpi-mtd', `RM ${metrics.kpiMTD.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
+    updateElement('sale-mtd', `RM ${metrics.saleMTD.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    updateElement('balance-bulanan', `RM ${metrics.balanceBulanan.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    updateElement('balance-mtd', `RM ${metrics.balanceMTD.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    updateElement('bilangan-terjual', metrics.bilanganTerjual.toString());
+    updateElement('total-close-rate', `${metrics.totalCloseRate.toFixed(1)}%`);
+    updateElement('working-days-info', `${metrics.workingDaysToDate} / ${metrics.totalWorkingDays}`);
+
+    // Update descriptions dengan dynamic info
+    updateElement('kpi-harian-desc', `per hari (${metrics.remainingWorkingDays} hari tinggal)`);
+    updateElement('kpi-mtd-desc', `sasaran ${metrics.workingDaysToDate} hari`);
+    updateElement('sale-mtd-desc', `jualan ${metrics.workingDaysToDate} hari`);
+    updateElement('balance-bulanan-desc', `perlu dicapai (${metrics.remainingWorkingDays} hari)`);
+    updateElement('balance-mtd-desc', metrics.balanceMTD > 0 ? 'ketinggalan MTD' : 'melebihi MTD');
 
     // Update progress bars
     const monthlyProgressBar = document.getElementById('monthly-progress-bar');
     const mtdProgressBar = document.getElementById('mtd-progress-bar');
-    const monthlyProgressText = document.getElementById('monthly-progress-text');
-    const mtdProgressText = document.getElementById('mtd-progress-text');
+    
+    if (monthlyProgressBar && mtdProgressBar) {
+        // Monthly progress
+        const monthlyProgressPercent = Math.min(Math.max(metrics.monthlyProgress, 0), 100);
+        monthlyProgressBar.style.width = `${monthlyProgressPercent}%`;
+        
+        // Change color based on performance
+        if (metrics.isAhead) {
+            monthlyProgressBar.className = 'bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300';
+        } else if (metrics.performanceGap > -10) {
+            monthlyProgressBar.className = 'bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-300';
+        } else {
+            monthlyProgressBar.className = 'bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300';
+        }
+        
+        updateElement('monthly-progress-text', `${monthlyProgressPercent.toFixed(1)}% (Expected: ${metrics.expectedProgress.toFixed(1)}%)`);
 
-    // Monthly progress
-    const monthlyProgressPercent = Math.min(metrics.monthlyProgress, 100);
-    monthlyProgressBar.style.width = `${monthlyProgressPercent}%`;
-    monthlyProgressText.textContent = `${monthlyProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${MONTHLY_KPI.toLocaleString('ms-MY')})`;
+        // MTD progress
+        const mtdProgressPercent = Math.min(Math.max(metrics.mtdProgress, 0), 100);
+        mtdProgressBar.style.width = `${mtdProgressPercent}%`;
+        
+        // Change MTD progress bar color
+        if (metrics.isOnTrack) {
+            mtdProgressBar.className = 'bg-gradient-to-r from-green-500 to-teal-500 h-2 rounded-full transition-all duration-300';
+        } else if (mtdProgressPercent >= 70) {
+            mtdProgressBar.className = 'bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-300';
+        } else {
+            mtdProgressBar.className = 'bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300';
+        }
+        
+        updateElement('mtd-progress-text', `${mtdProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${metrics.kpiMTD.toLocaleString('ms-MY')})`);
+    }
 
-    // MTD progress
-    const mtdProgressPercent = Math.min(metrics.mtdProgress, 100);
-    mtdProgressBar.style.width = `${mtdProgressPercent}%`;
-    mtdProgressText.textContent = `${mtdProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${metrics.kpiMTD.toLocaleString('ms-MY')})`;
+    // Update status indicators dengan dynamic logic
+    updateDynamicStatusIndicators(metrics);
 
-    // Update status indicators based on performance
-    updateStatusIndicators(metrics);
-
-    console.log('Power Metrics Updated:', metrics);
+    // Log untuk debugging
+    console.log('Dynamic Power Metrics:', {
+        'Original KPI Harian': `RM ${metrics.originalKpiHarian.toFixed(0)}`,
+        'Dynamic KPI Harian': `RM ${metrics.dynamicKpiHarian.toFixed(0)}`,
+        'Adjustment': `${metrics.adjustmentPercentage > 0 ? '+' : ''}${metrics.adjustmentPercentage.toFixed(1)}%`,
+        'Performance Gap': `${metrics.performanceGap > 0 ? '+' : ''}${metrics.performanceGap.toFixed(1)}%`,
+        'Days Remaining': metrics.remainingWorkingDays,
+        'Is Ahead': metrics.isAhead,
+        'Is On Track': metrics.isOnTrack
+    });
 }
 
-// Update status indicators with colors based on performance
-function updateStatusIndicators(metrics) {
-    // KPI Harian Status
-    const kpiHarianStatus = document.getElementById('kpi-harian-status');
-    kpiHarianStatus.textContent = 'Target';
+// 6. TAMBAH function updateDynamicStatusIndicators() yang baharu
+function updateDynamicStatusIndicators(metrics) {
+    const updateStatusElement = (id, text, className = null) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = text;
+            if (className) {
+                element.className = className;
+            }
+        }
+    };
 
-    // KPI MTD Status
-    const kpiMtdStatus = document.getElementById('kpi-mtd-status');
-    kpiMtdStatus.textContent = 'MTD';
+    // KPI Harian Status dengan adjustment indicator
+    let kpiHarianText = 'Dynamic';
+    let kpiHarianClass = 'text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full';
+    
+    if (metrics.adjustmentPercentage > 10) {
+        kpiHarianText = '↑ Higher';
+        kpiHarianClass = 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full';
+    } else if (metrics.adjustmentPercentage < -10) {
+        kpiHarianText = '↓ Lower';
+        kpiHarianClass = 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full';
+    }
+    
+    updateStatusElement('kpi-harian-status', kpiHarianText, kpiHarianClass);
 
-    // Sale MTD Trend
-    const saleMtdTrend = document.getElementById('sale-mtd-trend');
-    if (metrics.saleMTD >= metrics.kpiMTD) {
-        saleMtdTrend.textContent = '✓ Ahead';
-        saleMtdTrend.className = 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full';
+    // Sale MTD Trend dengan performance gap
+    if (metrics.isAhead) {
+        updateStatusElement('sale-mtd-trend', '✓ Ahead', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.performanceGap > -10) {
+        updateStatusElement('sale-mtd-trend', '△ Close', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
     } else {
-        saleMtdTrend.textContent = '△ Behind';
-        saleMtdTrend.className = 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full';
+        updateStatusElement('sale-mtd-trend', '⚠ Behind', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     }
 
     // Balance Bulanan Status
-    const balanceBulananStatus = document.getElementById('balance-bulanan-status');
     if (metrics.balanceBulanan <= 0) {
-        balanceBulananStatus.textContent = '✓ Achieved';
-        balanceBulananStatus.className = 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full';
+        updateStatusElement('balance-bulanan-status', '🎯 Achieved', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.remainingWorkingDays <= 0) {
+        updateStatusElement('balance-bulanan-status', '❌ Missed', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     } else {
-        balanceBulananStatus.textContent = 'Pending';
+        updateStatusElement('balance-bulanan-status', `${metrics.remainingWorkingDays} days left`, 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full');
     }
 
     // Balance MTD Status
-    const balanceMtdStatus = document.getElementById('balance-mtd-status');
-    if (metrics.balanceMTD <= 0) {
-        balanceMtdStatus.textContent = '✓ On Track';
-        balanceMtdStatus.className = 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full';
-    } else if (metrics.balanceMTD > 0 && metrics.balanceMTD <= metrics.kpiMTD * 0.2) {
-        balanceMtdStatus.textContent = '△ Close';
-        balanceMtdStatus.className = 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full';
+    if (metrics.isOnTrack) {
+        updateStatusElement('balance-mtd-status', '✓ On Track', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.mtdProgress >= 70) {
+        updateStatusElement('balance-mtd-status', '△ Recovery', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
     } else {
-        balanceMtdStatus.textContent = '⚠ Gap';
-        balanceMtdStatus.className = 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full';
+        updateStatusElement('balance-mtd-status', '🚨 Critical', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     }
 
-    // Close Rate Status
-    const closeRateStatus = document.getElementById('close-rate-status');
+    // Close Rate Status (unchanged)
     if (metrics.totalCloseRate >= 20) {
-        closeRateStatus.textContent = '✓ Excellent';
-        closeRateStatus.className = 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full';
+        updateStatusElement('close-rate-status', '✓ Excellent', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
     } else if (metrics.totalCloseRate >= 10) {
-        closeRateStatus.textContent = '△ Good';
-        closeRateStatus.className = 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full';
+        updateStatusElement('close-rate-status', '△ Good', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
     } else {
-        closeRateStatus.textContent = 'Need Focus';
+        updateStatusElement('close-rate-status', 'Need Focus', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     }
 
-    // Working Days Status
-    const workingDaysStatus = document.getElementById('working-days-status');
-    const progressRatio = metrics.workingDaysToDate / metrics.totalWorkingDays;
-    const salesRatio = metrics.saleMTD / MONTHLY_KPI;
-    
-    if (salesRatio >= progressRatio) {
-        workingDaysStatus.textContent = '✓ On Track';
-        workingDaysStatus.className = 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full';
+    // Working Days Status dengan urgency
+    if (metrics.remainingWorkingDays <= 0) {
+        updateStatusElement('working-days-status', '🏁 Month End', 'text-xs text-purple-400 bg-purple-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.isAhead) {
+        updateStatusElement('working-days-status', '✓ Ahead', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.remainingWorkingDays <= 5) {
+        updateStatusElement('working-days-status', '🔥 Urgent', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     } else {
-        workingDaysStatus.textContent = 'Need Push';
-        workingDaysStatus.className = 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full';
+        updateStatusElement('working-days-status', 'Push Harder', 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full');
     }
 }
 
-// Export function for use in dashboard
-window.updatePowerMetrics = updatePowerMetricsDisplay;
-
-// Additional utility functions
-function formatCurrency(amount) {
-    return `RM ${amount.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function formatPercentage(value) {
-    return `${value.toFixed(1)}%`;
-}
-
-// // Debug function to test calculations
-function debugPowerMetrics(salesTeamData) {
-    const calculator = new PowerMetricsCalculator();
-    const metrics = calculator.calculateAllMetrics(salesTeamData);
-    
-    console.table({
-        'Monthly KPI': formatCurrency(MONTHLY_KPI),
-        'KPI Harian': formatCurrency(metrics.kpiHarian),
-        'KPI MTD': formatCurrency(metrics.kpiMTD),
-        'Sale MTD': formatCurrency(metrics.saleMTD),
-        'Balance Bulanan': formatCurrency(metrics.balanceBulanan),
-        'Balance MTD': formatCurrency(metrics.balanceMTD),
-        'Bilangan Terjual': metrics.bilanganTerjual,
-        'Close Rate': formatPercentage(metrics.totalCloseRate),
-        'Working Days': `${metrics.workingDaysToDate} / ${metrics.totalWorkingDays}`,
-        'Monthly Progress': formatPercentage(metrics.monthlyProgress),
-        'MTD Progress': formatPercentage(metrics.mtdProgress)
-    });
-    
-    return metrics;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////// 
+console.log('Dynamic Power Metrics Integration completed successfully');
