@@ -3,6 +3,7 @@ import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.
 
 // Global variables
 let charts = {};
+let leadDistributionChart = null;
 let allData = {
     ecommerce: [],
     marketing: [],
@@ -23,7 +24,6 @@ let currentFilters = {
 // 1. ADD THESE GLOBAL VARIABLES (after existing global variables)
 // ============================================================================
 
-let leadDistributionChart = null;
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
@@ -411,6 +411,7 @@ function updateCharts(data) {
     updateSalesTrendChart(data);
     updateChannelChart(data);
     updateEnhancedLeadsChart(data); // ← CHANGED FROM updateLeadsChart
+    updateEnhancedLeadsChart(data); // ← Make sure this line exists
     updateTeamChart(data);
     updateSpendChart(data);
 }
@@ -1701,106 +1702,176 @@ if (typeof window !== 'undefined') {
 // 3. ADD ALL THESE NEW FUNCTIONS (before the utility functions section)
 // ============================================================================
 
-// Enhanced Lead Distribution - replace the existing updateLeadsChart function
+// COMPLETE REPLACEMENT for the updateEnhancedLeadsChart function
+// This goes in your dashboard.js file
+
+// First, add this BEFORE the updateCharts function
+
+// REPLACE the updateEnhancedLeadsChart function with this:
 function updateEnhancedLeadsChart(data) {
-    // Initialize dropdown if not exists
+    console.log('🔍 Enhanced Leads Chart - Processing data:', data);
+    
+    // Debug: Log the salesteam data structure
+    console.log('Salesteam data sample:', data.salesteam.slice(0, 3));
+    
+    // Initialize dropdown if not exists (simplified version)
     initializeLeadDistributionDropdowns();
     
-    // Get selected filters
-    const selectedTeam = document.getElementById('lead-team-filter')?.value || '';
-    const selectedTime = document.getElementById('lead-time-filter')?.value || '';
+    // Get filters (with fallback if elements don't exist)
+    const teamFilterEl = document.getElementById('lead-team-filter');
+    const timeFilterEl = document.getElementById('lead-time-filter');
     
-    // Process the data based on selections
-    const chartData = processLeadDistributionData(data, selectedTeam, selectedTime);
+    const selectedTeam = teamFilterEl?.value || '';
+    const selectedTime = timeFilterEl?.value || '';
     
-    // Update the chart
-    renderLeadDistributionChart(chartData);
+    // Process leads data - TRY MULTIPLE APPROACHES
+    const leadsByAgent = {};
     
-    // Update info display
-    updateLeadDistributionInfo(chartData);
+    console.log('🔍 Checking different data sources...');
+    
+    // Method 1: From 'lead' type data
+    const leadTypeData = data.salesteam.filter(item => item.type === 'lead');
+    console.log('📊 Lead type data found:', leadTypeData.length, leadTypeData);
+    
+    leadTypeData.forEach(item => {
+        const agent = item.team || item.agent || 'Unknown';
+        const leads = parseInt(item.total_lead) || 0;
+        
+        // Apply team filter
+        if (selectedTeam && agent !== selectedTeam) return;
+        
+        if (leads > 0) {
+            leadsByAgent[agent] = (leadsByAgent[agent] || 0) + leads;
+            console.log(`📈 Added ${leads} leads for ${agent}`);
+        }
+    });
+
+    // Method 2: From 'power_metrics' type (total_lead_bulan field)
+    const powerMetricsData = data.salesteam.filter(item => item.type === 'power_metrics');
+    console.log('📊 Power metrics data found:', powerMetricsData.length, powerMetricsData);
+    
+    powerMetricsData.forEach(item => {
+        const agent = item.team || item.agent || 'Unknown';
+        const leads = parseInt(item.total_lead_bulan) || 0;
+        
+        // Apply team filter
+        if (selectedTeam && agent !== selectedTeam) return;
+        
+        if (leads > 0) {
+            leadsByAgent[agent] = (leadsByAgent[agent] || 0) + leads;
+            console.log(`📈 Added ${leads} monthly leads for ${agent}`);
+        }
+    });
+
+    // Method 3: If still no data, try other possible fields
+    if (Object.keys(leadsByAgent).length === 0) {
+        console.log('⚠️ No standard lead data found, trying alternative fields...');
+        
+        data.salesteam.forEach(item => {
+            const agent = item.team || item.agent || item.name || 'Unknown';
+            
+            // Try multiple possible lead fields
+            const leads = parseInt(item.leads) || 
+                         parseInt(item.lead_count) || 
+                         parseInt(item.total_leads) ||
+                         parseInt(item.cold) + parseInt(item.warm) + parseInt(item.hot) || 
+                         0;
+            
+            // Apply team filter
+            if (selectedTeam && agent !== selectedTeam) return;
+            
+            if (leads > 0) {
+                leadsByAgent[agent] = (leadsByAgent[agent] || 0) + leads;
+                console.log(`📈 Added ${leads} leads (alternative) for ${agent}`);
+            }
+        });
+    }
+
+    console.log('📊 Final leads by agent:', leadsByAgent);
+
+    // Render the chart
+    renderLeadDistributionChart(leadsByAgent, selectedTeam, selectedTime);
+    
+    // Update info
+    updateLeadDistributionInfo(leadsByAgent);
 }
 
-// Initialize dropdowns for Lead Distribution
+// SIMPLIFIED dropdown initialization
 function initializeLeadDistributionDropdowns() {
-    const chartContainer = document.querySelector('#leadsChart').parentElement;
+    const chartContainer = document.querySelector('#leadsChart')?.parentElement;
+    if (!chartContainer) {
+        console.warn('Chart container not found');
+        return;
+    }
     
     // Check if dropdowns already exist
     if (chartContainer.querySelector('.lead-filters')) {
         return;
     }
     
-    // Create filter container
+    // Create simple filter container
     const filterContainer = document.createElement('div');
-    filterContainer.className = 'lead-filters mb-4 space-y-3';
+    filterContainer.className = 'lead-filters mb-3';
     filterContainer.innerHTML = `
-        <div class="flex flex-col sm:flex-row gap-3">
-            <div class="flex-1">
-                <label class="block text-xs text-gray-400 mb-1">Team Sales</label>
-                <select id="lead-team-filter" class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 border border-gray-600 focus:border-blue-500">
-                    <option value="">Semua Team</option>
-                </select>
-            </div>
-            <div class="flex-1">
-                <label class="block text-xs text-gray-400 mb-1">Masa Update</label>
-                <select id="lead-time-filter" class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 border border-gray-600 focus:border-blue-500">
-                    <option value="">Semua Masa</option>
-                    <option value="09:30">9:30 AM</option>
-                    <option value="14:00">2:00 PM</option>
-                    <option value="14:30">2:30 PM</option>
-                    <option value="16:00">4:00 PM</option>
-                    <option value="20:30">8:30 PM</option>
-                </select>
-            </div>
-        </div>
-        <div id="lead-distribution-info" class="text-xs text-gray-400 bg-gray-800/50 rounded p-2 hidden">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <span class="text-gray-500">Total Leads:</span>
-                    <span id="total-leads-display" class="text-white font-semibold">0</span>
-                </div>
-                <div>
-                    <span class="text-gray-500">Spend per Lead:</span>
-                    <span id="spend-per-lead-display" class="text-green-400 font-semibold">RM 0</span>
-                </div>
-            </div>
+        <div class="flex gap-2 text-xs">
+            <select id="lead-team-filter" class="bg-gray-800 text-white rounded px-2 py-1 border border-gray-600">
+                <option value="">Semua Team</option>
+            </select>
+            <select id="lead-time-filter" class="bg-gray-800 text-white rounded px-2 py-1 border border-gray-600">
+                <option value="">Semua Masa</option>
+                <option value="09:30">9:30 AM</option>
+                <option value="14:00">2:00 PM</option>
+                <option value="16:00">4:00 PM</option>
+                <option value="20:30">8:30 PM</option>
+            </select>
         </div>
     `;
     
     // Insert before chart
     chartContainer.insertBefore(filterContainer, chartContainer.firstChild);
     
+    // Populate team dropdown
+    populateTeamDropdown();
+    
     // Add event listeners
-    document.getElementById('lead-team-filter').addEventListener('change', () => {
-        updateEnhancedLeadsChart({
-            marketing: allData.marketing,
-            salesteam: filterSalesTeamData(allData.salesteam, currentFilters.startDate, currentFilters.endDate, currentFilters.agent)
-        });
-    });
+    const teamFilter = document.getElementById('lead-team-filter');
+    const timeFilter = document.getElementById('lead-time-filter');
     
-    document.getElementById('lead-time-filter').addEventListener('change', () => {
-        updateEnhancedLeadsChart({
-            marketing: allData.marketing,
-            salesteam: filterSalesTeamData(allData.salesteam, currentFilters.startDate, currentFilters.endDate, currentFilters.agent)
+    if (teamFilter) {
+        teamFilter.addEventListener('change', () => {
+            const filteredData = {
+                salesteam: filterSalesTeamData(allData.salesteam, currentFilters.startDate, currentFilters.endDate, currentFilters.agent)
+            };
+            updateEnhancedLeadsChart(filteredData);
         });
-    });
+    }
+    
+    if (timeFilter) {
+        timeFilter.addEventListener('change', () => {
+            const filteredData = {
+                salesteam: filterSalesTeamData(allData.salesteam, currentFilters.startDate, currentFilters.endDate, currentFilters.agent)
+            };
+            updateEnhancedLeadsChart(filteredData);
+        });
+    }
 }
+// Render the lead distribution chart  
 
-// Populate team dropdown with available teams
-function populateLeadTeamDropdown(salesTeamData) {
+// Populate team dropdown
+function populateTeamDropdown() {
     const teamSelect = document.getElementById('lead-team-filter');
-    if (!teamSelect) return;
+    if (!teamSelect || !allData.salesteam) return;
     
-    // Get unique teams from lead data
-    const teams = [...new Set(salesTeamData
-        .filter(item => item.type === 'lead')
-        .map(item => item.team)
+    // Get unique teams
+    const teams = [...new Set(allData.salesteam
+        .map(item => item.team || item.agent)
         .filter(Boolean)
     )].sort();
     
-    // Clear existing options except "Semua Team"
-    teamSelect.innerHTML = '<option value="">Semua Team</option>';
+    console.log('Available teams:', teams);
     
-    // Add team options
+    // Clear and repopulate
+    teamSelect.innerHTML = '<option value="">Semua Team</option>';
     teams.forEach(team => {
         const option = document.createElement('option');
         option.value = team;
@@ -1964,28 +2035,60 @@ function calculateMarketingSpendPerLead(marketingData, leadData) {
     };
 }
 
-// Render the lead distribution chart
-function renderLeadDistributionChart(chartData) {
-    const ctx = document.getElementById('leadsChart').getContext('2d');
-    
-    if (leadDistributionChart) {
-        leadDistributionChart.destroy();
-    }
-    
-    const teams = Object.keys(chartData.leadData);
-    const leadCounts = teams.map(team => chartData.leadData[team].totalLeads);
-    
-    if (teams.length === 0) {
-        // Show no data message
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.fillStyle = '#9CA3AF';
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Tiada data lead', ctx.canvas.width / 2, ctx.canvas.height / 2);
+// SIMPLIFIED chart rendering
+function renderLeadDistributionChart(leadsByAgent, selectedTeam, selectedTime) {
+    const ctx = document.getElementById('leadsChart')?.getContext('2d');
+    if (!ctx) {
+        console.error('Chart canvas not found');
         return;
     }
     
-    const colors = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#EF4444'];
+    // Destroy existing chart
+    if (leadDistributionChart) {
+        leadDistributionChart.destroy();
+        leadDistributionChart = null;
+    }
+    
+    const teams = Object.keys(leadsByAgent);
+    const leadCounts = Object.values(leadsByAgent);
+    const totalLeads = leadCounts.reduce((sum, count) => sum + count, 0);
+    
+    console.log('📊 Chart data:', { teams, leadCounts, totalLeads });
+    
+    // Handle empty data
+    if (teams.length === 0 || totalLeads === 0) {
+        console.log('⚠️ No data for chart, showing empty state');
+        
+        leadDistributionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Tiada Data'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['#374151'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        display: false 
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: () => 'Tiada data lead tersedia'
+                        }
+                    }
+                }
+            }
+        });
+        return;
+    }
+    
+    // Create chart with data
+    const colors = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#EF4444', '#F97316'];
     
     leadDistributionChart = new Chart(ctx, {
         type: 'doughnut',
@@ -1994,7 +2097,8 @@ function renderLeadDistributionChart(chartData) {
             datasets: [{
                 data: leadCounts,
                 backgroundColor: colors.slice(0, teams.length),
-                borderWidth: 0,
+                borderColor: colors.slice(0, teams.length).map(color => color + '80'),
+                borderWidth: 2,
                 hoverOffset: 8
             }]
         },
@@ -2008,66 +2112,107 @@ function renderLeadDistributionChart(chartData) {
                         color: '#D1D5DB',
                         padding: 12,
                         usePointStyle: true,
-                        font: { size: 11 }
+                        font: { size: 10 }
                     }
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#F9FAFB',
+                    bodyColor: '#F9FAFB',
+                    borderColor: '#374151',
+                    borderWidth: 1,
                     callbacks: {
                         label: function(context) {
-                            const team = context.label;
-                            const teamData = chartData.leadData[team];
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            
-                            return [
-                                `${team}: ${context.parsed} leads (${percentage}%)`,
-                                `Cold: ${teamData.cold}`,
-                                `Warm: ${teamData.warm}`,
-                                `Hot: ${teamData.hot}`
-                            ];
+                            return `${context.label}: ${context.parsed} leads (${percentage}%)`;
                         }
                     }
                 }
+            },
+            animation: {
+                duration: 1000
             }
         }
     });
+    
+    console.log('✅ Chart rendered successfully');
 }
 
-// Update lead distribution info display
-function updateLeadDistributionInfo(chartData) {
-    const infoDiv = document.getElementById('lead-distribution-info');
-    const totalLeadsDisplay = document.getElementById('total-leads-display');
-    const spendPerLeadDisplay = document.getElementById('spend-per-lead-display');
+// Update info display
+function updateLeadDistributionInfo(leadsByAgent) {
+    const totalLeads = Object.values(leadsByAgent).reduce((sum, count) => sum + count, 0);
     
-    if (infoDiv && totalLeadsDisplay && spendPerLeadDisplay) {
-        const totalLeads = chartData.spendData.totalLeads;
-        const spendPerLead = chartData.spendData.spendPerLead;
-        
-        totalLeadsDisplay.textContent = totalLeads.toString();
-        spendPerLeadDisplay.textContent = `RM ${spendPerLead.toFixed(2)}`;
-        
-        // Show info if there's data
-        if (totalLeads > 0) {
-            infoDiv.classList.remove('hidden');
-        } else {
-            infoDiv.classList.add('hidden');
+    // Try to update any lead info displays
+    const infoElements = [
+        'total-leads-display',
+        'lead-distribution-info',
+        'leads-info'
+    ];
+    
+    infoElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            if (id === 'total-leads-display') {
+                element.textContent = totalLeads.toString();
+            } else {
+                element.textContent = `Total: ${totalLeads} leads`;
+            }
         }
-        
-        // Add time/team context
-        let contextText = '';
-        if (chartData.selectedTime && chartData.selectedTeam) {
-            contextText = ` (${chartData.selectedTeam} pada ${chartData.selectedTime})`;
-        } else if (chartData.selectedTime) {
-            contextText = ` (pada ${chartData.selectedTime})`;
-        } else if (chartData.selectedTeam) {
-            contextText = ` (${chartData.selectedTeam})`;
-        } else {
-            contextText = ' (data terkini)';
-        }
-        
-        // Update the info display with context
-        infoDiv.querySelector('.text-gray-500').textContent = `Total Leads${contextText}:`;
+    });
+    
+    console.log('📊 Total leads displayed:', totalLeads);
+}
+
+// DEBUGGING FUNCTIONS - Add these to help diagnose
+window.debugLeadsChart = function() {
+    console.log('🔍 === DEBUGGING LEADS CHART ===');
+    
+    if (!allData || !allData.salesteam) {
+        console.log('❌ No salesteam data available');
+        return;
     }
+
+    console.log('📊 Total salesteam records:', allData.salesteam.length);
+    
+    // Show sample data
+    console.log('📋 Sample salesteam data:');
+    allData.salesteam.slice(0, 5).forEach((item, index) => {
+        console.log(`[${index}]`, {
+            type: item.type,
+            team: item.team || item.agent,
+            total_lead: item.total_lead,
+            total_lead_bulan: item.total_lead_bulan,
+            leads: item.leads,
+            cold: item.cold,
+            warm: item.warm,
+            hot: item.hot
+        });
+    });
+    
+    // Show all unique types
+    const types = [...new Set(allData.salesteam.map(item => item.type))];
+    console.log('📋 Available types:', types);
+    
+    // Count by type
+    types.forEach(type => {
+        const count = allData.salesteam.filter(item => item.type === type).length;
+        console.log(`   - ${type}: ${count} records`);
+    });
+    
+    console.log('🔍 === END DEBUG ===');
+    
+    // Force refresh chart
+    const filteredData = {
+        salesteam: filterSalesTeamData(allData.salesteam, currentFilters.startDate, currentFilters.endDate, currentFilters.agent)
+    };
+    updateEnhancedLeadsChart(filteredData);
+};
+
+// Test function
+window.testLeadsChart = function() {
+    console.log('🧪 Testing Leads Chart...');
+    window.debugLeadsChart();
 }
 
 // Update marketing budget display
