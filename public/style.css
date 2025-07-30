@@ -1166,6 +1166,13 @@ body {
 #leadsChart:hover {
     transform: scale(1.02);
 }
+#lead-efficiency-display {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--success-500);
+    font-variant-numeric: tabular-nums;
+    margin-top: 0.5rem;  ;   
+}
 
 /* Loading state styling */
 .chart-loading {
