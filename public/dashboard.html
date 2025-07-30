@@ -246,15 +246,35 @@
             </div>
         </div>
 
-        <!-- Secondary Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <!-- Leads Distribution -->
-            <div class="glass-card p-6 rounded-xl">
-                <h3 class="text-xl font-semibold mb-6">Leads Distribution</h3>
-                <div class="small-chart-container">
-                    <canvas id="leadsChart"></canvas>
-                </div>
+    <!-- Enhanced Leads Distribution Section -->
+    <!-- Replace your existing leads distribution div with this -->
+    <div class="glass-card p-6 rounded-xl">
+        <h3 class="text-xl font-semibold mb-6 flex items-center justify-between">
+            Leads Distribution
+            <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">Real-time</span>
+        </h3>
+        
+        <!-- Filters will be inserted here dynamically by JavaScript -->
+        
+        <div class="small-chart-container" style="height: 300px;">
+            <canvas id="leadsChart"></canvas>
+        </div>
+        
+        <!-- Additional info section (hidden by default, shown when data available) -->
+        <div class="mt-4 grid grid-cols-2 gap-4 text-xs">
+            <div class="bg-gray-800/30 rounded p-3">
+                <div class="text-gray-400 mb-1">Marketing Budget</div>
+                <div id="marketing-budget-display" class="text-orange-400 font-semibold">RM 0</div>
+                <div class="text-gray-500 text-xs">dari lead semasa</div>
             </div>
+            <div class="bg-gray-800/30 rounded p-3">
+                <div class="text-gray-400 mb-1">Efficiency</div>
+                <div id="lead-efficiency-display" class="text-green-400 font-semibold">0%</div>
+                <div class="text-gray-500 text-xs">conversion rate</div>
+            </div>
+        </div>
+    </div>
+
 
             <!-- Team Performance -->
             <div class="glass-card p-6 rounded-xl">
