@@ -85,7 +85,7 @@ async function initializeDashboard() {
         applyFilters();
         
         // Initialize Power Metrics
-        updateEnhancedPowerMetricsDisplay(allData.salesteam);
+        updatePowerMetricsDisplay(allData.salesteam);
         
         // Setup real-time updates
         updateCurrentTime();
@@ -227,7 +227,7 @@ function applyFilters() {
     updateKPIs(filteredData);
     updateCharts(filteredData);
     updateRecentActivity(filteredData);
-    updateEnhancedPowerMetricsDisplay(filteredData.salesteam)
+    updatePowerMetricsDisplay(filteredData.salesteam);
 }
 
 function filterByDate(data, startDate, endDate) {
@@ -297,7 +297,7 @@ function clearFilters() {
     updateCharts(allData);
     updateRecentActivity(allData);
     updateActiveFiltersDisplay();
-    updateEnhancedPowerMetricsDisplay(allData.salesteam);
+    updatePowerMetricsDisplay(allData.salesteam);
 }
 
 function updateActiveFiltersDisplay() {
@@ -909,25 +909,19 @@ function showErrorState() {
     `;
 }
 
-// Enhanced Power Metrics Calculator with Dynamic Working Days Detection
-// This system automatically detects working days and adjusts KPI daily based on current sales
+// Power Metrics Calculator
+const MONTHLY_KPI = 15000; // RM 15,000 monthly target
 
-class EnhancedPowerMetricsCalculator {
-    constructor(customWorkingDays = null) {
-        this.monthlyKPI = 15000; // RM 15,000 monthly target
+class PowerMetricsCalculator {
+    constructor() {
+        this.monthlyKPI = MONTHLY_KPI;
         this.currentDate = new Date();
         this.currentMonth = this.currentDate.getMonth() + 1;
         this.currentYear = this.currentDate.getFullYear();
         this.currentDay = this.currentDate.getDate();
-        
-        // Custom working days configuration (if provided)
-        this.customWorkingDays = customWorkingDays; // e.g., [1,2,3,4,6] for Mon-Thu,Sat
-        
-        console.log(`📅 Current Date: ${this.currentDate.toLocaleDateString('ms-MY')}`);
-        console.log(`📊 Monthly KPI: RM ${this.monthlyKPI.toLocaleString()}`);
     }
 
-    // Enhanced working days calculation with custom configuration
+    // Calculate working days in current month (excluding weekends)
     getWorkingDaysInMonth() {
         const year = this.currentYear;
         const month = this.currentMonth;
@@ -935,24 +929,12 @@ class EnhancedPowerMetricsCalculator {
         const lastDay = new Date(year, month, 0);
         
         let workingDays = 0;
-        
         for (let day = new Date(firstDay); day <= lastDay; day.setDate(day.getDate() + 1)) {
-            const dayOfWeek = day.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-            
-            if (this.customWorkingDays) {
-                // Use custom working days configuration
-                if (this.customWorkingDays.includes(dayOfWeek)) {
-                    workingDays++;
-                }
-            } else {
-                // Default: Exclude Friday (5) and Saturday (6) - Malaysian working pattern
-                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
-                    workingDays++;
-                }
+            const dayOfWeek = day.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday (0) or Saturday (6)
+                workingDays++;
             }
         }
-        
-        console.log(`📈 Total Working Days in ${month}/${year}: ${workingDays} days`);
         return workingDays;
     }
 
@@ -964,23 +946,12 @@ class EnhancedPowerMetricsCalculator {
         const currentDate = new Date(year, month - 1, this.currentDay);
         
         let workingDays = 0;
-        
         for (let day = new Date(firstDay); day <= currentDate; day.setDate(day.getDate() + 1)) {
             const dayOfWeek = day.getDay();
-            
-            if (this.customWorkingDays) {
-                if (this.customWorkingDays.includes(dayOfWeek)) {
-                    workingDays++;
-                }
-            } else {
-                // Default: Exclude Friday and Saturday
-                if (dayOfWeek !== 5 && dayOfWeek !== 6) {
-                    workingDays++;
-                }
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday (0) or Saturday (6)
+                workingDays++;
             }
         }
-        
-        console.log(`📊 Working Days to Date: ${workingDays} days`);
         return workingDays;
     }
 
@@ -988,59 +959,28 @@ class EnhancedPowerMetricsCalculator {
     getRemainingWorkingDays() {
         const totalWorkingDays = this.getWorkingDaysInMonth();
         const workingDaysToDate = this.getWorkingDaysToDate();
-        const remaining = Math.max(0, totalWorkingDays - workingDaysToDate);
-        
-        console.log(`⏰ Remaining Working Days: ${remaining} days`);
-        return remaining;
+        return Math.max(0, totalWorkingDays - workingDaysToDate);
     }
 
-    // STATIC KPI Harian (Original calculation for reference)
-    calculateStaticKPIHarian() {
+    // Calculate KPI Harian
+    calculateKPIHarian() {
         const totalWorkingDays = this.getWorkingDaysInMonth();
-        const staticKPI = this.monthlyKPI / totalWorkingDays;
-        
-        console.log(`📋 Static KPI Harian: RM ${staticKPI.toFixed(2)}`);
-        return staticKPI;
+        return this.monthlyKPI / totalWorkingDays;
     }
 
-    // DYNAMIC KPI Harian - Adjusts based on current sales and remaining days
-    calculateDynamicKPIHarian(saleMTD) {
-        const remainingWorkingDays = this.getRemainingWorkingDays();
-        const remainingKPI = this.monthlyKPI - saleMTD;
-        
-        // If no working days remaining, return 0
-        if (remainingWorkingDays <= 0) {
-            console.log(`🏁 No working days remaining - Dynamic KPI: RM 0`);
-            return 0;
-        }
-        
-        // Dynamic KPI = Remaining KPI ÷ Remaining working days
-        const dynamicKPI = remainingKPI / remainingWorkingDays;
-        
-        console.log(`🔄 Dynamic KPI Calculation:`);
-        console.log(`   - Remaining KPI: RM ${remainingKPI.toLocaleString()}`);
-        console.log(`   - Remaining Days: ${remainingWorkingDays}`);
-        console.log(`   - Dynamic KPI Harian: RM ${dynamicKPI.toFixed(2)}`);
-        
-        return Math.max(0, dynamicKPI); // Ensure non-negative
-    }
-
-    // Calculate expected KPI MTD (Month-to-Date target)
+    // Calculate KPI MTD
     calculateKPIMTD() {
         const workingDaysToDate = this.getWorkingDaysToDate();
-        const staticKpiHarian = this.calculateStaticKPIHarian();
-        const kpiMTD = staticKpiHarian * workingDaysToDate;
-        
-        console.log(`📊 KPI MTD: RM ${kpiMTD.toFixed(2)} (${workingDaysToDate} days × RM ${staticKpiHarian.toFixed(2)})`);
-        return kpiMTD;
+        const kpiHarian = this.calculateKPIHarian();
+        return kpiHarian * workingDaysToDate;
     }
 
-    // Extract Sale MTD from sales team data
+    // Get Sale MTD from power metrics data
     getSaleMTD(salesTeamData) {
         const currentMonth = this.currentMonth;
         const currentYear = this.currentYear;
         
-        const saleMTD = salesTeamData
+        return salesTeamData
             .filter(item => {
                 // Check if item is power_metrics type
                 if (item.type !== 'power_metrics') return false;
@@ -1063,32 +1003,25 @@ class EnhancedPowerMetricsCalculator {
                 const saleAmount = parseFloat(item.total_sale_bulan) || 0;
                 return total + saleAmount;
             }, 0);
-
-        console.log(`💰 Current Sale MTD: RM ${saleMTD.toLocaleString()}`);
-        return saleMTD;
     }
 
-    // Calculate Balance Bulanan (Remaining to reach monthly target)
+    // Calculate Balance Bulanan
     calculateBalanceBulanan(saleMTD) {
-        const balance = this.monthlyKPI - saleMTD;
-        console.log(`📊 Balance Bulanan: RM ${balance.toLocaleString()}`);
-        return balance;
+        return this.monthlyKPI - saleMTD;
     }
-
-    // Calculate Balance MTD (Gap between expected and actual sales)
+ 
+    // Calculate Balance MTD
     calculateBalanceMTD(saleMTD) {
         const kpiMTD = this.calculateKPIMTD();
-        const balance = kpiMTD - saleMTD;
-        console.log(`📈 Balance MTD: RM ${balance.toLocaleString()}`);
-        return balance;
+        return kpiMTD - saleMTD;
     }
 
-    // Get total sales count (bilangan terjual)
+    // Get Total Close Count from power metrics
     getTotalCloseCount(salesTeamData) {
         const currentMonth = this.currentMonth;
         const currentYear = this.currentYear;
         
-        const totalClose = salesTeamData
+        return salesTeamData
             .filter(item => {
                 if (item.type !== 'power_metrics') return false;
                 
@@ -1108,17 +1041,14 @@ class EnhancedPowerMetricsCalculator {
                 const closeCount = parseInt(item.total_close_bulan) || 0;
                 return total + closeCount;
             }, 0);
-
-        console.log(`🎯 Total Close Count: ${totalClose} units`);
-        return totalClose;
     }
 
-    // Get total lead count
+    // Get Total Lead Count from power metrics
     getTotalLeadCount(salesTeamData) {
         const currentMonth = this.currentMonth;
         const currentYear = this.currentYear;
         
-        const totalLead = salesTeamData
+        return salesTeamData
             .filter(item => {
                 if (item.type !== 'power_metrics') return false;
                 
@@ -1138,25 +1068,19 @@ class EnhancedPowerMetricsCalculator {
                 const leadCount = parseInt(item.total_lead_bulan) || 0;
                 return total + leadCount;
             }, 0);
-
-        console.log(`📋 Total Lead Count: ${totalLead} leads`);
-        return totalLead;
     }
 
-    // Calculate close rate percentage
+    // Calculate Total Close Percentage
     calculateTotalCloseRate(salesTeamData) {
         const totalClose = this.getTotalCloseCount(salesTeamData);
         const totalLead = this.getTotalLeadCount(salesTeamData);
         
         if (totalLead === 0) return 0;
-        
-        const closeRate = (totalClose / totalLead) * 100;
-        console.log(`📊 Close Rate: ${closeRate.toFixed(1)}% (${totalClose}/${totalLead})`);
-        return closeRate;
+        return (totalClose / totalLead) * 100;
     }
 
-    // Enhanced performance analysis
-    getPerformanceAnalysis(saleMTD) {
+    // Calculate Performance Status
+    getPerformanceStatus(saleMTD) {
         const kpiMTD = this.calculateKPIMTD();
         const monthlyProgress = (saleMTD / this.monthlyKPI) * 100;
         const mtdProgress = kpiMTD > 0 ? (saleMTD / kpiMTD) * 100 : 0;
@@ -1165,68 +1089,20 @@ class EnhancedPowerMetricsCalculator {
         const totalWorkingDays = this.getWorkingDaysInMonth();
         const expectedProgress = (workingDaysToDate / totalWorkingDays) * 100;
         
-        const staticKPI = this.calculateStaticKPIHarian();
-        const dynamicKPI = this.calculateDynamicKPIHarian(saleMTD);
-        const kpiAdjustment = dynamicKPI - staticKPI;
-        const adjustmentPercentage = staticKPI > 0 ? (kpiAdjustment / staticKPI) * 100 : 0;
-        
-        const analysis = {
-            monthlyProgress: monthlyProgress,
-            mtdProgress: mtdProgress,
-            expectedProgress: expectedProgress,
-            performanceGap: monthlyProgress - expectedProgress,
+        return {
+            monthlyProgress,
+            mtdProgress,
+            expectedProgress,
             isAhead: monthlyProgress >= expectedProgress,
-            isOnTrack: mtdProgress >= 90,
-            kpiAdjustment: kpiAdjustment,
-            adjustmentPercentage: adjustmentPercentage,
-            urgencyLevel: this.getUrgencyLevel(saleMTD),
-            recommendation: this.getRecommendation(saleMTD)
+            isOnTrack: mtdProgress >= 90, // 90% of MTD target
+            performanceGap: monthlyProgress - expectedProgress
         };
-
-        console.log(`📊 Performance Analysis:`, analysis);
-        return analysis;
     }
 
-    // Determine urgency level based on performance
-    getUrgencyLevel(saleMTD) {
-        const remainingDays = this.getRemainingWorkingDays();
-        const balanceBulanan = this.calculateBalanceBulanan(saleMTD);
-        const monthlyProgress = (saleMTD / this.monthlyKPI) * 100;
-        
-        if (monthlyProgress >= 100) return 'ACHIEVED';
-        if (remainingDays <= 0) return 'CRITICAL';
-        if (remainingDays <= 3) return 'URGENT';
-        if (monthlyProgress < 50 && remainingDays <= 10) return 'HIGH';
-        if (monthlyProgress >= 80) return 'LOW';
-        return 'MODERATE';
-    }
-
-    // Get recommendation based on current performance
-    getRecommendation(saleMTD) {
-        const dynamicKPI = this.calculateDynamicKPIHarian(saleMTD);
-        const staticKPI = this.calculateStaticKPIHarian();
-        const remainingDays = this.getRemainingWorkingDays();
-        const urgency = this.getUrgencyLevel(saleMTD);
-        
-        const recommendations = {
-            'ACHIEVED': '🎉 Target achieved! Maintain momentum for next month.',
-            'CRITICAL': '🚨 Month ended. Analyze performance for next month planning.',
-            'URGENT': `⚡ Only ${remainingDays} days left! Need RM ${dynamicKPI.toFixed(0)}/day intensive push!`,
-            'HIGH': `🔥 High pressure! Daily target increased to RM ${dynamicKPI.toFixed(0)}`,
-            'MODERATE': `📈 Stay focused! Daily target: RM ${dynamicKPI.toFixed(0)}`,
-            'LOW': `✅ Good progress! Maintain RM ${dynamicKPI.toFixed(0)}/day pace`
-        };
-        
-        return recommendations[urgency] || 'Keep pushing towards your goal!';
-    }
-
-    // Master calculation method - returns all metrics
+    // Calculate all metrics
     calculateAllMetrics(salesTeamData) {
-        console.log(`🔄 Calculating Power Metrics for ${this.currentDate.toLocaleDateString('ms-MY')}`);
-        
         const saleMTD = this.getSaleMTD(salesTeamData);
-        const staticKpiHarian = this.calculateStaticKPIHarian();
-        const dynamicKpiHarian = this.calculateDynamicKPIHarian(saleMTD);
+        const kpiHarian = this.calculateKPIHarian();
         const kpiMTD = this.calculateKPIMTD();
         const balanceBulanan = this.calculateBalanceBulanan(saleMTD);
         const balanceMTD = this.calculateBalanceMTD(saleMTD);
@@ -1234,12 +1110,11 @@ class EnhancedPowerMetricsCalculator {
         const totalWorkingDays = this.getWorkingDaysInMonth();
         const workingDaysToDate = this.getWorkingDaysToDate();
         const remainingWorkingDays = this.getRemainingWorkingDays();
-        const performanceAnalysis = this.getPerformanceAnalysis(saleMTD);
+        const performanceStatus = this.getPerformanceStatus(saleMTD);
 
-        const metrics = {
+        return {
             // KPI Values
-            staticKpiHarian: staticKpiHarian,
-            dynamicKpiHarian: dynamicKpiHarian,
+            kpiHarian: kpiHarian,
             kpiMTD: kpiMTD,
             saleMTD: saleMTD,
             balanceBulanan: balanceBulanan,
@@ -1254,199 +1129,76 @@ class EnhancedPowerMetricsCalculator {
             workingDaysToDate: workingDaysToDate,
             remainingWorkingDays: remainingWorkingDays,
             
-            // Performance Analysis
-            ...performanceAnalysis,
+            // Progress Indicators
+            monthlyProgress: performanceStatus.monthlyProgress,
+            mtdProgress: performanceStatus.mtdProgress,
+            expectedProgress: performanceStatus.expectedProgress,
+            performanceGap: performanceStatus.performanceGap,
             
-            // Additional Info
-            urgencyLevel: this.getUrgencyLevel(saleMTD),
-            recommendation: this.getRecommendation(saleMTD),
-            monthlyKPI: this.monthlyKPI
-        };
-
-        console.log(`✅ Power Metrics Calculation Complete`);
-        console.table({
-            'Monthly KPI': `RM ${metrics.monthlyKPI.toLocaleString()}`,
-            'Static KPI/Day': `RM ${metrics.staticKpiHarian.toFixed(0)}`,
-            'Dynamic KPI/Day': `RM ${metrics.dynamicKpiHarian.toFixed(0)}`,
-            'Adjustment': `${metrics.adjustmentPercentage > 0 ? '+' : ''}${metrics.adjustmentPercentage.toFixed(1)}%`,
-            'Sale MTD': `RM ${metrics.saleMTD.toLocaleString()}`,
-            'Monthly Progress': `${metrics.monthlyProgress.toFixed(1)}%`,
-            'Days Left': metrics.remainingWorkingDays,
-            'Urgency': metrics.urgencyLevel
-        });
-
-        return metrics;
-    }
-
-    // Method to simulate different scenarios
-    simulateScenario(currentSales, daysRemaining = null) {
-        const remainingDays = daysRemaining || this.getRemainingWorkingDays();
-        const requiredKPI = remainingDays > 0 ? (this.monthlyKPI - currentSales) / remainingDays : 0;
-        
-        console.log(`🎯 Simulation: If sales = RM ${currentSales.toLocaleString()}`);
-        console.log(`   Required daily KPI: RM ${requiredKPI.toFixed(2)}`);
-        console.log(`   Days remaining: ${remainingDays}`);
-        
-        return {
-            currentSales: currentSales,
-            remainingDays: remainingDays,
-            requiredDailyKPI: requiredKPI,
-            isAchievable: requiredKPI <= (this.calculateStaticKPIHarian() * 2) // 2x normal is still achievable
+            // Status Flags
+            isAhead: performanceStatus.isAhead,
+            isOnTrack: performanceStatus.isOnTrack
         };
     }
 }
 
-// Usage Examples and Test Functions
-function demonstrateDynamicKPI() {
-    console.log(`\n🚀 === DYNAMIC KPI DEMONSTRATION ===`);
-    
-    // Initialize calculator with custom working days (Monday to Thursday + Saturday)
-    // [1,2,3,4,6] = Monday, Tuesday, Wednesday, Thursday, Saturday (Friday off)
-    const calculator = new EnhancedPowerMetricsCalculator([1,2,3,4,6]);
-    
-    // Mock sales data for demonstration
-    const mockSalesData = [
-        {
-            type: 'power_metrics',
-            tarikh: '2025-07-01',
-            total_sale_bulan: 1000,
-            total_close_bulan: 2,
-            total_lead_bulan: 10
-        },
-        {
-            type: 'power_metrics',
-            tarikh: '2025-07-03',
-            total_sale_bulan: 2000,
-            total_close_bulan: 3,
-            total_lead_bulan: 15
-        }
-    ];
-
-    // Calculate metrics
-    const metrics = calculator.calculateAllMetrics(mockSalesData);
-    
-    console.log(`\n📊 === RESULTS SUMMARY ===`);
-    console.log(`📅 Current Date: ${new Date().toLocaleDateString('ms-MY')}`);
-    console.log(`💰 Monthly Target: RM ${metrics.monthlyKPI.toLocaleString()}`);
-    console.log(`📈 Current Sales: RM ${metrics.saleMTD.toLocaleString()}`);
-    console.log(`📋 Static KPI/Day: RM ${metrics.staticKpiHarian.toFixed(0)}`);
-    console.log(`🔄 Dynamic KPI/Day: RM ${metrics.dynamicKpiHarian.toFixed(0)}`);
-    console.log(`📊 Adjustment: ${metrics.adjustmentPercentage > 0 ? '+' : ''}${metrics.adjustmentPercentage.toFixed(1)}%`);
-    console.log(`⏰ Days Remaining: ${metrics.remainingWorkingDays}`);
-    console.log(`🎯 Urgency Level: ${metrics.urgencyLevel}`);
-    console.log(`💡 Recommendation: ${metrics.recommendation}`);
-    
-    // Test different scenarios
-    console.log(`\n🧪 === SCENARIO TESTING ===`);
-    
-    // Scenario 1: No sales yet
-    console.log(`\n📈 Scenario 1: No sales yet`);
-    calculator.simulateScenario(0);
-    
-    // Scenario 2: Good progress (RM 5000)
-    console.log(`\n📈 Scenario 2: Good progress`);
-    calculator.simulateScenario(5000);
-    
-    // Scenario 3: Behind target (RM 2000 with 5 days left)
-    console.log(`\n📈 Scenario 3: Behind target`);
-    calculator.simulateScenario(2000, 5);
-    
-    return metrics;
-}
-
-// Auto-detect working days for different regions/companies
-function createCalculatorForRegion(region = 'malaysia_default') {
-    const workingDayConfigs = {
-        'malaysia_default': [0,1,2,3,4,6], // Sunday to Thursday + Saturday (Friday off)
-        'malaysia_private': [1,2,3,4,5],   // Monday to Friday (weekends off)
-        'brunei': [1,2,3,4,6],             // Monday to Thursday + Saturday (Friday off)
-        'indonesia': [1,2,3,4,5],          // Monday to Friday
-        'singapore': [1,2,3,4,5],          // Monday to Friday
-        'custom_6_days': [1,2,3,4,5,6]     // Monday to Saturday
-    };
-    
-    const workingDays = workingDayConfigs[region] || workingDayConfigs['malaysia_default'];
-    console.log(`🌍 Creating calculator for region: ${region}`);
-    console.log(`📅 Working days: ${workingDays.map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ')}`);
-    
-    return new EnhancedPowerMetricsCalculator(workingDays);
-}
-
-// Export for use in dashboard
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { 
-        EnhancedPowerMetricsCalculator, 
-        demonstrateDynamicKPI,
-        createCalculatorForRegion 
-    };
-}
-
-// Make available globally for browser use
-if (typeof window !== 'undefined') {
-    window.EnhancedPowerMetricsCalculator = EnhancedPowerMetricsCalculator;
-    window.demonstrateDynamicKPI = demonstrateDynamicKPI;
-    window.createCalculatorForRegion = createCalculatorForRegion;
-}
-
-// Enhanced update function for dashboard integration
-function updateEnhancedPowerMetricsDisplay(salesTeamData) {
-    // Create calculator with Malaysia working pattern (Friday off only)
-    const calculator = new EnhancedPowerMetricsCalculator([0,1,2,3,4,6]); // Sun-Thu + Sat
+function updatePowerMetricsDisplay(salesTeamData) {
+    const calculator = new PowerMetricsCalculator();
     const metrics = calculator.calculateAllMetrics(salesTeamData);
 
-    // Helper function to update elements safely
+    // Helper function untuk update element
     const updateElement = (id, value) => {
         const element = document.getElementById(id);
         if (element) {
             element.textContent = value;
-        } else {
-            console.warn(`Element with ID '${id}' not found`);
         }
     };
 
-    // Update main KPI displays with DYNAMIC values
-    updateElement('kpi-harian', `RM ${metrics.dynamicKpiHarian.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
+    // Update KPI displays
+    updateElement('kpi-harian', `RM ${metrics.kpiHarian.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
     updateElement('kpi-mtd', `RM ${metrics.kpiMTD.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
     updateElement('sale-mtd', `RM ${metrics.saleMTD.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
     updateElement('balance-bulanan', `RM ${metrics.balanceBulanan.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-    updateElement('balance-mtd', `RM ${Math.abs(metrics.balanceMTD).toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    updateElement('balance-mtd', `RM ${metrics.balanceMTD.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
     updateElement('bilangan-terjual', metrics.bilanganTerjual.toString());
     updateElement('total-close-rate', `${metrics.totalCloseRate.toFixed(1)}%`);
     updateElement('working-days-info', `${metrics.workingDaysToDate} / ${metrics.totalWorkingDays}`);
 
-    // Update descriptions with enhanced context
-    updateElement('kpi-harian-desc', `${metrics.remainingWorkingDays} hari tinggal (${metrics.urgencyLevel.toLowerCase()})`);
-    updateElement('kpi-mtd-desc', `sasaran ${metrics.workingDaysToDate} hari kerja`);
-    updateElement('sale-mtd-desc', `${metrics.monthlyProgress.toFixed(1)}% dari target bulanan`);
-    updateElement('balance-bulanan-desc', metrics.balanceBulanan <= 0 ? '🎯 Target tercapai!' : `perlu RM ${Math.ceil(metrics.dynamicKpiHarian)}/hari`);
-    updateElement('balance-mtd-desc', metrics.balanceMTD > 0 ? 'ketinggalan MTD' : 'melebihi sasaran MTD');
+    // Update descriptions
+    updateElement('kpi-harian-desc', `per hari kerja`);
+    updateElement('kpi-mtd-desc', `sasaran bulan ini`);
+    updateElement('sale-mtd-desc', `jualan sebenar`);
+    updateElement('balance-bulanan-desc', `perlu dicapai`);
+    updateElement('balance-mtd-desc', metrics.balanceMTD > 0 ? 'gap sasaran' : 'melebihi MTD');
+    updateElement('bilangan-terjual-desc', `unit terjual`);
+    updateElement('total-close-rate-desc', `conversion rate`);
+    updateElement('working-days-desc', `hari ini / total`);
 
-    // Update progress bars with enhanced colors
+    // Update progress bars
     const monthlyProgressBar = document.getElementById('monthly-progress-bar');
     const mtdProgressBar = document.getElementById('mtd-progress-bar');
     
     if (monthlyProgressBar && mtdProgressBar) {
-        // Monthly progress with performance-based colors
+        // Monthly progress
         const monthlyProgressPercent = Math.min(Math.max(metrics.monthlyProgress, 0), 100);
         monthlyProgressBar.style.width = `${monthlyProgressPercent}%`;
         
-        // Color based on urgency level
-        const colorClasses = {
-            'ACHIEVED': 'bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300',
-            'LOW': 'bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300',
-            'MODERATE': 'bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300',
-            'HIGH': 'bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-300',
-            'URGENT': 'bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all duration-300',
-            'CRITICAL': 'bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300'
-        };
+        // Change color based on performance
+        if (metrics.isAhead) {
+            monthlyProgressBar.className = 'bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300';
+        } else if (metrics.performanceGap > -10) {
+            monthlyProgressBar.className = 'bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-300';
+        } else {
+            monthlyProgressBar.className = 'bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300';
+        }
         
-        monthlyProgressBar.className = colorClasses[metrics.urgencyLevel] || colorClasses['MODERATE'];
-        updateElement('monthly-progress-text', `${monthlyProgressPercent.toFixed(1)}% (${metrics.urgencyLevel})`);
+        updateElement('monthly-progress-text', `${monthlyProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${MONTHLY_KPI.toLocaleString('ms-MY')})`);
 
         // MTD progress
         const mtdProgressPercent = Math.min(Math.max(metrics.mtdProgress, 0), 100);
         mtdProgressBar.style.width = `${mtdProgressPercent}%`;
         
+        // Change MTD progress bar color
         if (metrics.isOnTrack) {
             mtdProgressBar.className = 'bg-gradient-to-r from-green-500 to-teal-500 h-2 rounded-full transition-all duration-300';
         } else if (mtdProgressPercent >= 70) {
@@ -1458,30 +1210,13 @@ function updateEnhancedPowerMetricsDisplay(salesTeamData) {
         updateElement('mtd-progress-text', `${mtdProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${metrics.kpiMTD.toLocaleString('ms-MY')})`);
     }
 
-    // Update status indicators with enhanced logic
-    updateEnhancedStatusIndicators(metrics);
+    // Update status indicators
+    updateStatusIndicators(metrics);
 
-    // Add notification/alert if critical
-    if (metrics.urgencyLevel === 'URGENT' || metrics.urgencyLevel === 'CRITICAL') {
-        showUrgencyAlert(metrics);
-    }
-
-    // Console log for monitoring
-    console.log(`🔥 Enhanced Power Metrics Updated:`, {
-        'Date': new Date().toLocaleDateString('ms-MY'),
-        'Dynamic KPI/Day': `RM ${metrics.dynamicKpiHarian.toFixed(0)}`,
-        'Static vs Dynamic': `${metrics.adjustmentPercentage > 0 ? '+' : ''}${metrics.adjustmentPercentage.toFixed(1)}%`,
-        'Monthly Progress': `${metrics.monthlyProgress.toFixed(1)}%`,
-        'Urgency': metrics.urgencyLevel,
-        'Days Left': metrics.remainingWorkingDays,
-        'Recommendation': metrics.recommendation
-    });
-
-    return metrics;
+    console.log('Power Metrics Updated:', metrics);
 }
 
-// Enhanced status indicators with dynamic logic
-function updateEnhancedStatusIndicators(metrics) {
+function updateStatusIndicators(metrics) {
     const updateStatusElement = (id, text, className = null) => {
         const element = document.getElementById(id);
         if (element) {
@@ -1492,189 +1227,58 @@ function updateEnhancedStatusIndicators(metrics) {
         }
     };
 
-    // KPI Harian Status with dynamic adjustment indicator
-    const adjustmentPercent = metrics.adjustmentPercentage;
-    let kpiHarianText, kpiHarianClass;
+    // KPI Harian Status
+    updateStatusElement('kpi-harian-status', 'Target', 'text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full');
     
-    if (adjustmentPercent > 20) {
-        kpiHarianText = `↑ +${adjustmentPercent.toFixed(0)}%`;
-        kpiHarianClass = 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full';
-    } else if (adjustmentPercent > 0) {
-        kpiHarianText = `↗ +${adjustmentPercent.toFixed(0)}%`;
-        kpiHarianClass = 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full';
-    } else if (adjustmentPercent < -20) {
-        kpiHarianText = `↓ ${adjustmentPercent.toFixed(0)}%`;
-        kpiHarianClass = 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full';
-    } else if (adjustmentPercent < 0) {
-        kpiHarianText = `↘ ${adjustmentPercent.toFixed(0)}%`;
-        kpiHarianClass = 'text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full';
-    } else {
-        kpiHarianText = 'Static';
-        kpiHarianClass = 'text-xs text-gray-400 bg-gray-400/20 px-2 py-1 rounded-full';
-    }
-    
-    updateStatusElement('kpi-harian-status', kpiHarianText, kpiHarianClass);
+    // KPI MTD Status
+    updateStatusElement('kpi-mtd-status', 'MTD', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
 
-    // KPI MTD Status based on expected vs actual
-    if (metrics.mtdProgress >= 100) {
-        updateStatusElement('kpi-mtd-status', '🎯 Achieved', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.mtdProgress >= 90) {
-        updateStatusElement('kpi-mtd-status', '✓ On Track', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.mtdProgress >= 70) {
-        updateStatusElement('kpi-mtd-status', '△ Close', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
-    } else {
-        updateStatusElement('kpi-mtd-status', '⚠ Behind', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
-    }
-
-    // Sale MTD Trend with performance comparison
+    // Sale MTD Trend
     if (metrics.isAhead) {
-        updateStatusElement('sale-mtd-trend', '🚀 Ahead', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.performanceGap > -5) {
-        updateStatusElement('sale-mtd-trend', '📈 Close', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
+        updateStatusElement('sale-mtd-trend', '✓ Ahead', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.performanceGap > -10) {
+        updateStatusElement('sale-mtd-trend', '△ Close', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
     } else {
-        updateStatusElement('sale-mtd-trend', '📉 Behind', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
+        updateStatusElement('sale-mtd-trend', '⚠ Behind', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     }
 
-    // Balance Bulanan Status with urgency
+    // Balance Bulanan Status
     if (metrics.balanceBulanan <= 0) {
-        updateStatusElement('balance-bulanan-status', '🏆 Done', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+        updateStatusElement('balance-bulanan-status', '🎯 Achieved', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.remainingWorkingDays <= 0) {
+        updateStatusElement('balance-bulanan-status', '❌ Missed', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     } else {
-        const urgencyColors = {
-            'CRITICAL': 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full',
-            'URGENT': 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full',
-            'HIGH': 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full',
-            'MODERATE': 'text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full',
-            'LOW': 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full'
-        };
-        updateStatusElement('balance-bulanan-status', metrics.urgencyLevel, urgencyColors[metrics.urgencyLevel]);
+        updateStatusElement('balance-bulanan-status', `${metrics.remainingWorkingDays} days`, 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full');
     }
 
     // Balance MTD Status
-    if (metrics.balanceMTD <= 0) {
-        updateStatusElement('balance-mtd-status', '✅ Surplus', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.balanceMTD <= 1000) {
-        updateStatusElement('balance-mtd-status', '📊 Gap Small', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
+    if (metrics.isOnTrack) {
+        updateStatusElement('balance-mtd-status', '✓ On Track', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.mtdProgress >= 70) {
+        updateStatusElement('balance-mtd-status', '△ Recovery', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
     } else {
-        updateStatusElement('balance-mtd-status', '🎯 Need Push', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
+        updateStatusElement('balance-mtd-status', '🚨 Critical', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     }
 
     // Close Rate Status
-    if (metrics.totalCloseRate >= 25) {
-        updateStatusElement('close-rate-status', '🌟 Excellent', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.totalCloseRate >= 15) {
-        updateStatusElement('close-rate-status', '✓ Good', 'text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full');
+    if (metrics.totalCloseRate >= 20) {
+        updateStatusElement('close-rate-status', '✓ Excellent', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
     } else if (metrics.totalCloseRate >= 10) {
-        updateStatusElement('close-rate-status', '△ Average', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
+        updateStatusElement('close-rate-status', '△ Good', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
     } else {
-        updateStatusElement('close-rate-status', '📈 Improve', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
+        updateStatusElement('close-rate-status', 'Need Focus', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     }
 
-    // Working Days Status with time urgency
+    // Working Days Status
     if (metrics.remainingWorkingDays <= 0) {
         updateStatusElement('working-days-status', '🏁 Month End', 'text-xs text-purple-400 bg-purple-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.remainingWorkingDays <= 3) {
-        updateStatusElement('working-days-status', '🔥 Final Push', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.remainingWorkingDays <= 7) {
-        updateStatusElement('working-days-status', '⚡ Sprint', 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full');
     } else if (metrics.isAhead) {
-        updateStatusElement('working-days-status', '✨ Cruising', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+        updateStatusElement('working-days-status', '✓ Ahead', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
+    } else if (metrics.remainingWorkingDays <= 5) {
+        updateStatusElement('working-days-status', '🔥 Urgent', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
     } else {
-        updateStatusElement('working-days-status', '🎯 Focus', 'text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full');
+        updateStatusElement('working-days-status', 'Push Harder', 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full');
     }
 }
 
-// Show urgency alert for critical situations
-function showUrgencyAlert(metrics) {
-    // Create or update alert banner
-    let alertBanner = document.getElementById('urgency-alert');
-    
-    if (!alertBanner) {
-        alertBanner = document.createElement('div');
-        alertBanner.id = 'urgency-alert';
-        alertBanner.className = 'fixed top-4 right-4 z-50 max-w-sm p-4 rounded-lg shadow-lg animate-pulse';
-        document.body.appendChild(alertBanner);
-    }
-
-    const alertColors = {
-        'URGENT': 'bg-orange-500 text-white',
-        'CRITICAL': 'bg-red-500 text-white'
-    };
-
-    const alertIcons = {
-        'URGENT': '⚡',
-        'CRITICAL': '🚨'
-    };
-
-    alertBanner.className = `fixed top-4 right-4 z-50 max-w-sm p-4 rounded-lg shadow-lg animate-pulse ${alertColors[metrics.urgencyLevel]}`;
-    alertBanner.innerHTML = `
-        <div class="flex items-start space-x-3">
-            <div class="text-2xl">${alertIcons[metrics.urgencyLevel]}</div>
-            <div>
-                <div class="font-bold text-sm">${metrics.urgencyLevel} - ${metrics.remainingWorkingDays} Days Left!</div>
-                <div class="text-xs mt-1">Need RM ${metrics.dynamicKpiHarian.toFixed(0)}/day to reach target</div>
-                <div class="text-xs mt-2 opacity-90">${metrics.recommendation}</div>
-            </div>
-            <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">×</button>
-        </div>
-    `;
-
-    // Auto remove after 10 seconds
-    setTimeout(() => {
-        if (alertBanner && alertBanner.parentElement) {
-            alertBanner.remove();
-        }
-    }, 10000);
-}
-
-// Integration instructions for dashboard.js
-function integrateToDashboard() {
-    console.log(`
-🔄 INTEGRATION STEPS FOR DASHBOARD.JS:
-
-1. Replace the old updatePowerMetricsDisplay function call with:
-   updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
-
-2. Update the function calls in dashboard.js:
-   - In applyFilters(): updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
-   - In clearFilters(): updateEnhancedPowerMetricsDisplay(allData.salesteam);
-   - In initializeDashboard(): updateEnhancedPowerMetricsDisplay(allData.salesteam);
-
-3. Test scenarios:
-   - Run demonstrateDynamicKPI() in console to see examples
-   - Check different sales amounts to see KPI adjustments
-   - Verify working days calculation for current month
-
-📊 FEATURES:
-✅ Auto-detects working days (Friday off by default)
-✅ Dynamic KPI adjustment based on current sales
-✅ Urgency levels (LOW, MODERATE, HIGH, URGENT, CRITICAL)
-✅ Visual alerts for critical situations
-✅ Enhanced status indicators
-✅ Performance-based progress bar colors
-✅ Detailed console logging for monitoring
-
-🎯 WORKING DAYS CONFIGURATION:
-- Current: Sunday-Thursday + Saturday (Friday off)
-- To change: Pass different array to EnhancedPowerMetricsCalculator([1,2,3,4,5])
-- [1,2,3,4,5] = Monday to Friday (weekends off)
-- [0,1,2,3,4,6] = Sunday-Thursday + Saturday (Friday off) - Malaysian pattern
-
-📈 DYNAMIC KPI EXAMPLE:
-- Monthly Target: RM 15,000
-- Days in Month: 27 working days
-- Static KPI: RM 556/day
-- If RM 2,000 sales on day 3: Dynamic KPI adjusts to RM 542/day for remaining 24 days
-- If no sales yet: Dynamic KPI stays at RM 556/day
-- If behind schedule: Dynamic KPI increases accordingly
-    `);
-}
-
-console.log(`✅ Enhanced Dynamic Power Metrics Calculator loaded successfully!`);
-console.log(`🚀 Try running: demonstrateDynamicKPI() to see it in action`);
-console.log(`📋 Run: integrateToDashboard() for integration instructions`);
-
-// Make functions available globally
-if (typeof window !== 'undefined') {
-    window.updateEnhancedPowerMetricsDisplay = updateEnhancedPowerMetricsDisplay;
-    window.integrateToDashboard = integrateToDashboard;
-}
+console.log('Dashboard.js loaded successfully');
