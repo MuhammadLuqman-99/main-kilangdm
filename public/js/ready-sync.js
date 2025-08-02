@@ -1,5 +1,5 @@
 // ============================================================================
-// READY-TO-USE AUTO-SYNC CONFIGURATION
+// READY-TO-USE AUTO-SYNC CONFIGURATION - FIXED VERSION
 // Your URLs are already configured below!
 // ============================================================================
 
@@ -7,44 +7,207 @@
 const SPREADSHEET_ID = '1oNmpTirhxi5K0mSqC-ynourLg7vTWrqIkPwTv-zcAFM';
 const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyqJEWrzOljzhd8aI0og7Ese6GVuMav3leHmpjrFt5otByOVybwFdlDYCpOxpgxosm-RQ/exec';
 
-// Quick setup function - add this to your dashboard.js
-function setupAutoSyncWithYourURLs() {
-    console.log('🚀 Setting up auto-sync with your URLs...');
-    
-    // Initialize the sync system
-    if (!window.autoSyncInstance) {
-        window.autoSyncInstance = new FixedFirebaseSheetsSync();
+// Firebase to Google Sheets Sync Class
+class FirebaseToSheetsSync {
+    constructor() {
+        this.webAppUrl = WEBAPP_URL;
+        this.spreadsheetId = SPREADSHEET_ID;
+        console.log('🚀 Firebase to Sheets Sync initialized');
     }
-    
-    // Configure with your URLs
-    window.autoSyncInstance.quickSetup(WEBAPP_URL, SPREADSHEET_ID);
-    
-    // Auto-fill the UI inputs if they exist
-    const spreadsheetInput = document.getElementById('auto-spreadsheet-id');
-    const webappInput = document.getElementById('auto-webapp-url');
-    
-    if (spreadsheetInput) spreadsheetInput.value = SPREADSHEET_ID;
-    if (webappInput) webappInput.value = WEBAPP_URL;
-    
-    console.log('✅ Auto-sync configured with your URLs!');
-    console.log('📊 Spreadsheet:', SPREADSHEET_ID);
-    console.log('🔗 Web App:', WEBAPP_URL.substring(0, 50) + '...');
-    
-    return window.autoSyncInstance;
+
+    // Convert Firebase data to sheets format
+    convertToSheetsFormat(data, type) {
+        if (!data || data.length === 0) return [];
+
+        let headers;
+        let rows = [];
+
+        switch (type) {
+            case 'orders':
+                headers = [
+                    'ID', 'Tarikh', 'Nama Pelanggan', 'No Telefon', 'Alamat',
+                    'Produk', 'Kuantiti', 'Harga', 'Total', 'Status',
+                    'Agent', 'Channel', 'Catatan', 'Created At'
+                ];
+                
+                rows = data.map(item => [
+                    item.id || '',
+                    item.date || '',
+                    item.customerName || '',
+                    item.phone || '',
+                    item.address || '',
+                    item.product || '',
+                    item.quantity || 0,
+                    item.price || 0,
+                    item.total || 0,
+                    item.status || '',
+                    item.agent || '',
+                    item.channel || '',
+                    item.notes || '',
+                    item.createdAt || ''
+                ]);
+                break;
+
+            case 'marketing':
+                headers = [
+                    'ID', 'Tarikh', 'Channel', 'Budget', 'Leads Generated',
+                    'Conversion Rate', 'ROAS', 'Agent', 'Campaign',
+                    'Status', 'Catatan', 'Created At'
+                ];
+                
+                rows = data.map(item => [
+                    item.id || '',
+                    item.date || '',
+                    item.channel || '',
+                    item.budget || 0,
+                    item.leadsGenerated || 0,
+                    item.conversionRate || 0,
+                    item.roas || 0,
+                    item.agent || '',
+                    item.campaign || '',
+                    item.status || '',
+                    item.notes || '',
+                    item.createdAt || ''
+                ]);
+                break;
+
+            case 'salesteam':
+                headers = [
+                    'ID', 'Tarikh', 'Agent Name', 'Leads', 'Closes',
+                    'Sales Amount', 'Commission', 'Target',
+                    'Achievement %', 'Status', 'Catatan', 'Created At'
+                ];
+                
+                rows = data.map(item => [
+                    item.id || '',
+                    item.date || '',
+                    item.agentName || '',
+                    item.leads || 0,
+                    item.closes || 0,
+                    item.salesAmount || 0,
+                    item.commission || 0,
+                    item.target || 0,
+                    item.achievementRate || 0,
+                    item.status || '',
+                    item.notes || '',
+                    item.createdAt || ''
+                ]);
+                break;
+
+            default:
+                return [];
+        }
+
+        return [headers, ...rows];
+    }
+
+    // Send data to Google Sheets
+    async sendToSheets(sheetName, data) {
+        try {
+            console.log(`📊 Sending ${data.length} rows to sheet: ${sheetName}`);
+
+            const payload = {
+                action: 'writeData',
+                spreadsheetId: this.spreadsheetId,
+                sheetName: sheetName,
+                data: data
+            };
+
+            const response = await fetch(this.webAppUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.success) {
+                console.log(`✅ Success: ${result.message} (${result.rows} rows)`);
+                return true;
+            } else {
+                throw new Error(result.error);
+            }
+
+        } catch (error) {
+            console.error(`❌ Error sending to ${sheetName}:`, error);
+            throw error;
+        }
+    }
+
+    // Sync all data to sheets
+    async syncAllData() {
+        try {
+            console.log('🔄 Starting sync to Google Sheets...');
+
+            if (!window.allData) {
+                throw new Error('Data belum loaded. Sila tunggu sebentar.');
+            }
+
+            const { orders = [], marketing = [], salesteam = [] } = window.allData;
+            const totalRecords = orders.length + marketing.length + salesteam.length;
+
+            if (totalRecords === 0) {
+                throw new Error('Tiada data untuk sync. Sila masukkan data terlebih dahulu.');
+            }
+
+            console.log(`📊 Syncing ${totalRecords} records...`);
+
+            const syncPromises = [];
+
+            // Sync Orders
+            if (orders.length > 0) {
+                const ordersData = this.convertToSheetsFormat(orders, 'orders');
+                syncPromises.push(this.sendToSheets('Orders', ordersData));
+            }
+
+            // Sync Marketing
+            if (marketing.length > 0) {
+                const marketingData = this.convertToSheetsFormat(marketing, 'marketing');
+                syncPromises.push(this.sendToSheets('Marketing', marketingData));
+            }
+
+            // Sync Sales Team
+            if (salesteam.length > 0) {
+                const salesteamData = this.convertToSheetsFormat(salesteam, 'salesteam');
+                syncPromises.push(this.sendToSheets('SalesTeam', salesteamData));
+            }
+
+            // Wait for all syncs to complete
+            await Promise.all(syncPromises);
+
+            console.log('✅ All data synced successfully!');
+            return true;
+
+        } catch (error) {
+            console.error('❌ Sync failed:', error);
+            throw error;
+        }
+    }
 }
+
+// Initialize sync instance
+let syncInstance = null;
 
 // One-click sync function
 async function syncNowWithYourSheets() {
     try {
         console.log('🔄 Starting sync to your Google Sheets...');
         
-        // Setup if not already done
-        const syncInstance = setupAutoSyncWithYourURLs();
+        // Initialize sync instance if needed
+        if (!syncInstance) {
+            syncInstance = new FirebaseToSheetsSync();
+        }
         
         // Check if data is available
         if (!window.allData) {
             alert('⏳ Data masih loading. Sila tunggu sebentar dan cuba lagi.');
-            return;
+            return false;
         }
         
         const data = {
@@ -57,7 +220,7 @@ async function syncNowWithYourSheets() {
         
         if (totalRecords === 0) {
             alert('⚠️ Tiada data untuk sync. Sila masukkan data melalui borang terlebih dahulu.');
-            return;
+            return false;
         }
         
         console.log('📊 Data counts:', data);
@@ -66,26 +229,31 @@ async function syncNowWithYourSheets() {
         const confirmMsg = `🚀 Ready to sync ${totalRecords} records to Google Sheets:\n\n• Orders: ${data.orders.length}\n• Marketing: ${data.marketing.length}\n• Sales Team: ${data.salesteam.length}\n\nProceed with sync?`;
         
         if (!confirm(confirmMsg)) {
-            return;
+            return false;
         }
         
         // Perform sync
-        const success = await syncInstance.syncAllDataToSheets();
+        const success = await syncInstance.syncAllData();
         
         if (success) {
             // Open the Google Sheets to show results
-            const sheetUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`;
+            const sheetUrl = `https://docs.google.com/spreadsheets/d/1oNmpTirhxi5K0mSqC-ynourLg7vTWrqIkPwTv-zcAFM/edit?gid=627356785#gid=627356785`;
             
             const openSheet = confirm('✅ Sync BERJAYA!\n\nData telah di-update ke Google Sheets.\n\nNak buka Google Sheets sekarang?');
             
             if (openSheet) {
                 window.open(sheetUrl, '_blank');
             }
+            
+            return true;
         }
+        
+        return false;
         
     } catch (error) {
         console.error('❌ Sync error:', error);
         alert(`❌ Sync gagal!\n\nError: ${error.message}\n\nSila check console untuk details.`);
+        return false;
     }
 }
 
@@ -94,6 +262,7 @@ async function testYourConnection() {
     try {
         console.log('🧪 Testing connection to your Apps Script...');
         
+        // Test with a simple GET request first
         const response = await fetch(WEBAPP_URL, {
             method: 'GET',
             mode: 'cors'
@@ -102,11 +271,11 @@ async function testYourConnection() {
         const text = await response.text();
         console.log('📡 Response:', text);
         
-        if (text.includes('working') || text.includes('success') || response.ok) {
-            alert('✅ Connection test BERJAYA!\n\nApps Script boleh dicapai dan berfungsi.');
+        if (response.ok) {
+            alert('✅ Connection test BERJAYA!\n\nApps Script boleh dicapai dan berfungsi.\n\nResponse: ' + text.substring(0, 100));
             return true;
         } else {
-            alert(`⚠️ Connection test mendapat response, tapi format tidak dijangka:\n\n${text.substring(0, 200)}...`);
+            alert(`⚠️ Connection mendapat response ${response.status}:\n\n${text.substring(0, 200)}...`);
             return false;
         }
         
@@ -123,51 +292,112 @@ async function testYourConnection() {
     }
 }
 
-// Create quick sync button
-function createQuickSyncButton() {
+// Create the sync button with better styling
+function createSyncButton() {
     // Remove existing button
-    const existing = document.getElementById('quick-sync-btn');
-    if (existing) existing.remove();
+    const existingBtn = document.getElementById('sync-to-sheets-btn');
+    if (existingBtn) {
+        existingBtn.remove();
+    }
     
+    // Create button element
     const button = document.createElement('button');
-    button.id = 'quick-sync-btn';
-    button.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105';
+    button.id = 'sync-to-sheets-btn';
+    button.className = 'sync-btn-fixed';
     
-    button.innerHTML = `
-        <div class="flex items-center space-x-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            <span class="font-semibold">SYNC TO SHEETS</span>
-        </div>
+    // Add styles directly to button
+    button.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        z-index: 1000;
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 160px;
+        justify-content: center;
     `;
     
-    button.addEventListener('click', async () => {
-        button.disabled = true;
+    // Add hover effects
+    button.addEventListener('mouseenter', () => {
+        button.style.transform = 'translateY(-2px)';
+        button.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
+    });
+    
+    button.addEventListener('mouseleave', () => {
+        button.style.transform = 'translateY(0)';
+        button.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.3)';
+    });
+    
+    // Initial button content
+    function setButtonContent(text, icon, loading = false) {
         button.innerHTML = `
-            <div class="flex items-center space-x-2">
-                <div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
-                <span class="font-semibold">SYNCING...</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                ${loading ? 
+                    '<div style="width: 16px; height: 16px; border: 2px solid white; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>' : 
+                    `<i class="fas fa-${icon}" style="font-size: 16px;"></i>`
+                }
+                <span>${text}</span>
             </div>
         `;
+    }
+    
+    // Add spinning animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    setButtonContent('SYNC TO SHEETS', 'sync-alt');
+    
+    // Add click handler
+    button.addEventListener('click', async () => {
+        button.disabled = true;
+        setButtonContent('SYNCING...', '', true);
         
         try {
-            await syncNowWithYourSheets();
+            const success = await syncNowWithYourSheets();
+            
+            if (success) {
+                setButtonContent('SYNC SUCCESS!', 'check');
+                setTimeout(() => {
+                    setButtonContent('SYNC TO SHEETS', 'sync-alt');
+                }, 3000);
+            } else {
+                setButtonContent('SYNC FAILED', 'exclamation-triangle');
+                setTimeout(() => {
+                    setButtonContent('SYNC TO SHEETS', 'sync-alt');
+                }, 3000);
+            }
+        } catch (error) {
+            setButtonContent('SYNC ERROR', 'exclamation-triangle');
+            setTimeout(() => {
+                setButtonContent('SYNC TO SHEETS', 'sync-alt');
+            }, 3000);
         } finally {
             button.disabled = false;
-            button.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    <span class="font-semibold">SYNC TO SHEETS</span>
-                </div>
-            `;
         }
     });
     
+    // Add to page
     document.body.appendChild(button);
-    console.log('✅ Quick sync button created (top-right corner)');
+    console.log('✅ Sync button created (top-right corner)');
+    
+    return button;
 }
 
 // Display current configuration
@@ -175,11 +405,11 @@ function showCurrentConfig() {
     const config = `
 🔧 CURRENT CONFIGURATION:
 
-📊 Google Sheets:
+📊 Google Sheets ID:
    ${SPREADSHEET_ID}
    
-🔗 Apps Script:
-   ${WEBAPP_URL}
+🔗 Apps Script URL:
+   ${WEBAPP_URL.substring(0, 60)}...
    
 📋 Data Available:
    • Orders: ${window.allData?.orders?.length || 0}
@@ -193,106 +423,86 @@ function showCurrentConfig() {
     alert(config.trim());
 }
 
+// Create a test button too
+function createTestButton() {
+    const existingBtn = document.getElementById('test-connection-btn');
+    if (existingBtn) {
+        existingBtn.remove();
+    }
+    
+    const button = document.createElement('button');
+    button.id = 'test-connection-btn';
+    
+    button.style.cssText = `
+        position: fixed;
+        top: 160px;
+        right: 20px;
+        z-index: 1000;
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);
+        transition: all 0.3s ease;
+    `;
+    
+    button.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-wifi" style="font-size: 12px;"></i>
+            <span>TEST</span>
+        </div>
+    `;
+    
+    button.addEventListener('click', testYourConnection);
+    
+    document.body.appendChild(button);
+    console.log('✅ Test button created');
+}
+
 // Auto-setup when page loads
-document.addEventListener('DOMContentLoaded', () => {
+function initializeSync() {
+    console.log('🚀 Initializing Firebase to Sheets sync...');
+    
+    // Wait for DOM and Firebase to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeSync);
+        return;
+    }
+    
+    // Create buttons
     setTimeout(() => {
-        if (window.db) {
-            console.log('🚀 Auto-configuring with your URLs...');
-            
-            // Setup auto-sync with your URLs
-            setupAutoSyncWithYourURLs();
-            
-            // Create quick sync button
-            createQuickSyncButton();
-            
-            // Show configuration
-            console.log('✅ Ready! Your auto-sync is configured.');
-            console.log('📊 Spreadsheet ID:', SPREADSHEET_ID);
-            console.log('🔗 Web App URL:', WEBAPP_URL);
-            console.log('💡 Use: syncNowWithYourSheets() or click the SYNC button');
+        createSyncButton();
+        createTestButton();
+        
+        console.log('✅ Sync system ready!');
+        console.log('📊 Spreadsheet ID:', SPREADSHEET_ID);
+        console.log('🔗 Web App URL configured');
+        console.log('💡 Click the green SYNC button to sync data');
+        
+        // Show initial config
+        if (window.allData) {
+            console.log('📋 Data loaded:', {
+                orders: window.allData.orders?.length || 0,
+                marketing: window.allData.marketing?.length || 0,
+                salesteam: window.allData.salesteam?.length || 0
+            });
+        } else {
+            console.log('⏳ Waiting for data to load...');
         }
-    }, 3000);
-});
+    }, 2000);
+}
 
 // Make functions available globally
 window.syncNowWithYourSheets = syncNowWithYourSheets;
 window.testYourConnection = testYourConnection;
 window.showCurrentConfig = showCurrentConfig;
-window.setupAutoSyncWithYourURLs = setupAutoSyncWithYourURLs;
 
-console.log('🎯 Ready-to-use auto-sync loaded with your URLs!');
-console.log('🚀 Try: syncNowWithYourSheets() or click the green SYNC button');
+// Start initialization
+initializeSync();
 
-// Verify your Google Apps Script setup
-function verifyAppsScriptSetup() {
-    const instructions = `
-📋 GOOGLE APPS SCRIPT VERIFICATION:
-
-✅ Your Web App URL: ${WEBAPP_URL}
-
-🔧 Please verify in Google Apps Script:
-
-1. Open: script.google.com
-2. Find your project with the above URL
-3. Ensure this code is in your script:
-
-function doPost(e) {
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  
-  try {
-    var data = JSON.parse(e.postData.contents);
-    var result = handleRequest(data);
-    return output.setContent(JSON.stringify(result));
-  } catch (error) {
-    return output.setContent(JSON.stringify({
-      success: false, 
-      error: error.toString()
-    }));
-  }
-}
-
-function doGet(e) {
-  return ContentService
-    .createTextOutput(JSON.stringify({message: "API is working!"}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-4. Deploy settings:
-   • Execute as: Me
-   • Who has access: Anyone
-
-5. Test connection: testYourConnection()
-    `;
-    
-    console.log(instructions);
-    return instructions;
-}
-
-window.verifyAppsScriptSetup = verifyAppsScriptSetup;
-
-// Quick test function
-async function quickTest() {
-    console.log('🧪 Running quick test...');
-    
-    // Test connection
-    const connectionOk = await testYourConnection();
-    
-    if (connectionOk) {
-        console.log('✅ Connection test passed');
-        
-        // Show data counts
-        if (window.allData) {
-            showCurrentConfig();
-        } else {
-            console.log('⏳ Data not loaded yet, wait a moment...');
-        }
-    } else {
-        console.log('❌ Connection test failed');
-        console.log('📋 Run: verifyAppsScriptSetup() for setup instructions');
-    }
-}
-
-window.quickTest = quickTest;
-
-console.log('🎯 Run quickTest() to verify everything is working!');
+console.log('🎯 Firebase to Sheets Sync loaded!');
+console.log('🚀 Try: syncNowWithYourSheets() or click the SYNC button');
