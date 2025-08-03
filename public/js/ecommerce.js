@@ -233,8 +233,6 @@ Customer Note:
 
     function generateSampleData() {
         // Generate sample data for image uploads
-    function generateSampleData() {
-        // Generate sample data for image uploads
         const sampleCustomers = [
             'Siti Aminah binti Abdullah',
             'Ahmad Faizal bin Hassan',
@@ -267,6 +265,25 @@ Customer Note:
             setTimeout(() => {
                 successIndicator.classList.remove('show');
             }, 5000);
+        }
+
+        // Show extracted data preview
+        const extractedPreview = document.getElementById('extractedPreview');
+        const previewContent = document.getElementById('previewContent');
+        
+        if (extractedPreview && previewContent) {
+            let previewHTML = '';
+            
+            if (data.invoice) previewHTML += `<div class="preview-item"><span class="preview-label">Invoice:</span><span class="preview-value">${data.invoice}</span></div>`;
+            if (data.customer) previewHTML += `<div class="preview-item"><span class="preview-label">Customer:</span><span class="preview-value">${data.customer}</span></div>`;
+            if (data.phone) previewHTML += `<div class="preview-item"><span class="preview-label">Phone:</span><span class="preview-value">${data.phone}</span></div>`;
+            if (data.total) previewHTML += `<div class="preview-item"><span class="preview-label">Total:</span><span class="preview-value">RM ${data.total}</span></div>`;
+            if (data.codeKain) previewHTML += `<div class="preview-item"><span class="preview-label">Code Kain:</span><span class="preview-value">${data.codeKain}</span></div>`;
+            if (data.jenisOrder) previewHTML += `<div class="preview-item"><span class="preview-label">Jenis Order:</span><span class="preview-value">${data.jenisOrder}</span></div>`;
+            if (data.teamSale) previewHTML += `<div class="preview-item"><span class="preview-label">Team Sale:</span><span class="preview-value">${data.teamSale}</span></div>`;
+            
+            previewContent.innerHTML = previewHTML;
+            extractedPreview.classList.add('show');
         }
 
         // Populate form fields
@@ -305,7 +322,7 @@ Customer Note:
                 } else {
                     // If exact match not found, try partial match
                     if (data.platform.includes('Website')) {
-                        platformField.value = 'Website';
+                        platformField.value = 'Website Desa Murni';
                     }
                 }
             }
@@ -384,6 +401,9 @@ function initializeFormSubmission() {
                 // Hide success indicators
                 const successIndicator = document.getElementById('successIndicator');
                 if (successIndicator) successIndicator.classList.remove('show');
+                
+                const extractedPreview = document.getElementById('extractedPreview');
+                if (extractedPreview) extractedPreview.classList.remove('show');
             }, 2000);
 
         } catch (error) {
@@ -401,26 +421,14 @@ function showFeedback(message, type) {
     feedbackMessage.textContent = message;
     
     // Remove existing classes
-    feedbackMessage.className = 'mt-4 text-center';
+    feedbackMessage.classList.remove('show', 'success', 'error', 'info');
     
-    // Add type-specific classes
-    switch(type) {
-        case 'success':
-            feedbackMessage.classList.add('text-green-400');
-            break;
-        case 'error':
-            feedbackMessage.classList.add('text-red-400');
-            break;
-        case 'info':
-            feedbackMessage.classList.add('text-blue-400');
-            break;
-        default:
-            feedbackMessage.classList.add('text-gray-400');
-    }
+    // Add classes
+    feedbackMessage.classList.add('show', type);
     
     // Auto hide after 5 seconds
     setTimeout(() => {
-        feedbackMessage.textContent = '';
+        feedbackMessage.classList.remove('show');
     }, 5000);
 }
 
@@ -466,12 +474,18 @@ window.clearForm = function() {
         if (dateField) dateField.valueAsDate = new Date();
         
         const feedbackMessage = document.getElementById('feedback-message');
-        if (feedbackMessage) feedbackMessage.textContent = '';
+        if (feedbackMessage) {
+            feedbackMessage.classList.remove('show');
+            feedbackMessage.textContent = '';
+        }
         
         const successIndicator = document.getElementById('successIndicator');
         if (successIndicator) successIndicator.classList.remove('show');
+        
+        const extractedPreview = document.getElementById('extractedPreview');
+        if (extractedPreview) extractedPreview.classList.remove('show');
     }
 }
 
 // Export functions if needed
-export { initializeFileUpload, initializeFormSubmission, showFeedback };}
+export { initializeFileUpload, initializeFormSubmission, showFeedback };
