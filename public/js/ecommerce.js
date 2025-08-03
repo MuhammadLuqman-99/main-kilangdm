@@ -242,6 +242,7 @@ Customer Note:
 
         const sampleCodes = ['BZL05DR', 'BZP05DR', 'KTB001', 'BTK223'];
         const sampleOrders = ['Kemeja Batik', 'Baju Kurung', 'Kain Batik', 'Selendang'];
+        const sampleTeams = ['Qilah', 'Wiyah', 'Nisya', 'Tiktok', 'Shopee'];
 
         return {
             invoice: 'INV-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 10000).toString().padStart(6, '0'),
@@ -251,11 +252,12 @@ Customer Note:
             date: new Date().toISOString().split('T')[0],
             codeKain: sampleCodes[Math.floor(Math.random() * sampleCodes.length)],
             jenisOrder: sampleOrders[Math.floor(Math.random() * sampleOrders.length)],
+            teamSale: sampleTeams[Math.floor(Math.random() * sampleTeams.length)],
             platform: 'Website Desa Murni'
         };
     }
 
-    function populateFormFromExtractedData(data) {
+    async function populateFormFromExtractedData(data) {
         // Hide processing, show success
         if (processingIndicator) {
             processingIndicator.classList.remove('show');
@@ -264,7 +266,7 @@ Customer Note:
             successIndicator.classList.add('show');
             setTimeout(() => {
                 successIndicator.classList.remove('show');
-            }, 5000);
+            }, 8000);
         }
 
         // Show extracted data preview
@@ -354,11 +356,62 @@ Customer Note:
             }
         }
 
+        // **NEW: Auto-save extracted data to Firebase**
+        await autoSaveExtractedData(data);
+
         // Show success feedback
-        showFeedback('Invoice berjaya diproses! Data telah diisi ke dalam form.', 'success');
+        showFeedback('Invoice berjaya diproses dan data telah disimpan ke Firebase! Data akan muncul di Dashboard Order.', 'success');
 
         // Log extracted data for debugging
         console.log('Extracted Data:', data);
+    }
+
+    // **NEW FUNCTION: Auto-save extracted data to Firebase**
+    async function autoSaveExtractedData(extractedData) {
+        if (!window.db) {
+            console.error('Firebase not initialized. Cannot auto-save extracted data.');
+            return;
+        }
+
+        // Validate that we have minimum required data
+        if (!extractedData.customer || !extractedData.total) {
+            console.log('Insufficient data for auto-save. Skipping...');
+            return;
+        }
+
+        try {
+            showFeedback('Menyimpan data yang diekstrak ke Firebase...', 'info');
+
+            // Prepare order data with extracted information
+            const orderData = {
+                tarikh: extractedData.date || new Date().toISOString().split('T')[0],
+                code_kain: extractedData.codeKain || '',
+                nombor_po_invoice: extractedData.invoice || '',
+                nama_customer: extractedData.customer || '',
+                team_sale: extractedData.teamSale || '',
+                nombor_phone: extractedData.phone || '',
+                jenis_order: extractedData.jenisOrder || '',
+                total_rm: parseFloat(extractedData.total) || 0,
+                platform: extractedData.platform || 'Website Desa Murni',
+                source: 'auto_extracted', // Mark as auto-extracted for tracking
+                createdAt: serverTimestamp()
+            };
+
+            console.log('Auto-saving extracted order data:', orderData);
+
+            // Save to Firebase
+            const docRef = await addDoc(collection(window.db, "orderData"), orderData);
+            console.log("Auto-extracted order saved with ID: ", docRef.id);
+            
+            // Update success message to include Firebase save confirmation
+            setTimeout(() => {
+                showFeedback('✅ Data berjaya diekstrak dan disimpan! Order akan muncul di Dashboard Order.', 'success');
+            }, 1000);
+
+        } catch (error) {
+            console.error("Error auto-saving extracted order data: ", error);
+            showFeedback('⚠️ Data diekstrak tetapi gagal disimpan ke Firebase. Sila submit manual.', 'error');
+        }
     }
 }
 
@@ -383,12 +436,13 @@ function initializeFormSubmission() {
             jenis_order: form.jenis_order.value,
             total_rm: parseFloat(form.total_rm.value),
             platform: form.platform.value,
+            source: 'manual_form', // Mark as manual form submission
             createdAt: serverTimestamp()
         };
 
         try {
             const docRef = await addDoc(collection(db, "orderData"), orderData);
-            console.log("Order document written with ID: ", docRef.id);
+            console.log("Manual order document written with ID: ", docRef.id);
             
             showFeedback('Data order berjaya dihantar! ✅', 'success');
             
@@ -407,7 +461,7 @@ function initializeFormSubmission() {
             }, 2000);
 
         } catch (error) {
-            console.error("Error adding order document: ", error);
+            console.error("Error adding manual order document: ", error);
             showFeedback('Gagal menghantar data order. Sila cuba lagi. ❌', 'error');
         }
     });
@@ -426,10 +480,10 @@ function showFeedback(message, type) {
     // Add classes
     feedbackMessage.classList.add('show', type);
     
-    // Auto hide after 5 seconds
+    // Auto hide after 8 seconds for longer messages
     setTimeout(() => {
         feedbackMessage.classList.remove('show');
-    }, 5000);
+    }, 8000);
 }
 
 function initializePhoneFormatting() {
