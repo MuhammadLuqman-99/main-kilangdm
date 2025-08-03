@@ -10,30 +10,11 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .form-input, .form-select {
-            background-color: #374151; /* bg-gray-700 */
-            border: 1px solid #4B5563; /* border-gray-600 */
-            color: white;
-            border-radius: 0.5rem; /* rounded-lg */
-            padding: 0.75rem 1rem; /* px-4 py-3 */
-            width: 100%;
-        }
-        .form-input:focus, .form-select:focus {
-            outline: none;
-            border-color: #3B82F6; /* focus:border-blue-500 */
-            box-shadow: 0 0 0 2px #1E40AF; /* focus:ring-blue-500 */
-        }
-        .form-select option {
-            background-color: #374151;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" href="css/ecommerce-enhanced.css">
 </head>
-<body >
+<body>
 
-       <!-- Floating Action Button for Home -->
+    <!-- Floating Action Button for Home -->
     <div class="floating-home-btn">
         <button id="homeBtn" class="home-btn" title="Kembali ke Halaman Utama">
             <i class="fas fa-home"></i>
@@ -95,71 +76,134 @@
         </div>
     </nav>
 
-        <main class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl border border-gray-700">
-            <h1 class="text-3xl font-bold mb-6 text-center">Borang Order</h1>
-            <form id="order-form" class="space-y-6">
-                <div>
-                    <label for="tarikh" class="block mb-2 font-medium">Tarikh</label>
-                    <input type="date" id="tarikh" name="tarikh" class="form-input" required>
-                </div>
-                
-                <div>
-                    <label for="code_kain" class="block mb-2 font-medium">Code Kain</label>
-                    <input type="text" id="code_kain" name="code_kain" class="form-input" placeholder="e.g., KD001, BATIK123" required>
+    <!-- Main Content Container -->
+    <div class="main-container">
+        <!-- Left Side - PDF Upload & Auto Detection -->
+        <div class="upload-container">
+            <div class="upload-header">
+                <h2><i class="fas fa-file-upload"></i> Auto-Fill dari Invoice</h2>
+                <p>Upload PDF invoice untuk auto-populate form</p>
+            </div>
+
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">
+                        <strong>Click atau drag PDF di sini</strong>
+                        <span>Support: PDF, JPG, PNG (Max: 10MB)</span>
+                    </div>
+                    <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.txt" hidden />
                 </div>
 
-                <div>
-                    <label for="nombor_po_invoice" class="block mb-2 font-medium">Nombor PO / Invoice</label>
-                    <input type="text" id="nombor_po_invoice" name="nombor_po_invoice" class="form-input" placeholder="e.g., PO2024001, INV001" required>
+                <div class="processing-indicator" id="processingIndicator">
+                    <div class="spinner"></div>
+                    <p>Sedang memproses invoice...</p>
                 </div>
 
-                <div>
-                    <label for="nama_customer" class="block mb-2 font-medium">Nama Customer</label>
-                    <input type="text" id="nama_customer" name="nama_customer" class="form-input" placeholder="e.g., Siti Aminah" required>
+                <div class="success-indicator" id="successIndicator">
+                    <i class="fas fa-check-circle"></i>
+                    <p>Invoice berjaya diproses! Data telah diisi ke form.</p>
+                </div>
+            </div>
+
+            <!-- Extracted Data Preview -->
+            <div class="extracted-preview" id="extractedPreview">
+                <h3><i class="fas fa-eye"></i> Data Yang Dikesan</h3>
+                <div class="preview-content" id="previewContent">
+                    <!-- Data akan dipaparkan di sini -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Manual Form -->
+        <div class="form-container">
+            <div class="form-header">
+                <h2><i class="fas fa-edit"></i> Borang Order</h2>
+                <p>Isi maklumat order secara manual atau gunakan auto-fill</p>
+            </div>
+
+            <form id="order-form" class="order-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tarikh"><i class="fas fa-calendar"></i> Tarikh</label>
+                        <input type="date" id="tarikh" name="tarikh" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="code_kain"><i class="fas fa-tag"></i> Code Kain</label>
+                        <input type="text" id="code_kain" name="code_kain" class="form-input" placeholder="e.g., BZL05DR" required>
+                    </div>
                 </div>
 
-                <div>
-                    <label for="team_sale" class="block mb-2 font-medium">Team Sale</label>
-                    <select id="team_sale" name="team_sale" class="form-select" required>
-                        <option value="">Pilih Team Sale</option>
-                        <option value="Qilah">Qilah</option>
-                        <option value="Wiyah">Wiyah</option>
-                        <option value="Nisya">Nisya</option>
-                        <option value="Tiktok">Tiktok</option>
-                        <option value="Shopee">Shopee</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombor_po_invoice"><i class="fas fa-receipt"></i> Nombor PO / Invoice</label>
+                        <input type="text" id="nombor_po_invoice" name="nombor_po_invoice" class="form-input" placeholder="e.g., Inv-100403-210725" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nama_customer"><i class="fas fa-user"></i> Nama Customer</label>
+                        <input type="text" id="nama_customer" name="nama_customer" class="form-input" placeholder="e.g., Azliza Awang Kechik" required>
+                    </div>
                 </div>
 
-                <div>
-                    <label for="nombor_phone" class="block mb-2 font-medium">Nombor Phone Customer</label>
-                    <input type="tel" id="nombor_phone" name="nombor_phone" class="form-input" placeholder="e.g., 012-3456789" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="team_sale"><i class="fas fa-users"></i> Team Sale</label>
+                        <select id="team_sale" name="team_sale" class="form-select" required>
+                            <option value="">Pilih Team Sale</option>
+                            <option value="Qilah">Qilah</option>
+                            <option value="Wiyah">Wiyah</option>
+                            <option value="Nisya">Nisya</option>
+                            <option value="Tiktok">Tiktok</option>
+                            <option value="Shopee">Shopee</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nombor_phone"><i class="fas fa-phone"></i> Nombor Phone Customer</label>
+                        <input type="tel" id="nombor_phone" name="nombor_phone" class="form-input" placeholder="e.g., 010-453-2013" required>
+                    </div>
                 </div>
 
-                <div>
-                    <label for="jenis_order" class="block mb-2 font-medium">Jenis Order</label>
-                    <input type="text" id="jenis_order" name="jenis_order" class="form-input" placeholder="e.g., Baju Kurung, Kain Batik" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="jenis_order"><i class="fas fa-shopping-bag"></i> Jenis Order</label>
+                        <input type="text" id="jenis_order" name="jenis_order" class="form-input" placeholder="e.g., Kemeja Batik, Baju Kurung" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="total_rm"><i class="fas fa-money-bill"></i> Total (RM)</label>
+                        <input type="number" id="total_rm" name="total_rm" step="0.01" class="form-input" placeholder="e.g., 11842.00" required>
+                    </div>
                 </div>
 
-                <div>
-                    <label for="total_rm" class="block mb-2 font-medium">Total (RM)</label>
-                    <input type="number" id="total_rm" name="total_rm" step="0.01" class="form-input" placeholder="e.g., 150.00" required>
-                </div>
-
-                <div>
-                    <label for="platform" class="block mb-2 font-medium">Platform</label>
+                <div class="form-group full-width">
+                    <label for="platform"><i class="fas fa-globe"></i> Platform</label>
                     <select id="platform" name="platform" class="form-select" required>
                         <option value="">Pilih Platform</option>
-                        <option value="Website">Website</option>
+                        <option value="Website Desa Murni">Website Desa Murni</option>
+                        <option value="Shopee">Shopee</option>
+                        <option value="Lazada">Lazada</option>
                         <option value="Manual">Manual</option>
                     </select>
                 </div>
 
-                <div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Order</button>
+                <div class="form-actions">
+                    <button type="button" class="btn-clear" onclick="clearForm()">
+                        <i class="fas fa-eraser"></i> Clear Form
+                    </button>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane"></i> Hantar Order
+                    </button>
                 </div>
             </form>
-            <div id="feedback-message" class="mt-4 text-center"></div>
-        </main>
+
+            <div id="feedback-message" class="feedback-message"></div>
+        </div>
+    </div>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -188,12 +232,11 @@
         window.db = db;
     </script>
 
-    <!-- Order JavaScript -->
-    <script type="module" src="js/ecommerce.js"></script>
+    <!-- Enhanced JavaScript -->
+    <script type="module" src="js/ecommerce-enhanced.js"></script>
     <script>
         // Home button functionality
         document.getElementById('homeBtn').addEventListener('click', function() {
-            // Replace with your actual homepage URL
             window.location.href = 'index.html';
         });
 
@@ -216,7 +259,440 @@
 
         setInterval(updateCurrentTime, 1000);
         updateCurrentTime();
+
+        // Set today's date as default
+        document.getElementById('tarikh').valueAsDate = new Date();
+
+        // Clear form function
+        function clearForm() {
+            document.getElementById('order-form').reset();
+            document.getElementById('tarikh').valueAsDate = new Date();
+            document.getElementById('feedback-message').textContent = '';
+            document.getElementById('extractedPreview').style.display = 'none';
+        }
     </script>
+    <style>
+        /* Enhanced Ecommerce Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+/* Main Container - Side by Side Layout */
+.main-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 6rem auto 2rem;
+    padding: 0 2rem;
+    min-height: calc(100vh - 8rem);
+}
+
+/* Upload Container (Left Side) */
+.upload-container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    height: fit-content;
+}
+
+.upload-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.upload-header h2 {
+    color: #60a5fa;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.upload-header p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+/* Upload Area */
+.upload-area {
+    border: 3px dashed #60a5fa;
+    border-radius: 15px;
+    padding: 3rem 2rem;
+    text-align: center;
+    background: rgba(96, 165, 250, 0.05);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+}
+
+.upload-area:hover {
+    border-color: #3b82f6;
+    background: rgba(96, 165, 250, 0.1);
+    transform: translateY(-2px);
+}
+
+.upload-area.dragover {
+    border-color: #2563eb;
+    background: rgba(96, 165, 250, 0.15);
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: #60a5fa;
+    margin-bottom: 1rem;
+}
+
+.upload-text strong {
+    display: block;
+    color: white;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.upload-text span {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+/* Processing Indicator */
+.processing-indicator {
+    display: none;
+    text-align: center;
+    padding: 1.5rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.processing-indicator.show {
+    display: block;
+}
+
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #60a5fa;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success Indicator */
+.success-indicator {
+    display: none;
+    text-align: center;
+    padding: 1rem;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.success-indicator.show {
+    display: block;
+    animation: slideIn 0.5s ease;
+}
+
+.success-indicator i {
+    color: #22c55e;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Extracted Data Preview */
+.extracted-preview {
+    display: none;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.extracted-preview.show {
+    display: block;
+}
+
+.extracted-preview h3 {
+    color: #60a5fa;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.preview-content {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-label {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.preview-value {
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Form Container (Right Side) */
+.form-container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    height: fit-content;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-header h2 {
+    color: #60a5fa;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-header p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+/* Form Styles */
+.order-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+}
+
+.form-group label i {
+    color: #60a5fa;
+    width: 16px;
+}
+
+.form-input, .form-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    width: 100%;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #60a5fa;
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(96, 165, 250, 0.2);
+}
+
+.form-input::placeholder {
+    color: #94a3b8;
+}
+
+.form-select option {
+    background: #374151;
+    color: white;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn-clear, .btn-submit {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-clear {
+    background: rgba(107, 114, 128, 0.8);
+    color: white;
+}
+
+.btn-clear:hover {
+    background: rgba(107, 114, 128, 1);
+    transform: translateY(-1px);
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+}
+
+/* Feedback Message */
+.feedback-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 500;
+    display: none;
+}
+
+.feedback-message.show {
+    display: block;
+}
+
+.feedback-message.success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.feedback-message.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.feedback-message.info {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #3b82f6;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .main-container {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-top: 5rem;
+    }
+    
+    .upload-container {
+        order: 1;
+    }
+    
+    .form-container {
+        order: 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container {
+        padding: 0 1rem;
+        margin-top: 4rem;
+    }
+    
+    .upload-container, .form-container {
+        padding: 1.5rem;
+        border-radius: 15px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .upload-area {
+        padding: 2rem 1rem;
+    }
+    
+    .upload-icon {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .upload-header h2, .form-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .upload-text strong {
+        font-size: 1rem;
+    }
+    
+    .btn-clear, .btn-submit {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+}
+    </style>
 
 </body>
 </html>
