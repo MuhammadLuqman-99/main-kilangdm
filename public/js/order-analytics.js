@@ -62,6 +62,20 @@ class OrderAnalytics {
                 }
             });
         });
+        // **TAMBAH KOD INI** di penghujung fungsi setupEventListeners
+        document.querySelectorAll('.tab-link').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.dataset.tab;
+                
+                // Urus state 'active' untuk butang tab
+                document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                // Urus state 'active' untuk kandungan tab
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
 
         // View all button
         const viewAllBtn = document.querySelector('.view-all-btn');
@@ -348,36 +362,52 @@ class OrderAnalytics {
         }
     }
 
+    // Gantikan fungsi updateRecentOrders() yang lama dengan yang ini
     updateRecentOrders() {
-        const tbody = document.getElementById('recent-orders-tbody');
+        // Logik baharu: tapis order dan sediakan setiap tab
+        this.orders.sort((a, b) => b.createdAt - a.createdAt); // Pastikan order disusun dari terbaru ke terlama
+        
+        // **Nota Penting**: Pastikan nama di bawah ('Shopee', 'TikTok', 'Qilah', etc.)
+        // sepadan dengan data sebenar dalam Firestore anda.
+        this.renderOrdersForCategory('all', this.orders);
+        this.renderOrdersForCategory('shopee', this.orders.filter(o => o.platform && o.platform.toLowerCase() === 'shopee'));
+        this.renderOrdersForCategory('tiktok', this.orders.filter(o => o.platform && o.platform.toLowerCase() === 'tiktok'));
+        this.renderOrdersForCategory('qilah', this.orders.filter(o => o.team_sale && o.team_sale.toLowerCase() === 'qilah'));
+        this.renderOrdersForCategory('nisya', this.orders.filter(o => o.team_sale && o.team_sale.toLowerCase() === 'nisya'));
+        this.renderOrdersForCategory('wiyah', this.orders.filter(o => o.team_sale && o.team_sale.toLowerCase() === 'wiyah'));
+
+        // Paparkan tab pertama secara lalai
+        document.querySelector('.tab-link[data-tab="all"]').click();
+    }
+
+    renderOrdersForCategory(category, orders, page = 1) {
+        const tbody = document.getElementById(`recent-orders-tbody-${category}`);
+        const paginationContainer = document.getElementById(`pagination-${category}`);
+        if (!tbody || !paginationContainer) return;
+
         tbody.innerHTML = '';
+        const ordersPerPage = 10; // Tentukan berapa order untuk dipaparkan per halaman
+        const startIndex = (page - 1) * ordersPerPage;
+        const endIndex = startIndex + ordersPerPage;
+        const paginatedOrders = orders.slice(startIndex, endIndex);
 
-        // Get 10 most recent orders
-        const recentOrders = this.orders.slice(0, 10);
-
-        if (recentOrders.length === 0) {
+        if (paginatedOrders.length === 0) {
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td colspan="8" style="text-align: center; color: #6b7280; font-style: italic;">
-                    Tiada data order ditemui
-                </td>
-            `;
+            row.innerHTML = `<td colspan="8" style="text-align: center; color: #6b7280; font-style: italic;">Tiada data order ditemui untuk kategori ini</td>`;
             tbody.appendChild(row);
+            paginationContainer.innerHTML = ''; // Kosongkan pagination jika tiada order
             return;
         }
 
-        recentOrders.forEach(order => {
+        paginatedOrders.forEach(order => {
             const row = document.createElement('tr');
             const platformClass = `platform-${order.platform.toLowerCase().replace(/\s+/g, '')}`;
             const typeClass = `type-${order.jenis_order.toLowerCase()}`;
-            
-            // Format date
-            const orderDate = order.tarikh || 
-                (order.createdAt ? order.createdAt.toISOString().split('T')[0] : 'N/A');
-            
+            const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('ms-MY') : 'N/A';
+
             row.innerHTML = `
                 <td><span class="order-code">${order.code_kain || 'N/A'}</span></td>
-                <td>${new Date(orderDate).toLocaleDateString('ms-MY')}</td>
+                <td>${orderDate}</td>
                 <td>${order.nama_customer}</td>
                 <td>${order.team_sale}</td>
                 <td><span class="order-platform ${platformClass}">${order.platform}</span></td>
@@ -387,8 +417,50 @@ class OrderAnalytics {
             `;
             tbody.appendChild(row);
         });
-    }
 
+        this.setupPagination(category, orders, page);
+    }
+    
+    setupPagination(category, orders, currentPage) {
+        const paginationContainer = document.getElementById(`pagination-${category}`);
+        const ordersPerPage = 10;
+        const totalPages = Math.ceil(orders.length / ordersPerPage);
+        
+        paginationContainer.innerHTML = '';
+
+        if (totalPages <= 1) return; // Jangan tunjuk pagination jika hanya ada 1 halaman
+
+        // Butang 'Previous'
+        const prevButton = document.createElement('button');
+        prevButton.innerHTML = `<i class="fas fa-chevron-left"></i> Previous`;
+        prevButton.className = 'btn btn-outline btn-sm';
+        if (currentPage === 1) {
+            prevButton.disabled = true;
+        }
+        prevButton.addEventListener('click', () => {
+            this.renderOrdersForCategory(category, orders, currentPage - 1);
+        });
+        
+        // Paparan Info Halaman
+        const pageInfo = document.createElement('span');
+        pageInfo.textContent = `Halaman ${currentPage} / ${totalPages}`;
+        pageInfo.className = 'page-info';
+
+        // Butang 'Next'
+        const nextButton = document.createElement('button');
+        nextButton.innerHTML = `Next <i class="fas fa-chevron-right"></i>`;
+        nextButton.className = 'btn btn-outline btn-sm';
+        if (currentPage === totalPages) {
+            nextButton.disabled = true;
+        }
+        nextButton.addEventListener('click', () => {
+            this.renderOrdersForCategory(category, orders, currentPage + 1);
+        });
+
+        paginationContainer.appendChild(prevButton);
+        paginationContainer.appendChild(pageInfo);
+        paginationContainer.appendChild(nextButton);
+    }
     initCharts() {
         this.initOrderTrendChart();
         this.initOrderTimelineChart();

@@ -30,6 +30,175 @@
     
     console.log('Firebase initialized successfully');
     </script>
+    <style>
+    /* ===== General Styling for the Section ===== */
+    .recent-orders {
+        background-color: #1e293b; /* Warna latar belakang sedikit cerah dari body */
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        margin-top: 2rem;
+    }
+
+    .recent-orders-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #334155;
+        margin-bottom: 1.5rem;
+    }
+
+    .recent-orders-header h4 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin: 0;
+    }
+
+    /* ===== Tab Styling - Kunci kepada rupa profesional ===== */
+    .tabs-container {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .tab-link {
+        background-color: transparent;
+        color: #94a3b8;
+        border: 1px solid #334155;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        position: relative;
+        bottom: -1px; /* Untuk efek 'merge' dengan border bawah */
+    }
+
+    .tab-link:hover {
+        background-color: #334155;
+        color: #f1f5f9;
+    }
+
+    .tab-link.active {
+        color: #f9fafb;
+        background-color: #3b82f6; /* Warna accent untuk tab aktif */
+        border-color: #3b82f6;
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+    }
+    
+    .tab-content {
+        display: none; /* Sembunyikan semua tab content secara lalai */
+    }
+
+    .tab-content.active {
+        display: block; /* Paparkan hanya yang aktif */
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Table Styling yang Lebih Kemas ===== */
+    .table-container {
+        overflow-x: auto; /* Untuk paparan mobile */
+    }
+
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .orders-table th, .orders-table td {
+        padding: 0.9rem 1rem;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    .orders-table thead {
+        background-color: #283446; /* Latar header table */
+    }
+
+    .orders-table th {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .orders-table tbody tr {
+        border-bottom: 1px solid #334155;
+        transition: background-color 0.2s ease;
+    }
+
+    .orders-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .orders-table tbody tr:hover {
+        background-color: #283446; /* Efek hover pada baris */
+    }
+
+    .orders-table td {
+        color: #cbd5e1;
+        font-size: 0.875rem;
+    }
+
+    .order-platform, .order-type {
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    /* Spesifik warna untuk platform */
+    .platform-shopee { background-color: #ff5e4d30; color: #ff5e4d; }
+    .platform-tiktok { background-color: #ffffff30; color: #ffffff; }
+    /* Tambah lagi jika perlu */
+
+    /* ===== Pagination Styling ===== */
+    .pagination-controls {
+        display: flex;
+        justify-content: flex-start; /* Letak di sebelah kiri bawah */
+        align-items: center;
+        padding-top: 1.5rem;
+        gap: 1rem;
+    }
+
+    .pagination-controls .btn {
+        background-color: #283446;
+        border: 1px solid #475569;
+    }
+
+    .pagination-controls .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .pagination-controls .page-info {
+        color: #94a3b8;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    /* ===== Responsive Adjustments (Penting!) ===== */
+    @media (max-width: 768px) {
+        .recent-orders-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .tabs-container {
+            flex-wrap: wrap;
+        }
+    }
+</style>
     
 </head>
 <body style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f9fafb; font-family: 'Inter', sans-serif; padding: 2rem;">
@@ -299,14 +468,20 @@
     </div>
 
     <!-- Recent Orders Table -->
-    <div class="recent-orders">
-        <div class="recent-orders-header">
-            <h4>Recent Orders</h4>
-            <button class="view-all-btn">
-                <i class="fas fa-external-link-alt"></i>
-                View All
-            </button>
+   <div class="recent-orders">
+    <div class="recent-orders-header">
+        <h4>Recent Orders</h4>
+        <div class="tabs-container">
+            <button class="tab-link active" data-tab="all">Semua</button>
+            <button class="tab-link" data-tab="shopee">Shopee</button>
+            <button class="tab-link" data-tab="tiktok">TikTok</button>
+            <button class="tab-link" data-tab="qilah">Qilah</button>
+            <button class="tab-link" data-tab="nisya">Nisya</button>
+            <button class="tab-link" data-tab="wiyah">Wiyah</button>
         </div>
+    </div>
+
+    <div id="all" class="tab-content active">
         <div class="table-container">
             <table class="orders-table">
                 <thead>
@@ -321,14 +496,112 @@
                         <th>PO/Invoice</th>
                     </tr>
                 </thead>
-                <tbody id="recent-orders-tbody">
-                    <tr>
-                        <td colspan="8" class="loading-placeholder">Loading recent orders...</td>
-                    </tr>
-                </tbody>
+                <tbody id="recent-orders-tbody-all"></tbody>
             </table>
         </div>
+        <div class="pagination-controls" id="pagination-all"></div>
     </div>
+    <div id="shopee" class="tab-content">
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Code Kain</th>
+                        <th>Tarikh</th>
+                        <th>Customer</th>
+                        <th>Team</th>
+                        <th>Platform</th>
+                        <th>Jenis</th>
+                        <th>Amount</th>
+                        <th>PO/Invoice</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-orders-tbody-shopee"></tbody>
+            </table>
+        </div>
+        <div class="pagination-controls" id="pagination-shopee"></div>
+    </div>
+    <div id="tiktok" class="tab-content">
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Code Kain</th>
+                        <th>Tarikh</th>
+                        <th>Customer</th>
+                        <th>Team</th>
+                        <th>Platform</th>
+                        <th>Jenis</th>
+                        <th>Amount</th>
+                        <th>PO/Invoice</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-orders-tbody-tiktok"></tbody>
+            </table>
+        </div>
+        <div class="pagination-controls" id="pagination-tiktok"></div>
+    </div>
+    <div id="qilah" class="tab-content">
+        <div class="table-container">
+            <table class="orders-table">
+                 <thead>
+                    <tr>
+                        <th>Code Kain</th>
+                        <th>Tarikh</th>
+                        <th>Customer</th>
+                        <th>Team</th>
+                        <th>Platform</th>
+                        <th>Jenis</th>
+                        <th>Amount</th>
+                        <th>PO/Invoice</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-orders-tbody-qilah"></tbody>
+            </table>
+        </div>
+        <div class="pagination-controls" id="pagination-qilah"></div>
+    </div>
+    <div id="nisya" class="tab-content">
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Code Kain</th>
+                        <th>Tarikh</th>
+                        <th>Customer</th>
+                        <th>Team</th>
+                        <th>Platform</th>
+                        <th>Jenis</th>
+                        <th>Amount</th>
+                        <th>PO/Invoice</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-orders-tbody-nisya"></tbody>
+            </table>
+        </div>
+        <div class="pagination-controls" id="pagination-nisya"></div>
+    </div>
+    <div id="wiyah" class="tab-content">
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Code Kain</th>
+                        <th>Tarikh</th>
+                        <th>Customer</th>
+                        <th>Team</th>
+                        <th>Platform</th>
+                        <th>Jenis</th>
+                        <th>Amount</th>
+                        <th>PO/Invoice</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-orders-tbody-wiyah"></tbody>
+            </table>
+        </div>
+        <div class="pagination-controls" id="pagination-wiyah"></div>
+    </div>
+</div>
 </section>>
     <script type="module" src="js/order-analytics.js"></script>
       <script>

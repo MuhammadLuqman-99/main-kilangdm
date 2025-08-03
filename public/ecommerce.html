@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
     <style>
         /* Enhanced Ecommerce Styles */
 body {
@@ -814,11 +815,6 @@ body {
                     </div>
                     <input type="file" id="fileInput" accept=".pdf,.csv,.jpg,.jpeg,.png,.txt" hidden />
                 </div>
-                <select id="file-source" class="input w-full mb-4 bg-gray-700 border-gray-600 text-white p-2 rounded-md">
-            <option value="shopee">Shopee</option>
-            <option value="tiktok">TikTok</option>
-            <option value="manual">Template Manual</option>
-        </select>
                 
                 <div class="processing-indicator" id="processingIndicator">
                     <div class="spinner"></div>
@@ -826,8 +822,9 @@ body {
                 </div>
 
                 <div class="success-indicator" id="successIndicator">
-                    <i class="fas fa-check-circle"></i>
-                    <p>File berjaya diproses! Data telah diisi/disimpan.</p>
+                <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 0.75rem;"></i>
+                <h4 id="success-title" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem;"></h4>
+                <p id="success-details" style="font-size: 0.9rem; color: #cbd5e1;"></p>
                 </div>
             </div>
 
