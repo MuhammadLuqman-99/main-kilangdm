@@ -9,267 +9,6 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- <link rel="stylesheet" href="style.css"> -->
-    <script type="module" src="js/ecommerce.js"></script>
-</head>
-<body>
-
-    <!-- Floating Action Button for Home -->
-    <div class="floating-home-btn">
-        <button id="homeBtn" class="home-btn" title="Kembali ke Halaman Utama">
-            <i class="fas fa-home"></i>
-        </button>
-    </div>
-
-    <!-- Navigation Header -->
-    <nav class="main-nav">
-        <div class="nav-container">
-            <!-- Brand Section -->
-            <div class="nav-brand">
-                <div class="brand-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div class="brand-text">
-                    <h2>KilangDM</h2>
-                    <span>Analytics Dashboard</span>
-                </div>
-            </div>
-
-            <!-- Navigation Links -->
-            <div class="nav-links" id="navLinks">
-                <a href="dashboard.html" class="nav-link">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="dashboardbo.html" class="nav-link">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard Order</span>
-                </a>
-                <a href="ecommerce.html" class="nav-link active">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Borang Order</span>
-                </a>
-                <a href="marketing.html" class="nav-link">
-                    <i class="fas fa-bullhorn"></i>
-                    <span>Marketing</span>
-                </a>
-                <a href="salesteam.html" class="nav-link">
-                    <i class="fas fa-users"></i>
-                    <span>Sales Team</span>
-                </a>
-                <a href="followup.html" class="nav-link">
-                    <i class="fas fa-phone"></i>
-                    <span>Follow Up</span>
-                </a>
-            </div>
-
-            <!-- Time Display -->
-            <div class="nav-time">
-                <div class="time-label">Last Updated</div>
-                <div class="time-value" id="current-time">-</div>
-            </div>
-
-            <!-- Mobile Menu Toggle -->
-            <button class="mobile-menu-btn" id="mobileMenuBtn">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-    </nav>
-
-    <!-- Main Content Container -->
-    <div class="main-container">
-        <!-- Left Side - PDF Upload & Auto Detection -->
-        <div class="upload-container">
-            <div class="upload-header">
-                <h2><i class="fas fa-file-upload"></i> Auto-Fill dari Invoice</h2>
-                <p>Upload PDF invoice untuk auto-populate form</p>
-            </div>
-
-            <div class="upload-section">
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <div class="upload-text">
-                        <strong>Click atau drag PDF di sini</strong>
-                        <span>Support: PDF, JPG, PNG (Max: 10MB)</span>
-                    </div>
-                    <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.txt" hidden />
-                </div>
-
-                <div class="processing-indicator" id="processingIndicator">
-                    <div class="spinner"></div>
-                    <p>Sedang memproses invoice...</p>
-                </div>
-
-                <div class="success-indicator" id="successIndicator">
-                    <i class="fas fa-check-circle"></i>
-                    <p>Invoice berjaya diproses! Data telah diisi ke form.</p>
-                </div>
-            </div>
-
-            <!-- Extracted Data Preview -->
-            <div class="extracted-preview" id="extractedPreview">
-                <h3><i class="fas fa-eye"></i> Data Yang Dikesan</h3>
-                <div class="preview-content" id="previewContent">
-                    <!-- Data akan dipaparkan di sini -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Side - Manual Form -->
-        <div class="form-container">
-            <div class="form-header">
-                <h2><i class="fas fa-edit"></i> Borang Order</h2>
-                <p>Isi maklumat order secara manual atau gunakan auto-fill</p>
-            </div>
-
-            <form id="order-form" class="order-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="tarikh"><i class="fas fa-calendar"></i> Tarikh</label>
-                        <input type="date" id="tarikh" name="tarikh" class="form-input" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="code_kain"><i class="fas fa-tag"></i> Code Kain</label>
-                        <input type="text" id="code_kain" name="code_kain" class="form-input" placeholder="e.g., BZL05DR" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="nombor_po_invoice"><i class="fas fa-receipt"></i> Nombor PO / Invoice</label>
-                        <input type="text" id="nombor_po_invoice" name="nombor_po_invoice" class="form-input" placeholder="e.g., Inv-100403-210725" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="nama_customer"><i class="fas fa-user"></i> Nama Customer</label>
-                        <input type="text" id="nama_customer" name="nama_customer" class="form-input" placeholder="e.g., Azliza Awang Kechik" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="team_sale"><i class="fas fa-users"></i> Team Sale</label>
-                        <select id="team_sale" name="team_sale" class="form-select" required>
-                            <option value="">Pilih Team Sale</option>
-                            <option value="Qilah">Qilah</option>
-                            <option value="Wiyah">Wiyah</option>
-                            <option value="Nisya">Nisya</option>
-                            <option value="Tiktok">Tiktok</option>
-                            <option value="Shopee">Shopee</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="nombor_phone"><i class="fas fa-phone"></i> Nombor Phone Customer</label>
-                        <input type="tel" id="nombor_phone" name="nombor_phone" class="form-input" placeholder="e.g., 010-453-2013" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="jenis_order"><i class="fas fa-shopping-bag"></i> Jenis Order</label>
-                        <input type="text" id="jenis_order" name="jenis_order" class="form-input" placeholder="e.g., Kemeja Batik, Baju Kurung" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="total_rm"><i class="fas fa-money-bill"></i> Total (RM)</label>
-                        <input type="number" id="total_rm" name="total_rm" step="0.01" class="form-input" placeholder="e.g., 11842.00" required>
-                    </div>
-                </div>
-
-                <div class="form-group full-width">
-                    <label for="platform"><i class="fas fa-globe"></i> Platform</label>
-                    <select id="platform" name="platform" class="form-select" required>
-                        <option value="">Pilih Platform</option>
-                        <option value="Website Desa Murni">Website Desa Murni</option>
-                        <option value="Shopee">Shopee</option>
-                        <option value="Lazada">Lazada</option>
-                        <option value="Manual">Manual</option>
-                    </select>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-clear" onclick="clearForm()">
-                        <i class="fas fa-eraser"></i> Clear Form
-                    </button>
-                    <button type="submit" class="btn-submit">
-                        <i class="fas fa-paper-plane"></i> Hantar Order
-                    </button>
-                </div>
-            </form>
-
-            <div id="feedback-message" class="feedback-message"></div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
-            authDomain: "kilangdm-v1.firebaseapp.com",
-            projectId: "kilangdm-v1",
-            storageBucket: "kilangdm-v1.firebasestorage.app",
-            messagingSenderId: "264191193800",
-            appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
-            measurementId: "G-C02S0CPE63"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        onAuthStateChanged(auth, (user) => {
-            if (!user) { signInAnonymously(auth); }
-        });
-        
-        window.db = db;
-    </script>
-
-    <!-- Enhanced JavaScript -->
-    <script>
-        // Home button functionality
-        document.getElementById('homeBtn').addEventListener('click', function() {
-            window.location.href = 'index.html';
-        });
-
-        // Mobile menu toggle
-        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
-            const navLinks = document.getElementById('navLinks');
-            navLinks.classList.toggle('mobile-active');
-        });
-
-        // Update current time
-        function updateCurrentTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('ms-MY', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            document.getElementById('current-time').textContent = timeString;
-        }
-
-        setInterval(updateCurrentTime, 1000);
-        updateCurrentTime();
-
-        // Set today's date as default
-        document.getElementById('tarikh').valueAsDate = new Date();
-
-        // Clear form function
-        function clearForm() {
-            document.getElementById('order-form').reset();
-            document.getElementById('tarikh').valueAsDate = new Date();
-            document.getElementById('feedback-message').textContent = '';
-            document.getElementById('extractedPreview').style.display = 'none';
-        }
-    </script>
     <style>
         /* Enhanced Ecommerce Styles */
 body {
@@ -317,6 +56,34 @@ body {
 .upload-header p {
     color: #94a3b8;
     font-size: 0.9rem;
+}
+
+/* File Type Indicators */
+.file-type-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.file-type-badge {
+    background: rgba(96, 165, 250, 0.1);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    color: #60a5fa;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-type-badge.csv {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
 }
 
 /* Upload Area */
@@ -424,6 +191,8 @@ body {
     border-radius: 15px;
     padding: 1.5rem;
     margin-top: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 .extracted-preview.show {
@@ -462,6 +231,75 @@ body {
     color: white;
     font-size: 0.9rem;
     font-weight: 600;
+}
+
+/* CSV Specific Styles */
+.csv-summary {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.summary-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #22c55e;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.summary-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.stat-item {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.stat-item strong {
+    color: #22c55e;
+    font-weight: 700;
+}
+
+.csv-preview-table {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.preview-table th {
+    background: rgba(96, 165, 250, 0.2);
+    color: #60a5fa;
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid rgba(96, 165, 250, 0.3);
+}
+
+.preview-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+.preview-footer {
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
 }
 
 /* Form Container (Right Side) */
@@ -631,66 +469,6 @@ body {
     color: #3b82f6;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .main-container {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        margin-top: 5rem;
-    }
-    
-    .upload-container {
-        order: 1;
-    }
-    
-    .form-container {
-        order: 2;
-    }
-}
-
-@media (max-width: 768px) {
-    .main-container {
-        padding: 0 1rem;
-        margin-top: 4rem;
-    }
-    
-    .upload-container, .form-container {
-        padding: 1.5rem;
-        border-radius: 15px;
-    }
-    
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-    
-    .form-actions {
-        flex-direction: column;
-    }
-    
-    .upload-area {
-        padding: 2rem 1rem;
-    }
-    
-    .upload-icon {
-        font-size: 2rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .upload-header h2, .form-header h2 {
-        font-size: 1.25rem;
-    }
-    
-    .upload-text strong {
-        font-size: 1rem;
-    }
-    
-    .btn-clear, .btn-submit {
-        padding: 0.75rem 1rem;
-        font-size: 0.85rem;
-    }
-}
 /* Navigation Styles */
 .floating-home-btn {
     position: fixed;
@@ -834,7 +612,23 @@ body {
     padding: 0.5rem;
 }
 
-/* Mobile Navigation */
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .main-container {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-top: 5rem;
+    }
+    
+    .upload-container {
+        order: 1;
+    }
+    
+    .form-container {
+        order: 2;
+    }
+}
+
 @media (max-width: 768px) {
     .nav-container {
         padding: 0 1rem;
@@ -870,8 +664,331 @@ body {
     .nav-time {
         display: none;
     }
+    
+    .main-container {
+        padding: 0 1rem;
+        margin-top: 4rem;
+    }
+    
+    .upload-container, .form-container {
+        padding: 1.5rem;
+        border-radius: 15px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .upload-area {
+        padding: 2rem 1rem;
+    }
+    
+    .upload-icon {
+        font-size: 2rem;
+    }
+    
+    .file-type-indicators {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .upload-header h2, .form-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .upload-text strong {
+        font-size: 1rem;
+    }
+    
+    .btn-clear, .btn-submit {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
 }
     </style>
+</head>
+<body>
 
+    <!-- Floating Action Button for Home -->
+    <div class="floating-home-btn">
+        <button id="homeBtn" class="home-btn" title="Kembali ke Halaman Utama">
+            <i class="fas fa-home"></i>
+        </button>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <!-- Brand Section -->
+            <div class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>KilangDM</h2>
+                    <span>Analytics Dashboard</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="nav-links" id="navLinks">
+                <a href="dashboard.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="dashboardbo.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard Order</span>
+                </a>
+                <a href="ecommerce.html" class="nav-link active">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Borang Order</span>
+                </a>
+                <a href="marketing.html" class="nav-link">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Marketing</span>
+                </a>
+                <a href="salesteam.html" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>Sales Team</span>
+                </a>
+                <a href="followup.html" class="nav-link">
+                    <i class="fas fa-phone"></i>
+                    <span>Follow Up</span>
+                </a>
+            </div>
+
+            <!-- Time Display -->
+            <div class="nav-time">
+                <div class="time-label">Last Updated</div>
+                <div class="time-value" id="current-time">-</div>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="main-container">
+        <!-- Left Side - PDF/CSV Upload & Auto Detection -->
+        <div class="upload-container">
+            <div class="upload-header">
+                <h2><i class="fas fa-file-upload"></i> Auto-Fill dari File</h2>
+                <p>Upload PDF invoice atau CSV file untuk auto-populate orders</p>
+            </div>
+
+            <!-- File Type Indicators -->
+            <div class="file-type-indicators">
+                <div class="file-type-badge">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>PDF Invoice</span>
+                </div>
+                <div class="file-type-badge csv">
+                    <i class="fas fa-file-csv"></i>
+                    <span>CSV Bulk Import</span>
+                </div>
+                <div class="file-type-badge">
+                    <i class="fas fa-file-image"></i>
+                    <span>Image OCR</span>
+                </div>
+            </div>
+
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">
+                        <strong>Click atau drag file di sini</strong>
+                        <span>Support: PDF, CSV, JPG, PNG, TXT (Max: 10MB)</span>
+                    </div>
+                    <input type="file" id="fileInput" accept=".pdf,.csv,.jpg,.jpeg,.png,.txt" hidden />
+                </div>
+
+                <div class="processing-indicator" id="processingIndicator">
+                    <div class="spinner"></div>
+                    <p>Sedang memproses file...</p>
+                </div>
+
+                <div class="success-indicator" id="successIndicator">
+                    <i class="fas fa-check-circle"></i>
+                    <p>File berjaya diproses! Data telah diisi/disimpan.</p>
+                </div>
+            </div>
+
+            <!-- Extracted Data Preview -->
+            <div class="extracted-preview" id="extractedPreview">
+                <h3><i class="fas fa-eye"></i> Data Yang Dikesan</h3>
+                <div class="preview-content" id="previewContent">
+                    <!-- Data akan dipaparkan di sini -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Manual Form -->
+        <div class="form-container">
+            <div class="form-header">
+                <h2><i class="fas fa-edit"></i> Borang Order</h2>
+                <p>Isi maklumat order secara manual atau gunakan auto-fill</p>
+            </div>
+
+            <form id="order-form" class="order-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tarikh"><i class="fas fa-calendar"></i> Tarikh</label>
+                        <input type="date" id="tarikh" name="tarikh" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="code_kain"><i class="fas fa-tag"></i> Code Kain</label>
+                        <input type="text" id="code_kain" name="code_kain" class="form-input" placeholder="e.g., BZL05DR" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombor_po_invoice"><i class="fas fa-receipt"></i> Nombor PO / Invoice</label>
+                        <input type="text" id="nombor_po_invoice" name="nombor_po_invoice" class="form-input" placeholder="e.g., Inv-100403-210725" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nama_customer"><i class="fas fa-user"></i> Nama Customer</label>
+                        <input type="text" id="nama_customer" name="nama_customer" class="form-input" placeholder="e.g., Azliza Awang Kechik" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="team_sale"><i class="fas fa-users"></i> Team Sale</label>
+                        <select id="team_sale" name="team_sale" class="form-select" required>
+                            <option value="">Pilih Team Sale</option>
+                            <option value="Qilah">Qilah</option>
+                            <option value="Wiyah">Wiyah</option>
+                            <option value="Nisya">Nisya</option>
+                            <option value="Tiktok">Tiktok</option>
+                            <option value="Shopee">Shopee</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nombor_phone"><i class="fas fa-phone"></i> Nombor Phone Customer</label>
+                        <input type="tel" id="nombor_phone" name="nombor_phone" class="form-input" placeholder="e.g., 010-453-2013" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="jenis_order"><i class="fas fa-shopping-bag"></i> Jenis Order</label>
+                        <input type="text" id="jenis_order" name="jenis_order" class="form-input" placeholder="e.g., Kemeja Batik, Baju Kurung" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="total_rm"><i class="fas fa-money-bill"></i> Total (RM)</label>
+                        <input type="number" id="total_rm" name="total_rm" step="0.01" class="form-input" placeholder="e.g., 11842.00" required>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="platform"><i class="fas fa-globe"></i> Platform</label>
+                    <select id="platform" name="platform" class="form-select" required>
+                        <option value="">Pilih Platform</option>
+                        <option value="Website Desa Murni">Website Desa Murni</option>
+                        <option value="Shopee">Shopee</option>
+                        <option value="Lazada">Lazada</option>
+                        <option value="Manual">Manual</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-clear" onclick="clearForm()">
+                        <i class="fas fa-eraser"></i> Clear Form
+                    </button>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane"></i> Hantar Order
+                    </button>
+                </div>
+            </form>
+
+            <div id="feedback-message" class="feedback-message"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
+            authDomain: "kilangdm-v1.firebaseapp.com",
+            projectId: "kilangdm-v1",
+            storageBucket: "kilangdm-v1.firebasestorage.app",
+            messagingSenderId: "264191193800",
+            appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
+            measurementId: "G-C02S0CPE63"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { signInAnonymously(auth); }
+        });
+        
+        window.db = db;
+    </script>
+
+    <script type="module" src="js/ecommerce.js"></script>
+
+    <!-- Enhanced JavaScript -->
+    <script>
+        // Home button functionality
+        document.getElementById('homeBtn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('mobile-active');
+        });
+
+        // Update current time
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ms-MY', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('current-time').textContent = timeString;
+        }
+
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        // Set today's date as default
+        document.getElementById('tarikh').valueAsDate = new Date();
+
+        // Clear form function
+        function clearForm() {
+            document.getElementById('order-form').reset();
+            document.getElementById('tarikh').valueAsDate = new Date();
+            document.getElementById('feedback-message').textContent = '';
+            document.getElementById('extractedPreview').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
