@@ -240,6 +240,277 @@ function updateStatistics() {
     
     // Calculate basic stats
     const totalRevenue = data.reduce((sum, order) => sum + (order.total_rm || 0), 0);
+    const totalOrders = data.length;
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const activePlatforms = new Set(data.map(order => order.platform)).size;
+    
+    // Today's stats
+    const today = new Date().toISOString().split('T')[0];
+    const todayOrders = data.filter(order => order.tarikh === today);
+    const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total_rm || 0), 0);
+    const todayAvg = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0;
+    
+    // Update main statistics  
+    updateElement('total-order-revenue', `RM ${totalRevenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
+    updateElement('total-order-count', totalOrders.toLocaleString());
+    updateElement('avg-order-value', `RM ${avgOrderValue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
+    updateElement('active-platforms', activePlatforms.toString());
+    
+    // Update today's stats
+    updateElement('total-orders-today', todayOrders.length.toString());
+    updateElement('total-revenue-today', `RM ${todayRevenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
+    updateElement('avg-order-today', `RM ${todayAvg.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
+    
+    // Update period text
+    updateElement('revenue-period', `dari ${totalOrders} order`);
+    updateElement('volume-period', 'jumlah order');
+    updateElement('avg-period', 'purata per order');
+    updateElement('platform-period', 'platform aktif');
+}
+
+function initializeCharts() {
+    // Initialize Order Trend Chart
+    const trendCtx = document.getElementById('orderTrendChart');
+    if (trendCtx) {
+        charts.trend = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Orders',
+                    data: [],
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Revenue (RM)',
+                    data: [],
+                    borderColor: '#34d399',
+                    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        ticks: { color: '#94a3b8' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Initialize Timeline Chart
+    const timelineCtx = document.getElementById('orderTimelineChart');
+    if (timelineCtx) {
+        charts.timeline = new Chart(timelineCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Orders',
+                    data: [],
+                    backgroundColor: 'rgba(96, 165, 250, 0.8)',
+                    borderColor: '#60a5fa',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#e2e8f0' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    },
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function updateCharts() {
+    updateTrendChart();
+    updateTimelineChart();
+}
+
+function updateTrendChart() {
+    if (!charts.trend) return;
+    
+    const data = filteredOrderData;
+    
+    // Group data by date (last 30 days)
+    const dateGroups = {};
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 29); // 30 days total
+    
+    // Initialize all dates with 0
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        dateGroups[dateStr] = { count: 0, revenue: 0 };
+    }
+    
+    // Populate with actual data
+    data.forEach(order => {
+        const date = order.tarikh;
+        if (dateGroups[date]) {
+            dateGroups[date].count++;
+            dateGroups[date].revenue += order.total_rm || 0;
+        }
+    });
+    
+    const labels = Object.keys(dateGroups).sort().map(date => {
+        const d = new Date(date);
+        return d.toLocaleDateString('ms-MY', { month: 'short', day: 'numeric' });
+    });
+    
+    const orderData = Object.keys(dateGroups).sort().map(date => dateGroups[date].count);
+    const revenueData = Object.keys(dateGroups).sort().map(date => dateGroups[date].revenue);
+    
+    charts.trend.data.labels = labels;
+    charts.trend.data.datasets[0].data = orderData;
+    charts.trend.data.datasets[1].data = revenueData;
+    charts.trend.update();
+}
+
+function updateTimelineChart() {
+    if (!charts.timeline) return;
+    
+    const data = filteredOrderData;
+    
+    // Group by current view (daily for now)
+    const hourGroups = {};
+    
+    // Initialize 24 hours
+    for (let i = 0; i < 24; i++) {
+        hourGroups[i] = 0;
+    }
+    
+    // Group by hour of creation (using createdAt if available, otherwise use tarikh)
+    data.forEach(order => {
+        let hour;
+        if (order.createdAt instanceof Date) {
+            hour = order.createdAt.getHours();
+        } else {
+            // Fallback to midday if no time info
+            hour = 12;
+        }
+        hourGroups[hour]++;
+    });
+    
+    const labels = Object.keys(hourGroups).map(hour => `${hour}:00`);
+    const orderData = Object.values(hourGroups);
+    
+    charts.timeline.data.labels = labels;
+    charts.timeline.data.datasets[0].data = orderData;
+    charts.timeline.update();
+}
+
+function updateBreakdowns() {
+    updatePlatformBreakdown();
+    updateTeamBreakdown();
+}
+
+function updatePlatformBreakdown() {
+    const platformBreakdownDiv = document.getElementById('platform-breakdown');
+    if (!platformBreakdownDiv) return;
+    
+    const data = filteredOrderData;
+    
+    // Group by platform
+    const platformStats = {};
+    data.forEach(order => {
+        const platform = order.platform || 'Unknown';
+        if (!platformStats[platform]) {
+            platformStats[platform] = { count: 0, revenue: 0 };
+        }
+        platformStats[platform].count++;
+        platformStats[platform].revenue += order.total_rm || 0;
+    });
+    
+    // Sort by count descending
+    const sortedPlatforms = Object.entries(platformStats)
+        .sort((a, b) => b[1].count - a[1].count);
+    
+    const total = data.length;
+    
+    platformBreakdownDiv.innerHTML = sortedPlatforms.map(([platform, stats]) => {
+        const percentage = total > 0 ? (stats.count / total * 100).toFixed(1) : 0;
+        return `
+            <div class="breakdown-item">
+                <div class="breakdown-info">
+                    <span class="breakdown-name">${platform}</span>
+                    <span class="breakdown-value">${stats.count} orders</span>
+                </div>
+                <div class="breakdown-bar">
+                    <div class="breakdown-fill" style="width: ${percentage}%"></div>
+                </div>
+                <div class="breakdown-stats">
+                    <span class="breakdown-percent">${percentage}%</span>
+                    <span class="breakdown-revenue">RM ${stats.revenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateTeamBreakdown() {
+    const teamBreakdownDiv = document.getElementById('team-breakdown');
+    if (!teamBreakdownDiv) return;
+    
+    const data = filteredOrderData;
+    
+    // Group by team
+    const teamStats = {};
+    data.forEach(order => {
+        const team = order.team_sale || 'Unknown';
+        if (!teamStats[team]) {
+            teamStats[team] = { count: 0, revenue: 0 };
+        }
+        teamStats[team].count++;
+        teamStats[team].revenue += order.total_rm || 0;
+    });
+    
+    // Sort by revenue descending
+    const sortedTeams = Object.entries(teamStats)
+        .sort((a, b) => b[1].revenue - a[1].revenue);
+    
+    const totalRevenue = data.reduce((sum, order) => sum + (order.total_rm || 0), 0);
     
     teamBreakdownDiv.innerHTML = sortedTeams.map(([team, stats]) => {
         const percentage = totalRevenue > 0 ? (stats.revenue / totalRevenue * 100).toFixed(1) : 0;
@@ -513,275 +784,4 @@ function updateTimelineChartForView(view) {
 // Export functions for global access
 window.loadOrderData = loadOrderData;
 window.applyFilters = applyFilters;
-window.clearFilters = clearFilters; || 0), 0);
-    const totalOrders = data.length;
-    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    const activePlatforms = new Set(data.map(order => order.platform)).size;
-    
-    // Today's stats
-    const today = new Date().toISOString().split('T')[0];
-    const todayOrders = data.filter(order => order.tarikh === today);
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total_rm || 0), 0);
-    const todayAvg = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0;
-    
-    // Update main statistics
-    updateElement('total-order-revenue', `RM ${totalRevenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
-    updateElement('total-order-count', totalOrders.toLocaleString());
-    updateElement('avg-order-value', `RM ${avgOrderValue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
-    updateElement('active-platforms', activePlatforms.toString());
-    
-    // Update today's stats
-    updateElement('total-orders-today', todayOrders.length.toString());
-    updateElement('total-revenue-today', `RM ${todayRevenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
-    updateElement('avg-order-today', `RM ${todayAvg.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
-    
-    // Update period text
-    updateElement('revenue-period', `dari ${totalOrders} order`);
-    updateElement('volume-period', 'jumlah order');
-    updateElement('avg-period', 'purata per order');
-    updateElement('platform-period', 'platform aktif');
-}
-
-function initializeCharts() {
-    // Initialize Order Trend Chart
-    const trendCtx = document.getElementById('orderTrendChart');
-    if (trendCtx) {
-        charts.trend = new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Orders',
-                    data: [],
-                    borderColor: '#60a5fa',
-                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }, {
-                    label: 'Revenue (RM)',
-                    data: [],
-                    borderColor: '#34d399',
-                    backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    yAxisID: 'y1'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: { color: '#e2e8f0' }
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    },
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        ticks: { color: '#94a3b8' },
-                        grid: { drawOnChartArea: false }
-                    }
-                }
-            }
-        });
-    }
-    
-    // Initialize Timeline Chart
-    const timelineCtx = document.getElementById('orderTimelineChart');
-    if (timelineCtx) {
-        charts.timeline = new Chart(timelineCtx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Orders',
-                    data: [],
-                    backgroundColor: 'rgba(96, 165, 250, 0.8)',
-                    borderColor: '#60a5fa',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: { color: '#e2e8f0' }
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    },
-                    y: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    }
-                }
-            }
-        });
-    }
-}
-
-function updateCharts() {
-    updateTrendChart();
-    updateTimelineChart();
-}
-
-function updateTrendChart() {
-    if (!charts.trend) return;
-    
-    const data = filteredOrderData;
-    
-    // Group data by date (last 30 days)
-    const dateGroups = {};
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 29); // 30 days total
-    
-    // Initialize all dates with 0
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
-        dateGroups[dateStr] = { count: 0, revenue: 0 };
-    }
-    
-    // Populate with actual data
-    data.forEach(order => {
-        const date = order.tarikh;
-        if (dateGroups[date]) {
-            dateGroups[date].count++;
-            dateGroups[date].revenue += order.total_rm || 0;
-        }
-    });
-    
-    const labels = Object.keys(dateGroups).sort().map(date => {
-        const d = new Date(date);
-        return d.toLocaleDateString('ms-MY', { month: 'short', day: 'numeric' });
-    });
-    
-    const orderData = Object.keys(dateGroups).sort().map(date => dateGroups[date].count);
-    const revenueData = Object.keys(dateGroups).sort().map(date => dateGroups[date].revenue);
-    
-    charts.trend.data.labels = labels;
-    charts.trend.data.datasets[0].data = orderData;
-    charts.trend.data.datasets[1].data = revenueData;
-    charts.trend.update();
-}
-
-function updateTimelineChart() {
-    if (!charts.timeline) return;
-    
-    const data = filteredOrderData;
-    
-    // Group by current view (daily for now)
-    const hourGroups = {};
-    
-    // Initialize 24 hours
-    for (let i = 0; i < 24; i++) {
-        hourGroups[i] = 0;
-    }
-    
-    // Group by hour of creation (using createdAt if available, otherwise use tarikh)
-    data.forEach(order => {
-        let hour;
-        if (order.createdAt instanceof Date) {
-            hour = order.createdAt.getHours();
-        } else {
-            // Fallback to midday if no time info
-            hour = 12;
-        }
-        hourGroups[hour]++;
-    });
-    
-    const labels = Object.keys(hourGroups).map(hour => `${hour}:00`);
-    const orderData = Object.values(hourGroups);
-    
-    charts.timeline.data.labels = labels;
-    charts.timeline.data.datasets[0].data = orderData;
-    charts.timeline.update();
-}
-
-function updateBreakdowns() {
-    updatePlatformBreakdown();
-    updateTeamBreakdown();
-}
-
-function updatePlatformBreakdown() {
-    const platformBreakdownDiv = document.getElementById('platform-breakdown');
-    if (!platformBreakdownDiv) return;
-    
-    const data = filteredOrderData;
-    
-    // Group by platform
-    const platformStats = {};
-    data.forEach(order => {
-        const platform = order.platform || 'Unknown';
-        if (!platformStats[platform]) {
-            platformStats[platform] = { count: 0, revenue: 0 };
-        }
-        platformStats[platform].count++;
-        platformStats[platform].revenue += order.total_rm || 0;
-    });
-    
-    // Sort by count descending
-    const sortedPlatforms = Object.entries(platformStats)
-        .sort((a, b) => b[1].count - a[1].count);
-    
-    const total = data.length;
-    
-    platformBreakdownDiv.innerHTML = sortedPlatforms.map(([platform, stats]) => {
-        const percentage = total > 0 ? (stats.count / total * 100).toFixed(1) : 0;
-        return `
-            <div class="breakdown-item">
-                <div class="breakdown-info">
-                    <span class="breakdown-name">${platform}</span>
-                    <span class="breakdown-value">${stats.count} orders</span>
-                </div>
-                <div class="breakdown-bar">
-                    <div class="breakdown-fill" style="width: ${percentage}%"></div>
-                </div>
-                <div class="breakdown-stats">
-                    <span class="breakdown-percent">${percentage}%</span>
-                    <span class="breakdown-revenue">RM ${stats.revenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function updateTeamBreakdown() {
-    const teamBreakdownDiv = document.getElementById('team-breakdown');
-    if (!teamBreakdownDiv) return;
-    
-    const data = filteredOrderData;
-    
-    // Group by team
-    const teamStats = {};
-    data.forEach(order => {
-        const team = order.team_sale || 'Unknown';
-        if (!teamStats[team]) {
-            teamStats[team] = { count: 0, revenue: 0 };
-        }
-        teamStats[team].count++;
-        teamStats[team].revenue += order.total_rm || 0;
-    });
-    
-    // Sort by revenue descending
-    const sortedTeams = Object.entries(teamStats)
-        .sort((a, b) => b[1].revenue - a[1].revenue);
-    
-    const totalRevenue = data.reduce((sum, order) => sum + (order.total_rm
+window.clearFilters = clearFilters;
