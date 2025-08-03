@@ -7,19 +7,42 @@ import {
 
 // Pastikan kod ini berjalan selepas DOM dimuatkan sepenuhnya
 document.addEventListener('DOMContentLoaded', () => {
-    // Pastikan Firebase sudah sedia untuk digunakan
-    if (window.db) {
-        setupEventListeners();
-    } else {
-        // Tunggu seketika jika Firebase lambat dimuatkan
-        setTimeout(() => {
-            if (window.db) {
-                setupEventListeners();
-            } else {
-                console.error('Firebase gagal dimuatkan.');
-                showFeedback('Ralat: Gagal berhubung dengan pangkalan data.', 'error');
+    console.log('DOM loaded, checking dependencies...');
+    
+    // Function to check if all dependencies are loaded
+    function checkDependencies() {
+        const hasFirebase = window.db !== undefined;
+        const hasPdfJs = typeof pdfjsLib !== 'undefined';
+        
+        console.log('Firebase loaded:', hasFirebase);
+        console.log('PDF.js loaded:', hasPdfJs);
+        
+        if (hasFirebase) {
+            setupEventListeners();
+            return true;
+        }
+        return false;
+    }
+    
+    // Try immediately
+    if (!checkDependencies()) {
+        // Wait a bit for Firebase to load
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        const waitForDependencies = setInterval(() => {
+            attempts++;
+            console.log(`Attempt ${attempts}: Waiting for dependencies...`);
+            
+            if (checkDependencies() || attempts >= maxAttempts) {
+                clearInterval(waitForDependencies);
+                
+                if (attempts >= maxAttempts && !window.db) {
+                    console.error('Firebase failed to load after maximum attempts');
+                    showFeedback('Ralat: Gagal berhubung dengan pangkalan data.', 'error');
+                }
             }
-        }, 2000);
+        }, 500);
     }
 });
 
@@ -67,10 +90,6 @@ function setupEventListeners() {
  * Mengendalikan fail yang diupload (sama ada dari klik atau drag-drop)
  * @param {File} file Objek fail yang akan diproses
  */
-/**
- * Mengendalikan fail yang diupload (sama ada dari klik atau drag-drop)
- * @param {File} file Objek fail yang akan diproses
- */
 async function handleFile(file) {
     const processingIndicator = document.getElementById('processingIndicator');
     const successIndicator = document.getElementById('successIndicator');
@@ -85,7 +104,7 @@ async function handleFile(file) {
         let orders;
         let fileSource = 'unknown';
 
-        // ---- LOGIK BAHARU BERMULA DI SINI ----
+        // Check file type and process accordingly
         if (file.type === 'application/pdf') {
             fileSource = 'PDF Invoice';
             orders = await parsePdfInvoice(file);
@@ -101,7 +120,6 @@ async function handleFile(file) {
         } else {
             throw new Error('Format fail tidak disokong. Sila muat naik fail CSV atau PDF sahaja.');
         }
-        // ---- LOGIK BAHARU TAMAT ----
 
         if (!orders || orders.length === 0) {
             throw new Error('Tiada data order yang sah ditemui dalam fail.');
@@ -133,15 +151,24 @@ async function handleFile(file) {
         document.getElementById('fileInput').value = '';
     }
 }
+
 /**
- * --- FUNGSI BAHARU UNTUK PDF ---
  * Mem-parse fail PDF invoice untuk mendapatkan data order.
  * @param {File} file Objek fail PDF.
  * @returns {Promise<Array<Object>>} Array yang mengandungi satu objek order dengan senarai produk.
  */
 async function parsePdfInvoice(file) {
-    // Tetapkan worker untuk pdf.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://mozilla.github.io/pdf.js/build/pdf.worker.js`;
+    // Check if pdf.js is loaded from the global scope
+    if (typeof window.pdfjsLib === 'undefined' && typeof pdfjsLib === 'undefined') {
+        console.error('PDF.js library not found');
+        throw new Error('PDF.js library tidak dimuatkan. Sila refresh halaman dan cuba lagi.');
+    }
+
+    // Use the correct reference to pdfjsLib
+    const pdfLib = window.pdfjsLib || pdfjsLib;
+    
+    // Set worker for pdf.js with correct path
+    pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
     const fileReader = new FileReader();
     
@@ -149,87 +176,194 @@ async function parsePdfInvoice(file) {
         fileReader.onload = async function() {
             try {
                 const typedarray = new Uint8Array(this.result);
-                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                const pdf = await pdfLib.getDocument(typedarray).promise;
                 let fullText = '';
 
-                // Dapatkan teks dari semua mukasurat
+                console.log(`PDF loaded successfully. Pages: ${pdf.numPages}`);
+
+                // Get text from all pages
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
-                    fullText += textContent.items.map(item => item.str).join(' ');
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + ' ';
+                    console.log(`Page ${i} text length: ${pageText.length}`);
                 }
 
-                // Corak (Regex) untuk mencari maklumat spesifik
-                const invoiceRegex = /Invoice: (#Inv-[\w-]+)/;
-                const dateRegex = /(\d{2}\/\d{2}\/\d{4})/;
-                const totalRegex = /Total Paid:\s*(RM [\d,]+\.\d{2})/;
-                const customerRegex = /BILLING ADDRESS: (.*?)\s+Jabatan/
-                const noteRegex = /Customer Note:\s*\*(\w+)/; // Cth: *NISYA
-                const productLineRegex = /([A-Z0-9]{7})\s*,Kemeja Batik DM.*?,\s*(\d+)\s*,(RM [\d,]+\.\d{2})|([A-Z0-9]{7})\s*,Kurung Alana.*?,\s*(\d+)\s*,(RM [\d,]+\.\d{2})/g;
+                console.log('Full PDF text extracted:', fullText.substring(0, 1000)); // Debug log - show more text
+
+                // If no text found, it might be a scanned PDF
+                if (fullText.trim().length < 10) {
+                    throw new Error('PDF ini mungkin adalah scan/gambar. Sila gunakan PDF yang mengandungi teks yang boleh dipilih.');
+                }
+
+                // ===== EXTRACT DATA BERDASARKAN FORMAT DESA MURNI BATIK =====
                 
-                // Ekstrak data utama
+                // 1. Extract Invoice Number - lebih specific untuk format Desa Murni
+                const invoiceRegex = /Invoice:\s*#(Inv-[\d-]+)/i;
                 const invoiceMatch = fullText.match(invoiceRegex);
+                
+                // 2. Extract Date - format dd/mm/yyyy hh:mm
+                const dateRegex = /(\d{2}\/\d{2}\/\d{4})\s+\d{2}:\d{2}/;
                 const dateMatch = fullText.match(dateRegex);
-                const totalMatch = fullText.match(totalRegex);
+                
+                // 3. Extract Customer Name - dari BILLING ADDRESS
+                const customerRegex = /BILLING ADDRESS:\s*([^\n]+)/i;
                 const customerMatch = fullText.match(customerRegex);
-                const noteMatch = fullText.match(noteRegex);
+                
+                // 4. Extract Contact Number
+                const contactRegex = /Contact no:\s*([\d-]+)/i;
+                const contactMatch = fullText.match(contactRegex);
+                
+                // 5. Extract Total Paid Amount
+                const totalPaidRegex = /Total Paid:\s*RM\s*([\d,]+\.?\d*)/i;
+                const totalPaidMatch = fullText.match(totalPaidRegex);
+                
+                // 6. Extract Customer Note/Team Sale
+                const customerNoteRegex = /Customer Note:\s*\*(\w+)/i;
+                const customerNoteMatch = fullText.match(customerNoteRegex);
+                
+                // 7. Extract Product Information - ambil semua SKU yang ada
+                const productLines = [];
+                
+                // Pattern untuk Ready Stock products
+                const readyStockRegex = /Ready Stock([\s\S]*?)(?:Pre-Order|Sub Total|$)/i;
+                const readyStockMatch = fullText.match(readyStockRegex);
+                
+                // Pattern untuk Pre-Order products  
+                const preOrderRegex = /Pre-Order([\s\S]*?)(?:Sub Total|Total Paid|$)/i;
+                const preOrderMatch = fullText.match(preOrderRegex);
+                
+                // Function to extract products from text section
+                function extractProducts(text, type) {
+                    const products = [];
+                    // Pattern: SKU ProductName Qty Price
+                    const productRegex = /(BZ[LP]\d{2}[A-Z]{2})\s+([^0-9]+?)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g;
+                    
+                    let match;
+                    while ((match = productRegex.exec(text)) !== null) {
+                        products.push({
+                            sku: match[1],
+                            product_name: match[2].trim(),
+                            quantity: parseInt(match[3]),
+                            price: parseFloat(match[4].replace(/,/g, '')),
+                            type: type
+                        });
+                    }
+                    return products;
+                }
+                
+                // Extract products from both sections
+                if (readyStockMatch) {
+                    productLines.push(...extractProducts(readyStockMatch[1], 'Ready Stock'));
+                }
+                
+                if (preOrderMatch) {
+                    productLines.push(...extractProducts(preOrderMatch[1], 'Pre-Order'));
+                }
 
+                console.log('Extracted data:', {
+                    invoice: invoiceMatch?.[1],
+                    date: dateMatch?.[1],
+                    customer: customerMatch?.[1],
+                    contact: contactMatch?.[1],
+                    totalPaid: totalPaidMatch?.[1],
+                    customerNote: customerNoteMatch?.[1],
+                    productsCount: productLines.length
+                });
+
+                // Validate required data
                 if (!invoiceMatch) {
-                    throw new Error('Nombor invoice tidak ditemui dalam PDF.');
+                    throw new Error('Nombor invoice tidak ditemui. Pastikan PDF adalah invoice dari Desa Murni Batik.');
                 }
                 
-                // Ekstrak semua baris produk
-                const products = [];
-                let match;
-                while ((match = productLineRegex.exec(fullText)) !== null) {
-                    // Regex ini kompleks kerana format teks dari PDF tidak menentu
-                    // Ia cuba menangkap SKU, Kuantiti, dan Harga
-                     products.push({
-                        sku: match[1] || match[4],
-                        quantity: parseInt(match[2] || match[5], 10),
-                        price: match[3] || match[6]
-                    });
-                }
-
-                if (products.length === 0) {
-                    throw new Error('Tiada produk ditemui dalam PDF. Pastikan format PDF betul.');
+                if (!totalPaidMatch) {
+                    throw new Error('Total amount tidak ditemui dalam PDF.');
                 }
                 
-                // Format tarikh ke YYYY-MM-DD
+                // Format date to YYYY-MM-DD
                 let formattedDate = new Date().toISOString().split('T')[0];
                 if (dateMatch) {
                     const [day, month, year] = dateMatch[1].split('/');
-                    formattedDate = `${year}-${month}-${day}`;
+                    formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
                 }
 
-                // Gabungkan semua jadi satu order object
+                // Get dominant SKU (yang paling banyak quantity)
+                let dominantSKU = 'MIXED';
+                let dominantProductType = 'Mixed Products';
+                
+                if (productLines.length > 0) {
+                    // Group by SKU and sum quantities
+                    const skuGroups = {};
+                    productLines.forEach(product => {
+                        if (!skuGroups[product.sku]) {
+                            skuGroups[product.sku] = { 
+                                qty: 0, 
+                                name: product.product_name.split(' - ')[0] 
+                            };
+                        }
+                        skuGroups[product.sku].qty += product.quantity;
+                    });
+                    
+                    // Find dominant SKU
+                    let maxQty = 0;
+                    Object.keys(skuGroups).forEach(sku => {
+                        if (skuGroups[sku].qty > maxQty) {
+                            maxQty = skuGroups[sku].qty;
+                            dominantSKU = sku;
+                            dominantProductType = skuGroups[sku].name;
+                        }
+                    });
+                }
+
+                // Create comprehensive order object
                 const order = {
-                    nombor_po_invoice: invoiceMatch[1].trim(), // cth: #Inv-100403-210725
+                    // Required fields for form
+                    nombor_po_invoice: invoiceMatch[1].trim(),
                     tarikh: formattedDate,
-                    nama_customer: customerMatch ? customerMatch[1].trim() : 'N/A', // cth: Azliza Awang Kechik@ Alias
-                    team_sale: noteMatch ? noteMatch[1].trim() : 'N/A', // cth: NISYA
-                    total_rm: totalMatch ? parseFloat(totalMatch[1].replace('RM', '').replace(',', '').trim()) : 0, // cth: 11842.00
-                    platform: 'Manual PDF',
-                    jenis_order: 'Multiple Items',
-                    code_kain: 'Multiple SKUs',
-                    products: products, // Simpan senarai produk
+                    nama_customer: customerMatch ? customerMatch[1].trim() : 'Customer dari PDF',
+                    team_sale: customerNoteMatch ? customerNoteMatch[1].trim() : 'Manual',
+                    nombor_phone: contactMatch ? contactMatch[1].trim() : '',
+                    total_rm: parseFloat(totalPaidMatch[1].replace(/,/g, '')),
+                    platform: 'Website Desa Murni',
+                    jenis_order: dominantProductType,
+                    code_kain: dominantSKU,
+                    
+                    // Additional extracted data
+                    products: productLines,
+                    ready_stock_count: productLines.filter(p => p.type === 'Ready Stock').length,
+                    pre_order_count: productLines.filter(p => p.type === 'Pre-Order').length,
+                    total_quantity: productLines.reduce((sum, p) => sum + p.quantity, 0),
+                    
+                    // Metadata
                     createdAt: Timestamp.now(),
-                    source: 'pdf_invoice'
+                    source: 'pdf_desa_murni',
+                    pdf_processed_at: new Date().toISOString()
                 };
 
-                resolve([order]); // Balikkan sebagai array, sama seperti parser CSV
+                console.log('Final parsed order:', order);
+                
+                // Show preview of extracted data
+                showExtractedPreview(order);
+                
+                resolve([order]);
 
             } catch (err) {
-                reject(err);
+                console.error('Error parsing PDF:', err);
+                reject(new Error(`Gagal memproses PDF: ${err.message}`));
             }
         };
 
-        fileReader.onerror = (error) => reject(error);
+        fileReader.onerror = (error) => {
+            console.error('File reader error:', error);
+            reject(new Error('Gagal membaca fail PDF. Pastikan fail tidak rosak.'));
+        };
+        
         fileReader.readAsArrayBuffer(file);
     });
 }
+
 /**
- * --- FUNGSI BAHARU ---
  * Mengesan sumber CSV (Shopee/TikTok) berdasarkan lajur pengepala (headers).
  * @param {string} csvText Kandungan teks dari fail CSV.
  * @returns {'shopee' | 'tiktok' | 'manual' | 'unknown'} Nama sumber yang dikesan.
@@ -238,27 +372,26 @@ function detectSource(csvText) {
     const firstLine = csvText.split('\n')[0].trim();
     const headers = firstLine.split(',').map(h => h.trim().replace(/"/g, ''));
 
-    // Kriteria untuk mengesan fail Shopee
+    // Criteria for detecting Shopee file
     const isShopee = headers.includes('Order ID') && headers.includes('Recipient') && headers.includes('Seller SKU');
     if (isShopee) {
         return 'shopee';
     }
 
-    // Kriteria untuk mengesan fail TikTok (berdasarkan fail yang diupload)
+    // Criteria for detecting TikTok file
     const isTiktok = headers.includes('Order Number') && headers.includes('Buyer Name') && headers.includes('SKU');
     if (isTiktok) {
         return 'tiktok';
     }
 
-    // Kriteria untuk mengesan fail template manual
+    // Criteria for detecting manual template file
     const isManual = headers.includes('code_kain') && headers.includes('nombor_po_invoice');
     if (isManual) {
         return 'manual';
     }
     
-    return 'unknown'; // Jika tiada format yang sepadan
+    return 'unknown';
 }
-
 
 /**
  * Mem-parse teks CSV kepada array of order objects berdasarkan sumber
@@ -294,28 +427,29 @@ function parseCSV(csvText, source) {
                     jenis_order: rawData['Product Name'],
                     nombor_po_invoice: rawData['Order ID'],
                     code_kain: rawData['Seller SKU'],
+                    nombor_phone: rawData['Phone'] || '',
                     team_sale: 'Shopee',
                     platform: 'Shopee'
                 };
                 if (rawData['Created Time']) {
                     const [datePart] = rawData['Created Time'].split(' ');
                     const [day, month, year] = datePart.split('/');
-                    order.tarikh = `${year}-${month}-${day}`;
+                    order.tarikh = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
                 }
                 break;
 
             case 'tiktok':
-                 order = {
+                order = {
                     nama_customer: rawData['Buyer Name'],
-                    total_rm: parseFloat(rawData['Total Price']) || 0, // 'Total Price' dalam fail contoh
+                    total_rm: parseFloat(rawData['Total Price']) || 0,
                     jenis_order: rawData['Product Name'],
                     nombor_po_invoice: rawData['Order Number'],
                     code_kain: rawData['SKU'],
-                    nombor_phone: rawData['Phone Number'], // 'Phone Number' dalam fail contoh
+                    nombor_phone: rawData['Phone Number'] || '',
                     team_sale: 'Tiktok',
-                    platform: 'Lazada' // Platform TikTok tiada dalam form, jadi guna Lazada sebagai contoh
+                    platform: 'Lazada'
                 };
-                if (rawData['Created At']) { // 'Created At' dalam fail contoh
+                if (rawData['Created At']) {
                     order.tarikh = new Date(rawData['Created At']).toISOString().split('T')[0];
                 }
                 break;
@@ -327,7 +461,7 @@ function parseCSV(csvText, source) {
                     nombor_po_invoice: rawData['nombor_po_invoice'],
                     nama_customer: rawData['nama_customer'],
                     team_sale: rawData['team_sale'],
-                    nombor_phone: rawData['nombor_phone'],
+                    nombor_phone: rawData['nombor_phone'] || '',
                     jenis_order: rawData['jenis_order'],
                     total_rm: parseFloat(rawData['total_rm']) || 0,
                     platform: rawData['platform']
@@ -419,4 +553,157 @@ function showFeedback(message, type) {
 function hideIndicators() {
     document.getElementById('processingIndicator').classList.remove('show');
     document.getElementById('successIndicator').classList.remove('show');
+}
+
+/**
+ * Memaparkan preview data yang diekstrak dari PDF
+ * @param {Object} order Data order yang diekstrak
+ */
+function showExtractedPreview(order) {
+    const previewDiv = document.getElementById('extractedPreview');
+    const previewContent = document.getElementById('previewContent');
+    
+    if (!previewDiv || !previewContent) return;
+    
+    // Create preview HTML
+    let previewHTML = `
+        <div class="pdf-summary">
+            <div class="summary-badge">
+                <i class="fas fa-file-pdf"></i>
+                <span>Data dari PDF Desa Murni Batik</span>
+            </div>
+            <div class="summary-stats">
+                <div class="stat-item">Total Produk: <strong>${order.products?.length || 0}</strong></div>
+                <div class="stat-item">Kuantiti: <strong>${order.total_quantity || 0}</strong></div>
+                <div class="stat-item">Jumlah: <strong>RM ${order.total_rm?.toFixed(2) || '0.00'}</strong></div>
+            </div>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Invoice:</span>
+            <span class="preview-value">${order.nombor_po_invoice}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Tarikh:</span>
+            <span class="preview-value">${order.tarikh}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Customer:</span>
+            <span class="preview-value">${order.nama_customer}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Phone:</span>
+            <span class="preview-value">${order.nombor_phone || 'Tidak ditemui'}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Team Sale:</span>
+            <span class="preview-value">${order.team_sale}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Platform:</span>
+            <span class="preview-value">${order.platform}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Jenis Order:</span>
+            <span class="preview-value">${order.jenis_order}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Code Kain (Dominan):</span>
+            <span class="preview-value">${order.code_kain}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Total Amount:</span>
+            <span class="preview-value">RM ${order.total_rm?.toFixed(2)}</span>
+        </div>
+    `;
+    
+    // Add products table if available
+    if (order.products && order.products.length > 0) {
+        previewHTML += `
+            <div style="margin-top: 1rem;">
+                <h4 style="color: #60a5fa; margin-bottom: 0.5rem;">
+                    <i class="fas fa-list"></i> Senarai Produk (${order.products.length})
+                </h4>
+                <div class="csv-preview-table" style="max-height: 200px; overflow-y: auto;">
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Produk</th>
+                                <th>Qty</th>
+                                <th>Harga</th>
+                                <th>Jenis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        order.products.forEach(product => {
+            previewHTML += `
+                <tr>
+                    <td>${product.sku}</td>
+                    <td style="font-size: 0.7rem;">${product.product_name.substring(0, 30)}...</td>
+                    <td>${product.quantity}</td>
+                    <td>RM ${product.price.toFixed(2)}</td>
+                    <td><span style="font-size: 0.7rem; color: ${product.type === 'Ready Stock' ? '#22c55e' : '#f59e0b'}">${product.type}</span></td>
+                </tr>
+            `;
+        });
+        
+        previewHTML += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="preview-footer">
+                    Ready Stock: ${order.ready_stock_count} | Pre-Order: ${order.pre_order_count}
+                </div>
+            </div>
+        `;
+    }
+    
+    previewContent.innerHTML = previewHTML;
+    previewDiv.classList.add('show');
+    
+    // Auto-fill form with extracted data
+    populateForm(order);
+}
+
+/**
+ * Auto-populate form dengan data yang diekstrak
+ * @param {Object} order Data order
+ */
+function populateForm(order) {
+    const fields = [
+        'tarikh', 'nombor_po_invoice', 'nama_customer', 
+        'team_sale', 'nombor_phone', 'jenis_order', 
+        'code_kain', 'total_rm', 'platform'
+    ];
+    
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element && order[field]) {
+            element.value = order[field];
+            
+            // Add visual feedback
+            element.style.background = 'rgba(34, 197, 94, 0.1)';
+            element.style.borderColor = '#22c55e';
+            
+            // Remove highlight after 3 seconds
+            setTimeout(() => {
+                element.style.background = '';
+                element.style.borderColor = '';
+            }, 3000);
+        }
+    });
+    
+    // Show success message
+    showFeedback('Data PDF berjaya diekstrak dan diisi ke dalam form!', 'success');
 }
