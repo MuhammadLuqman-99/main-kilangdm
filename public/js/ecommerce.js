@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.error("Firestore 'db' instance not found.");
     }
+
+    // Initialize phone formatting
+    initializePhoneFormatting();
 });
 
 function initializeFileUpload() {
@@ -18,7 +21,9 @@ function initializeFileUpload() {
     const fileInput = document.getElementById('fileInput');
     const processingIndicator = document.getElementById('processingIndicator');
     const successIndicator = document.getElementById('successIndicator');
-    const extractedPreview = document.getElementById('extractedPreview');
+
+    // Return if elements don't exist (for compatibility with existing pages)
+    if (!uploadArea || !fileInput) return;
 
     // Click to upload
     uploadArea.addEventListener('click', () => {
@@ -65,10 +70,13 @@ function initializeFileUpload() {
             return;
         }
 
-        // Show processing indicator
-        processingIndicator.classList.add('show');
-        successIndicator.classList.remove('show');
-        extractedPreview.classList.remove('show');
+        // Show processing indicator if it exists
+        if (processingIndicator) {
+            processingIndicator.classList.add('show');
+        }
+        if (successIndicator) {
+            successIndicator.classList.remove('show');
+        }
 
         // Process file after delay (simulate processing time)
         setTimeout(() => {
@@ -88,8 +96,7 @@ function initializeFileUpload() {
             // For images, simulate OCR processing
             simulateImageOCR(file);
         } else if (file.type === 'application/pdf') {
-            // For PDFs, we would use PDF.js or similar library
-            // For now, simulate with sample data
+            // For PDFs, simulate with sample data (in production, use PDF.js)
             simulatePDFExtraction();
         } else {
             // For text files
@@ -100,9 +107,8 @@ function initializeFileUpload() {
     function simulateImageOCR(file) {
         // Simulate OCR processing time
         setTimeout(() => {
-            // Use sample data similar to the PDF content
             const sampleData = generateSampleData();
-            populateFormAndShowPreview(sampleData);
+            populateFormFromExtractedData(sampleData);
         }, 1500);
     }
 
@@ -123,6 +129,8 @@ Email: imanmaisarahh@gmail.com
 BZL05DR Kemeja Batik DM - LZ5-4 ( Dark Purple ) - (Size: S) 3 RM 264.00
 BZP05DR Kurung Alana PZ5-4 ( Dark Purple ) - (Size: M) 16 RM 1,408.00
 
+Sub Total: RM 11,701.00
+Shipment Fee: RM 141.00
 Total Paid: RM 11,842.00
 Customer Note:
 *NISYA`;
@@ -203,20 +211,28 @@ Customer Note:
                 extractedData.teamSale = 'Qilah';
             } else if (content.includes('*WIYAH')) {
                 extractedData.teamSale = 'Wiyah';
+            } else if (content.includes('*TIKTOK')) {
+                extractedData.teamSale = 'Tiktok';
+            } else if (content.includes('*SHOPEE')) {
+                extractedData.teamSale = 'Shopee';
             }
 
             // Default platform for Desa Murni Batik
             extractedData.platform = 'Website Desa Murni';
 
-            populateFormAndShowPreview(extractedData);
+            populateFormFromExtractedData(extractedData);
 
         } catch (error) {
             console.error('Error extracting data:', error);
             showFeedback('Gagal memproses invoice. Sila cuba lagi.', 'error');
-            processingIndicator.classList.remove('show');
+            if (processingIndicator) {
+                processingIndicator.classList.remove('show');
+            }
         }
     }
 
+    function generateSampleData() {
+        // Generate sample data for image uploads
     function generateSampleData() {
         // Generate sample data for image uploads
         const sampleCustomers = [
@@ -232,7 +248,7 @@ Customer Note:
         return {
             invoice: 'INV-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 10000).toString().padStart(6, '0'),
             customer: sampleCustomers[Math.floor(Math.random() * sampleCustomers.length)],
-            phone: '01' + Math.floor(Math.random() * 9) + '-' + Math.floor(Math.random() * 900 + 100) + '-' + Math.floor(Math.random() * 9000 + 1000),
+            phone: '01' + Math.floor(Math.random() * 9) + Math.floor(Math.random() * 90000000 + 10000000),
             total: (Math.random() * 2000 + 100).toFixed(2),
             date: new Date().toISOString().split('T')[0],
             codeKain: sampleCodes[Math.floor(Math.random() * sampleCodes.length)],
@@ -241,97 +257,99 @@ Customer Note:
         };
     }
 
-    function populateFormAndShowPreview(data) {
+    function populateFormFromExtractedData(data) {
         // Hide processing, show success
-        processingIndicator.classList.remove('show');
-        successIndicator.classList.add('show');
+        if (processingIndicator) {
+            processingIndicator.classList.remove('show');
+        }
+        if (successIndicator) {
+            successIndicator.classList.add('show');
+            setTimeout(() => {
+                successIndicator.classList.remove('show');
+            }, 5000);
+        }
 
         // Populate form fields
         if (data.invoice) {
-            document.getElementById('nombor_po_invoice').value = data.invoice;
+            const invoiceField = document.getElementById('nombor_po_invoice');
+            if (invoiceField) invoiceField.value = data.invoice;
         }
+        
         if (data.customer) {
-            document.getElementById('nama_customer').value = data.customer;
+            const customerField = document.getElementById('nama_customer');
+            if (customerField) customerField.value = data.customer;
         }
+        
         if (data.phone) {
             // Format phone number
             let formattedPhone = data.phone;
             if (formattedPhone.length === 10 && formattedPhone.startsWith('01')) {
                 formattedPhone = formattedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
             }
-            document.getElementById('nombor_phone').value = formattedPhone;
+            const phoneField = document.getElementById('nombor_phone');
+            if (phoneField) phoneField.value = formattedPhone;
         }
+        
         if (data.total) {
-            document.getElementById('total_rm').value = parseFloat(data.total.replace(',', ''));
+            const totalField = document.getElementById('total_rm');
+            if (totalField) totalField.value = parseFloat(data.total.replace(',', ''));
         }
+        
         if (data.platform) {
-            document.getElementById('platform').value = data.platform;
+            const platformField = document.getElementById('platform');
+            if (platformField) {
+                // Check if option exists before setting
+                const option = Array.from(platformField.options).find(opt => opt.value === data.platform);
+                if (option) {
+                    platformField.value = data.platform;
+                } else {
+                    // If exact match not found, try partial match
+                    if (data.platform.includes('Website')) {
+                        platformField.value = 'Website';
+                    }
+                }
+            }
         }
+        
         if (data.date) {
-            document.getElementById('tarikh').value = data.date;
+            const dateField = document.getElementById('tarikh');
+            if (dateField) dateField.value = data.date;
         }
+        
         if (data.codeKain) {
-            document.getElementById('code_kain').value = data.codeKain;
+            const codeField = document.getElementById('code_kain');
+            if (codeField) codeField.value = data.codeKain;
         }
+        
         if (data.jenisOrder) {
-            document.getElementById('jenis_order').value = data.jenisOrder;
+            const orderField = document.getElementById('jenis_order');
+            if (orderField) orderField.value = data.jenisOrder;
         }
+        
         if (data.teamSale) {
-            document.getElementById('team_sale').value = data.teamSale;
+            const teamField = document.getElementById('team_sale');
+            if (teamField) {
+                // Check if option exists before setting
+                const option = Array.from(teamField.options).find(opt => opt.value === data.teamSale);
+                if (option) {
+                    teamField.value = data.teamSale;
+                }
+            }
         }
-
-        // Show preview of extracted data
-        showExtractedPreview(data);
 
         // Show success feedback
         showFeedback('Invoice berjaya diproses! Data telah diisi ke dalam form.', 'success');
 
-        // Hide success indicator after 5 seconds
-        setTimeout(() => {
-            successIndicator.classList.remove('show');
-        }, 5000);
-
         // Log extracted data for debugging
         console.log('Extracted Data:', data);
-    }
-
-    function showExtractedPreview(data) {
-        const previewContent = document.getElementById('previewContent');
-        const extractedPreview = document.getElementById('extractedPreview');
-
-        let previewHTML = '';
-
-        const fieldLabels = {
-            invoice: 'Nombor Invoice',
-            customer: 'Nama Customer',
-            phone: 'Nombor Phone',
-            total: 'Total (RM)',
-            date: 'Tarikh',
-            codeKain: 'Code Kain',
-            jenisOrder: 'Jenis Order',
-            teamSale: 'Team Sale',
-            platform: 'Platform'
-        };
-
-        Object.keys(data).forEach(key => {
-            if (data[key] && fieldLabels[key]) {
-                previewHTML += `
-                    <div class="preview-item">
-                        <span class="preview-label">${fieldLabels[key]}:</span>
-                        <span class="preview-value">${data[key]}</span>
-                    </div>
-                `;
-            }
-        });
-
-        previewContent.innerHTML = previewHTML;
-        extractedPreview.classList.add('show');
     }
 }
 
 function initializeFormSubmission() {
     const db = window.db;
     const form = document.getElementById('order-form');
+
+    if (!form) return;
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -360,8 +378,12 @@ function initializeFormSubmission() {
             // Reset form after successful submission
             setTimeout(() => {
                 form.reset();
-                document.getElementById('tarikh').valueAsDate = new Date();
-                document.getElementById('extractedPreview').classList.remove('show');
+                const dateField = document.getElementById('tarikh');
+                if (dateField) dateField.valueAsDate = new Date();
+                
+                // Hide success indicators
+                const successIndicator = document.getElementById('successIndicator');
+                if (successIndicator) successIndicator.classList.remove('show');
             }, 2000);
 
         } catch (error) {
@@ -374,18 +396,39 @@ function initializeFormSubmission() {
 function showFeedback(message, type) {
     const feedbackMessage = document.getElementById('feedback-message');
     
+    if (!feedbackMessage) return;
+    
     feedbackMessage.textContent = message;
-    feedbackMessage.className = `feedback-message show ${type}`;
+    
+    // Remove existing classes
+    feedbackMessage.className = 'mt-4 text-center';
+    
+    // Add type-specific classes
+    switch(type) {
+        case 'success':
+            feedbackMessage.classList.add('text-green-400');
+            break;
+        case 'error':
+            feedbackMessage.classList.add('text-red-400');
+            break;
+        case 'info':
+            feedbackMessage.classList.add('text-blue-400');
+            break;
+        default:
+            feedbackMessage.classList.add('text-gray-400');
+    }
     
     // Auto hide after 5 seconds
     setTimeout(() => {
-        feedbackMessage.classList.remove('show');
+        feedbackMessage.textContent = '';
     }, 5000);
 }
 
-// Auto-format phone number as user types
-document.addEventListener('DOMContentLoaded', () => {
+function initializePhoneFormatting() {
+    // Auto-format phone number as user types
     const phoneInput = document.getElementById('nombor_phone');
+    
+    if (!phoneInput) return;
     
     phoneInput.addEventListener('input', function(e) {
         let value = e.target.value.replace(/\D/g, '');
@@ -404,10 +447,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-format total amount
     const totalInput = document.getElementById('total_rm');
     
+    if (!totalInput) return;
+    
     totalInput.addEventListener('blur', function(e) {
         let value = parseFloat(e.target.value);
         if (!isNaN(value)) {
             e.target.value = value.toFixed(2);
         }
     });
-});
+}
+
+// Global function for clearing form (called from HTML)
+window.clearForm = function() {
+    const form = document.getElementById('order-form');
+    if (form) {
+        form.reset();
+        const dateField = document.getElementById('tarikh');
+        if (dateField) dateField.valueAsDate = new Date();
+        
+        const feedbackMessage = document.getElementById('feedback-message');
+        if (feedbackMessage) feedbackMessage.textContent = '';
+        
+        const successIndicator = document.getElementById('successIndicator');
+        if (successIndicator) successIndicator.classList.remove('show');
+    }
+}
+
+// Export functions if needed
+export { initializeFileUpload, initializeFormSubmission, showFeedback };}
