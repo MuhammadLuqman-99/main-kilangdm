@@ -185,6 +185,61 @@
         font-size: 0.875rem;
         font-weight: 500;
     }
+    /* Enhanced styling untuk product details column */
+.product-details {
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.product-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.product-count-badge {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.product-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    background-color: rgba(51, 65, 85, 0.3);
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.product-name {
+    color: #cbd5e1;
+    font-weight: 500;
+    flex: 1;
+    margin-right: 0.5rem;
+}
+
+.product-qty {
+    background-color: #10b981;
+    color: white;
+    padding: 0.125rem 0.375rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.7rem;
+}
 
     /* ===== Responsive Adjustments (Penting!) ===== */
     @media (max-width: 768px) {
@@ -466,144 +521,162 @@
             <canvas id="orderTimelineChart"></canvas>
         </div>
     </div>
+    <!-- Gantikan bahagian Recent Orders Table dalam dashboardbo.html dengan kod ini -->
 
-    <!-- Recent Orders Table -->
-   <div class="recent-orders">
-    <div class="recent-orders-header">
-        <h4>Recent Orders</h4>
-        <div class="tabs-container">
-            <button class="tab-link active" data-tab="all">Semua</button>
-            <button class="tab-link" data-tab="shopee">Shopee</button>
-            <button class="tab-link" data-tab="tiktok">TikTok</button>
-            <button class="tab-link" data-tab="qilah">Qilah</button>
-            <button class="tab-link" data-tab="nisya">Nisya</button>
-            <button class="tab-link" data-tab="wiyah">Wiyah</button>
+    <div class="recent-orders">
+        <div class="recent-orders-header">
+            <h4>Enhanced Recent Orders</h4>
+            <div class="tabs-container">
+                <button class="tab-link active" data-tab="all">Semua</button>
+                <button class="tab-link" data-tab="shopee">Shopee</button>
+                <button class="tab-link" data-tab="tiktok">TikTok</button>
+                <button class="tab-link" data-tab="qilah">Qilah</button>
+                <button class="tab-link" data-tab="nisya">Nisya</button>
+                <button class="tab-link" data-tab="wiyah">Wiyah</button>
+            </div>
         </div>
-    </div>
 
-    <div id="all" class="tab-content active">
-        <div class="table-container">
-            <table class="orders-table">
-                <thead>
-                    <tr>
-                        <th>Code Kain</th>
-                        <th>Tarikh</th>
-                        <th>Customer</th>
-                        <th>Team</th>
-                        <th>Platform</th>
-                        <th>Jenis</th>
-                        <th>Amount</th>
-                        <th>PO/Invoice</th>
-                    </tr>
-                </thead>
-                <tbody id="recent-orders-tbody-all"></tbody>
-            </table>
+        <!-- Tab Content untuk All Orders -->
+        <div id="all" class="tab-content active">
+            <div class="table-container">
+                <table class="orders-table enhanced-orders-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th> <!-- Expand button -->
+                            <th>PO/Invoice</th>
+                            <th>Tarikh</th>
+                            <th>Customer</th>
+                            <th>Team</th>
+                            <th>Platform</th>
+                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
+                            <th>Total Qty</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-tbody-all"></tbody>
+                </table>
+            </div>
+            <div class="pagination-controls" id="pagination-all"></div>
         </div>
-        <div class="pagination-controls" id="pagination-all"></div>
-    </div>
-    <div id="shopee" class="tab-content">
-        <div class="table-container">
-            <table class="orders-table">
-                <thead>
-                    <tr>
-                        <th>Code Kain</th>
-                        <th>Tarikh</th>
-                        <th>Customer</th>
-                        <th>Team</th>
-                        <th>Platform</th>
-                        <th>Jenis</th>
-                        <th>Amount</th>
-                        <th>PO/Invoice</th>
-                    </tr>
-                </thead>
-                <tbody id="recent-orders-tbody-shopee"></tbody>
-            </table>
+
+        <!-- Tab Content untuk Shopee -->
+        <div id="shopee" class="tab-content">
+            <div class="table-container">
+                <table class="orders-table enhanced-orders-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>PO/Invoice</th>
+                            <th>Tarikh</th>
+                            <th>Customer</th>
+                            <th>Team</th>
+                            <th>Platform</th>
+                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
+                            <th>Total Qty</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-tbody-shopee"></tbody>
+                </table>
+            </div>
+            <div class="pagination-controls" id="pagination-shopee"></div>
         </div>
-        <div class="pagination-controls" id="pagination-shopee"></div>
-    </div>
-    <div id="tiktok" class="tab-content">
-        <div class="table-container">
-            <table class="orders-table">
-                <thead>
-                    <tr>
-                        <th>Code Kain</th>
-                        <th>Tarikh</th>
-                        <th>Customer</th>
-                        <th>Team</th>
-                        <th>Platform</th>
-                        <th>Jenis</th>
-                        <th>Amount</th>
-                        <th>PO/Invoice</th>
-                    </tr>
-                </thead>
-                <tbody id="recent-orders-tbody-tiktok"></tbody>
-            </table>
+
+        <!-- Tab Content untuk TikTok -->
+        <div id="tiktok" class="tab-content">
+            <div class="table-container">
+                <table class="orders-table enhanced-orders-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>PO/Invoice</th>
+                            <th>Tarikh</th>
+                            <th>Customer</th>
+                            <th>Team</th>
+                            <th>Platform</th>
+                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
+                            <th>Total Qty</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-tbody-tiktok"></tbody>
+                </table>
+            </div>
+            <div class="pagination-controls" id="pagination-tiktok"></div>
         </div>
-        <div class="pagination-controls" id="pagination-tiktok"></div>
-    </div>
-    <div id="qilah" class="tab-content">
-        <div class="table-container">
-            <table class="orders-table">
-                 <thead>
-                    <tr>
-                        <th>Code Kain</th>
-                        <th>Tarikh</th>
-                        <th>Customer</th>
-                        <th>Team</th>
-                        <th>Platform</th>
-                        <th>Jenis</th>
-                        <th>Amount</th>
-                        <th>PO/Invoice</th>
-                    </tr>
-                </thead>
-                <tbody id="recent-orders-tbody-qilah"></tbody>
-            </table>
+
+        <!-- Tab Content untuk Qilah -->
+        <div id="qilah" class="tab-content">
+            <div class="table-container">
+                <table class="orders-table enhanced-orders-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>PO/Invoice</th>
+                            <th>Tarikh</th>
+                            <th>Customer</th>
+                            <th>Team</th>
+                            <th>Platform</th>
+                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
+                            <th>Total Qty</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-tbody-qilah"></tbody>
+                </table>
+            </div>
+            <div class="pagination-controls" id="pagination-qilah"></div>
         </div>
-        <div class="pagination-controls" id="pagination-qilah"></div>
-    </div>
-    <div id="nisya" class="tab-content">
-        <div class="table-container">
-            <table class="orders-table">
-                <thead>
-                    <tr>
-                        <th>Code Kain</th>
-                        <th>Tarikh</th>
-                        <th>Customer</th>
-                        <th>Team</th>
-                        <th>Platform</th>
-                        <th>Jenis</th>
-                        <th>Amount</th>
-                        <th>PO/Invoice</th>
-                    </tr>
-                </thead>
-                <tbody id="recent-orders-tbody-nisya"></tbody>
-            </table>
+
+        <!-- Tab Content untuk Nisya -->
+        <div id="nisya" class="tab-content">
+            <div class="table-container">
+                <table class="orders-table enhanced-orders-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>PO/Invoice</th>
+                            <th>Tarikh</th>
+                            <th>Customer</th>
+                            <th>Team</th>
+                            <th>Platform</th>
+                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
+                            <th>Total Qty</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-tbody-nisya"></tbody>
+                </table>
+            </div>
+            <div class="pagination-controls" id="pagination-nisya"></div>
         </div>
-        <div class="pagination-controls" id="pagination-nisya"></div>
-    </div>
-    <div id="wiyah" class="tab-content">
-        <div class="table-container">
-            <table class="orders-table">
-                <thead>
-                    <tr>
-                        <th>Code Kain</th>
-                        <th>Tarikh</th>
-                        <th>Customer</th>
-                        <th>Team</th>
-                        <th>Platform</th>
-                        <th>Jenis</th>
-                        <th>Amount</th>
-                        <th>PO/Invoice</th>
-                    </tr>
-                </thead>
-                <tbody id="recent-orders-tbody-wiyah"></tbody>
-            </table>
+
+        <!-- Tab Content untuk Wiyah -->
+        <div id="wiyah" class="tab-content">
+            <div class="table-container">
+                <table class="orders-table enhanced-orders-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th>PO/Invoice</th>
+                            <th>Tarikh</th>
+                            <th>Customer</th>
+                            <th>Team</th>
+                            <th>Platform</th>
+                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
+                            <th>Total Qty</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-tbody-wiyah"></tbody>
+                </table>
+            </div>
+            <div class="pagination-controls" id="pagination-wiyah"></div>
         </div>
-        <div class="pagination-controls" id="pagination-wiyah"></div>
     </div>
 </div>
 </section>>
-    <script type="module" src="js/order-analytics.js"></script>
+    <script type="module" src="js/enhanced-order-analytics.js"></script>
       <script>
         // Home button functionality
         document.getElementById('homeBtn').addEventListener('click', function() {
