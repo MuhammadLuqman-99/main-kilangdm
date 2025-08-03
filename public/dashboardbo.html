@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Analytics Section</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
+        authDomain: "kilangdm-v1.firebaseapp.com",
+        projectId: "kilangdm-v1",
+        storageBucket: "kilangdm-v1.firebasestorage.app",
+        messagingSenderId: "264191193800",
+        appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
+        measurementId: "G-C02S0CPE63"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    window.db = getFirestore(app);
+    
+    console.log('Firebase initialized successfully');
+    </script>
+    
+</head>
+<body style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f9fafb; font-family: 'Inter', sans-serif; padding: 2rem;">
+    <!-- Floating Action Button for Home -->
+    <div class="floating-home-btn">
+        <button id="homeBtn" class="home-btn" title="Kembali ke Halaman Utama">
+            <i class="fas fa-home"></i>
+        </button>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <!-- Brand Section -->
+            <div class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>KilangDM</h2>
+                    <span>Analytics Dashboard</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="nav-links" id="navLinks">
+                <a href="dashboard.html" class="nav-link ">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="dashboardbo.html" class="nav-link active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard Order</span>
+                </a>
+                <a href="ecommerce.html" class="nav-link">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Borang Order</span>
+                </a>
+                <a href="marketing.html" class="nav-link">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Marketing</span>
+                </a>
+                <a href="salesteam.html" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>Sales Team</span>
+                </a>
+                <a href="followup.html" class="nav-link">
+                    <i class="fas fa-phone"></i>
+                    <span>Follow Up</span>
+                </a>
+            </div>
+
+            <!-- Time Display -->
+            <div class="nav-time">
+                <div class="time-label">Last Updated</div>
+                <div class="time-value" id="current-time">-</div>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+
+    </nav>
+
+   <!-- Order Analytics Section - Insert this into your dashboard.html before Recent Activity section -->
+<section class="order-analytics-section">
+    <!-- Section Header -->
+    <div class="order-analytics-header">
+        <div class="header-left">
+            <div class="analytics-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <div>
+                <h3 class="section-title">Order Analytics</h3>
+                <p class="section-subtitle">Comprehensive order data analysis & insights</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="analytics-summary">
+                <div class="summary-stat">
+                    <span class="stat-number" id="total-orders-today">0</span>
+                    <span class="stat-text">Hari Ini</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="stat-number" id="total-revenue-today">RM 0</span>
+                    <span class="stat-text">Revenue Hari Ini</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="stat-number" id="avg-order-today">RM 0</span>
+                    <span class="stat-text">Avg Order Hari Ini</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+        <section class="filter-section">
+            <div class="section-header">
+                <div class="header-left">
+                    <h3 class="section-title">Data Filters</h3>
+                    <p class="section-subtitle">Customize your analytics view</p>
+                </div>
+                <div class="section-actions">
+                    <button id="clear-filter" class="btn btn-outline btn-sm">
+                        <i class="fas fa-refresh"></i>
+                        Reset
+                    </button>
+                </div>
+            </div>
+            
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Tarikh Mula</label>
+                    <input type="date" id="start-date" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Tarikh Akhir</label>
+                    <input type="date" id="end-date" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Team</label>
+                    <select id="agent-filter" class="filter-select">
+                        <option value="">Semua Agent</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button id="apply-filter" class="btn btn-primary">
+                        <i class="fas fa-filter"></i>
+                        Terapkan Filter
+                    </button>
+                </div>
+            </div>
+            
+            <div id="active-filters" class="active-filters hidden">
+                <div class="filter-summary">
+                    <span class="summary-label">Filter Aktif:</span>
+                    <div id="filter-tags" class="filter-tags"></div>
+                </div>
+            </div>
+
+    <!-- Order Statistics Cards -->
+    <div class="order-stats-grid">
+        <!-- Total Revenue -->
+        <div class="order-stat-card revenue">
+            <div class="stat-header">
+                <div class="stat-icon revenue-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <span class="stat-trend trend-up" id="revenue-trend">+0%</span>
+            </div>
+            <div class="stat-content">
+                <h4 class="stat-title">Total Revenue</h4>
+                <p class="stat-value" id="total-order-revenue">RM 0.00</p>
+                <p class="stat-meta" id="revenue-period">daripada semua order</p>
+            </div>
+        </div>
+
+        <!-- Order Volume -->
+        <div class="order-stat-card volume">
+            <div class="stat-header">
+                <div class="stat-icon volume-icon">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <span class="stat-trend trend-up" id="volume-trend">+0%</span>
+            </div>
+            <div class="stat-content">
+                <h4 class="stat-title">Order Volume</h4>
+                <p class="stat-value" id="total-order-count">0</p>
+                <p class="stat-meta" id="volume-period">jumlah order</p>
+            </div>
+        </div>
+
+        <!-- Average Order Value -->
+        <div class="order-stat-card avg-order">
+            <div class="stat-header">
+                <div class="stat-icon avg-order-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <span class="stat-trend trend-stable" id="avg-trend">stable</span>
+            </div>
+            <div class="stat-content">
+                <h4 class="stat-title">Average Order Value</h4>
+                <p class="stat-value" id="avg-order-value">RM 0.00</p>
+                <p class="stat-meta" id="avg-period">purata per order</p>
+            </div>
+        </div>
+
+        <!-- Active Platforms -->
+        <div class="order-stat-card platforms">
+            <div class="stat-header">
+                <div class="stat-icon platforms-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+                <span class="stat-trend trend-up" id="platform-trend">+0</span>
+            </div>
+            <div class="stat-content">
+                <h4 class="stat-title">Active Platforms</h4>
+                <p class="stat-value" id="active-platforms">0</p>
+                <p class="stat-meta" id="platform-period">platform aktif</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Analytics -->
+    <div class="detailed-analytics">
+        <!-- Order Trend Chart -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <h4>Order Trend Analysis</h4>
+                <div class="chart-controls">
+                    <button class="timeline-btn active" data-period="7">7 Hari</button>
+                    <button class="timeline-btn" data-period="30">30 Hari</button>
+                    <button class="timeline-btn" data-period="90">90 Hari</button>
+                </div>
+            </div>
+            <div class="chart-container-timeline">
+                <canvas id="orderTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Breakdowns -->
+        <div class="breakdown-section">
+            <!-- Platform Breakdown -->
+            <div class="breakdown-card">
+                <h4 class="breakdown-title">
+                    <div class="breakdown-icon">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    Platform Breakdown
+                </h4>
+                <div class="breakdown-list" id="platform-breakdown">
+                    <div class="loading-placeholder">Loading platform data...</div>
+                </div>
+            </div>
+
+            <!-- Team Performance -->
+            <div class="breakdown-card">
+                <h4 class="breakdown-title">
+                    <div class="breakdown-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    Team Performance
+                </h4>
+                <div class="breakdown-list" id="team-breakdown">
+                    <div class="loading-placeholder">Loading team data...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Timeline -->
+    <div class="order-timeline">
+        <div class="timeline-header">
+            <h4>Order Timeline</h4>
+            <div class="timeline-controls">
+                <button class="timeline-btn active" data-view="daily">Harian</button>
+                <button class="timeline-btn" data-view="weekly">Mingguan</button>
+                <button class="timeline-btn" data-view="monthly">Bulanan</button>
+            </div>
+        </div>
+        <div class="chart-container-timeline">
+            <canvas id="orderTimelineChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Orders Table -->
+    <div class="recent-orders">
+        <div class="recent-orders-header">
+            <h4>Recent Orders</h4>
+            <button class="view-all-btn">
+                <i class="fas fa-external-link-alt"></i>
+                View All
+            </button>
+        </div>
+        <div class="table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Code Kain</th>
+                        <th>Tarikh</th>
+                        <th>Customer</th>
+                        <th>Team</th>
+                        <th>Platform</th>
+                        <th>Jenis</th>
+                        <th>Amount</th>
+                        <th>PO/Invoice</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-orders-tbody">
+                    <tr>
+                        <td colspan="8" class="loading-placeholder">Loading recent orders...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>>
+    <script type="module" src="js/order-analytics.js"></script>
+      <script>
+        // Home button functionality
+        document.getElementById('homeBtn').addEventListener('click', function() {
+            // Replace with your actual homepage URL
+            window.location.href = 'index.html';
+        });
+
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('mobile-active');
+        });
+
+        // Update current time
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ms-MY', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('current-time').textContent = timeString;
+        }
+
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+    </script>
+</body>
+</html>
