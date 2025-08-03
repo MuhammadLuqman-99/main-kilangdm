@@ -814,7 +814,12 @@ body {
                     </div>
                     <input type="file" id="fileInput" accept=".pdf,.csv,.jpg,.jpeg,.png,.txt" hidden />
                 </div>
-
+                <select id="file-source" class="input w-full mb-4 bg-gray-700 border-gray-600 text-white p-2 rounded-md">
+            <option value="shopee">Shopee</option>
+            <option value="tiktok">TikTok</option>
+            <option value="manual">Template Manual</option>
+        </select>
+                
                 <div class="processing-indicator" id="processingIndicator">
                     <div class="spinner"></div>
                     <p>Sedang memproses file...</p>

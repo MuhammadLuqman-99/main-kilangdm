@@ -1,787 +1,285 @@
-// Import Firestore functions
+// Import fungsi Firestore yang diperlukan
 import { 
     collection, 
-    getDocs, 
-    query, 
-    orderBy, 
-    where, 
-    limit,
-    Timestamp
+    addDoc,
+    Timestamp 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Global variables
-let allOrderData = [];
-let filteredOrderData = [];
-let charts = {};
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Wait for Firebase to be initialized
+// Pastikan kod ini berjalan selepas DOM dimuatkan sepenuhnya
+document.addEventListener('DOMContentLoaded', () => {
+    // Pastikan Firebase sudah sedia untuk digunakan
     if (window.db) {
-        initializeOrderAnalytics();
+        setupEventListeners();
     } else {
+        // Tunggu seketika jika Firebase lambat dimuatkan
         setTimeout(() => {
             if (window.db) {
-                initializeOrderAnalytics();
+                setupEventListeners();
             } else {
-                console.error('Firebase not initialized after timeout');
+                console.error('Firebase gagal dimuatkan.');
+                showFeedback('Ralat: Gagal berhubung dengan pangkalan data.', 'error');
             }
         }, 2000);
     }
 });
 
-async function initializeOrderAnalytics() {
-    console.log('Initializing Order Analytics...');
-    
-    try {
-        // Load order data
-        await loadOrderData();
-        
-        // Initialize UI components
-        initializeFilters();
-        initializeCharts();
-        
-        // Initial render
-        updateAnalytics();
-        
-        console.log('Order Analytics initialized successfully');
-    } catch (error) {
-        console.error('Error initializing Order Analytics:', error);
-        showError('Gagal memuatkan data analytics. Sila refresh halaman.');
+// Fungsi utama untuk menyediakan semua event listener
+function setupEventListeners() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const orderForm = document.getElementById('order-form');
+
+    // 1. Mengaktifkan klik pada kawasan upload
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // 2. Mengendalikan fail yang dipilih melalui dialog
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    });
+
+    // 3. Mengaktifkan fungsi drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    });
+
+    // 4. Mengendalikan penghantaran borang manual
+    if (orderForm) {
+        orderForm.addEventListener('submit', handleFormSubmit);
     }
 }
 
-async function loadOrderData() {
+/**
+ * Mengendalikan fail yang diupload (sama ada dari klik atau drag-drop)
+ * @param {File} file Objek fail yang akan diproses
+ */
+async function handleFile(file) {
+    const processingIndicator = document.getElementById('processingIndicator');
+    const successIndicator = document.getElementById('successIndicator');
+    const uploadSection = document.querySelector('.upload-section');
+
+    // Reset sebarang mesej sebelumnya
+    hideIndicators();
+    
+    // Tunjukkan penunjuk "processing"
+    uploadSection.style.display = 'none';
+    processingIndicator.classList.add('show');
+
     try {
-        console.log('Loading order data from Firestore...');
+        const fileText = await file.text();
+        const fileSource = document.getElementById('file-source').value;
         
-        const ordersCollection = collection(window.db, 'orderData');
-        const q = query(ordersCollection, orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        // Semak jenis fail, hanya proses CSV
+        if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+            throw new Error('Sila muat naik fail berformat CSV sahaja.');
+        }
+
+        const orders = parseCSV(fileText, fileSource);
+        if (orders.length === 0) {
+            throw new Error('Tiada data order yang sah ditemui dalam fail CSV.');
+        }
+
+        const { successCount, errorCount } = await saveOrdersToFirebase(orders);
+
+        // Tunjukkan mesej kejayaan
+        processingIndicator.classList.remove('show');
+        successIndicator.querySelector('p').textContent = `Proses selesai! ${successCount} order berjaya disimpan, ${errorCount} gagal.`;
+        successIndicator.classList.add('show');
+
+    } catch (error) {
+        console.error('Ralat semasa memproses fail:', error);
+        showFeedback(`Ralat: ${error.message}`, 'error');
+    } finally {
+        // Kembalikan UI ke keadaan asal selepas 5 saat
+        setTimeout(() => {
+            uploadSection.style.display = 'block';
+            hideIndicators();
+        }, 5000);
         
-        allOrderData = [];
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            // Add document ID for reference
-            data.id = doc.id;
-            
-            // Convert Firestore Timestamp to Date if needed
-            if (data.createdAt && data.createdAt.seconds) {
-                data.createdAt = new Date(data.createdAt.seconds * 1000);
-            }
-            
-            // Ensure required fields have default values
-            data.tarikh = data.tarikh || new Date().toISOString().split('T')[0];
-            data.total_rm = parseFloat(data.total_rm) || 0;
-            data.platform = data.platform || 'Unknown';
-            data.team_sale = data.team_sale || 'Unknown';
-            data.source = data.source || 'manual_form';
-            
-            allOrderData.push(data);
-        });
-        
-        filteredOrderData = [...allOrderData];
-        
-        console.log(`Loaded ${allOrderData.length} orders`);
-        
-        // Log data sources for debugging
-        const sourceCounts = allOrderData.reduce((acc, order) => {
-            acc[order.source] = (acc[order.source] || 0) + 1;
-            return acc;
+        // Reset input fail untuk membenarkan upload fail yang sama semula
+        document.getElementById('fileInput').value = '';
+    }
+}
+
+/**
+ * Mem-parse teks CSV kepada array of order objects berdasarkan sumber
+ * @param {string} csvText Kandungan teks dari fail CSV
+ * @param {string} source Sumber fail (shopee, tiktok, manual)
+ * @returns {Array<Object>} Array yang mengandungi objek order
+ */
+function parseCSV(csvText, source) {
+    const lines = csvText.split('\n').filter(line => line.trim() !== '');
+    if (lines.length < 2) return []; // Perlu sekurang-kurangnya 1 baris header dan 1 baris data
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const dataRows = lines.slice(1);
+    const orders = [];
+
+    dataRows.forEach(row => {
+        const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
+        if (values.length !== headers.length) return; // Abaikan baris yang tidak sepadan
+
+        const rawData = headers.reduce((obj, header, index) => {
+            obj[header] = values[index];
+            return obj;
         }, {});
-        console.log('Orders by source:', sourceCounts);
-        
+
+        let order = {};
+        let isValid = true;
+
+        switch (source) {
+            case 'shopee':
+                // Pemetaan lajur untuk format Shopee
+                order = {
+                    nama_customer: rawData['Recipient'],
+                    total_rm: parseFloat(rawData['Order Amount']) || 0,
+                    jenis_order: rawData['Product Name'],
+                    nombor_po_invoice: rawData['Order ID'],
+                    code_kain: rawData['Seller SKU'],
+                    team_sale: 'Shopee',
+                    platform: 'Shopee'
+                };
+                // Proses tarikh dari format "14/07/2025 14:33"
+                if (rawData['Created Time']) {
+                    const [datePart] = rawData['Created Time'].split(' ');
+                    const [day, month, year] = datePart.split('/');
+                    order.tarikh = `${year}-${month}-${day}`;
+                }
+                break;
+
+            case 'tiktok':
+                // Pemetaan lajur untuk format TikTok (andaian)
+                order = {
+                    nama_customer: rawData['Buyer Name'],
+                    total_rm: parseFloat(rawData['Order Total']) || 0,
+                    jenis_order: rawData['Product Title'],
+                    nombor_po_invoice: rawData['Order Number'],
+                    code_kain: rawData['SKU'],
+                    team_sale: 'Tiktok',
+                    platform: 'Lazada' // Platform TikTok tiada dalam form, jadi guna Lazada sebagai contoh
+                };
+                if (rawData['Order Date']) {
+                    order.tarikh = new Date(rawData['Order Date']).toISOString().split('T')[0];
+                }
+                break;
+
+            case 'manual':
+                 // Pemetaan untuk format template manual
+                order = {
+                    tarikh: rawData['tarikh'],
+                    code_kain: rawData['code_kain'],
+                    nombor_po_invoice: rawData['nombor_po_invoice'],
+                    nama_customer: rawData['nama_customer'],
+                    team_sale: rawData['team_sale'],
+                    nombor_phone: rawData['nombor_phone'],
+                    jenis_order: rawData['jenis_order'],
+                    total_rm: parseFloat(rawData['total_rm']) || 0,
+                    platform: rawData['platform']
+                };
+                break;
+
+            default:
+                isValid = false;
+        }
+
+        if (isValid && order.nombor_po_invoice) {
+            // Tambah nilai lalai dan metadata
+            order.tarikh = order.tarikh || new Date().toISOString().split('T')[0];
+            order.createdAt = Timestamp.now();
+            order.source = `csv_${source}`; // e.g., csv_shopee
+            orders.push(order);
+        }
+    });
+
+    return orders;
+}
+
+/**
+ * Menyimpan array of orders ke dalam Firestore
+ * @param {Array<Object>} orders Array objek order
+ * @returns {Promise<{successCount: number, errorCount: number}>} Bilangan kejayaan dan kegagalan
+ */
+async function saveOrdersToFirebase(orders) {
+    const ordersCollection = collection(window.db, 'orderData');
+    let successCount = 0;
+    let errorCount = 0;
+
+    const promises = orders.map(order => 
+        addDoc(ordersCollection, order)
+            .then(() => successCount++)
+            .catch(err => {
+                console.error('Gagal menyimpan order:', order.nombor_po_invoice, err);
+                errorCount++;
+            })
+    );
+
+    await Promise.all(promises);
+    return { successCount, errorCount };
+}
+
+/**
+ * Mengendalikan penghantaran borang secara manual
+ * @param {Event} e Objek event dari submit
+ */
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const orderData = Object.fromEntries(formData.entries());
+
+    // Tukar nilai total_rm kepada number
+    orderData.total_rm = parseFloat(orderData.total_rm);
+
+    // Tambah metadata
+    orderData.createdAt = Timestamp.now();
+    orderData.source = 'manual_form';
+
+    try {
+        const ordersCollection = collection(window.db, 'orderData');
+        await addDoc(ordersCollection, orderData);
+        showFeedback('Order berjaya dihantar!', 'success');
+        form.reset();
+        document.getElementById('tarikh').valueAsDate = new Date(); // Set tarikh kembali kepada hari ini
     } catch (error) {
-        console.error('Error loading order data:', error);
-        throw error;
+        console.error('Ralat menghantar borang:', error);
+        showFeedback('Gagal menghantar order. Sila cuba lagi.', 'error');
     }
 }
 
-function initializeFilters() {
-    // Date filters
-    const startDateInput = document.getElementById('start-date');
-    const endDateInput = document.getElementById('end-date');
+/**
+ * Memaparkan mesej maklum balas kepada pengguna
+ * @param {string} message Mesej untuk dipaparkan
+ * @param {'success' | 'error' | 'info'} type Jenis mesej
+ */
+function showFeedback(message, type) {
+    const feedbackDiv = document.getElementById('feedback-message');
+    feedbackDiv.textContent = message;
+    feedbackDiv.className = `feedback-message show ${type}`;
     
-    if (startDateInput && endDateInput) {
-        // Set default date range (last 30 days)
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
-        
-        startDateInput.value = startDate.toISOString().split('T')[0];
-        endDateInput.value = endDate.toISOString().split('T')[0];
-    }
-    
-    // Populate agent filter
-    populateAgentFilter();
-    
-    // Add event listeners
-    const applyFilterBtn = document.getElementById('apply-filter');
-    const clearFilterBtn = document.getElementById('clear-filter');
-    
-    if (applyFilterBtn) {
-        applyFilterBtn.addEventListener('click', applyFilters);
-    }
-    
-    if (clearFilterBtn) {
-        clearFilterBtn.addEventListener('click', clearFilters);
-    }
-}
-
-function populateAgentFilter() {
-    const agentFilter = document.getElementById('agent-filter');
-    if (!agentFilter) return;
-    
-    // Get unique team sales from data
-    const teams = [...new Set(allOrderData.map(order => order.team_sale))].filter(Boolean);
-    
-    // Clear existing options (keep the first "Semua Agent" option)
-    agentFilter.innerHTML = '<option value="">Semua Agent</option>';
-    
-    // Add team options
-    teams.forEach(team => {
-        const option = document.createElement('option');
-        option.value = team;
-        option.textContent = team;
-        agentFilter.appendChild(option);
-    });
-}
-
-function applyFilters() {
-    const startDate = document.getElementById('start-date')?.value;
-    const endDate = document.getElementById('end-date')?.value;
-    const selectedAgent = document.getElementById('agent-filter')?.value;
-    
-    filteredOrderData = allOrderData.filter(order => {
-        let matches = true;
-        
-        // Date filter
-        if (startDate || endDate) {
-            const orderDate = new Date(order.tarikh);
-            if (startDate && orderDate < new Date(startDate)) matches = false;
-            if (endDate && orderDate > new Date(endDate)) matches = false;
-        }
-        
-        // Agent filter
-        if (selectedAgent && order.team_sale !== selectedAgent) {
-            matches = false;
-        }
-        
-        return matches;
-    });
-    
-    // Update active filters display
-    updateActiveFiltersDisplay();
-    
-    // Update analytics with filtered data
-    updateAnalytics();
-    
-    console.log(`Applied filters: ${filteredOrderData.length} orders match criteria`);
-}
-
-function clearFilters() {
-    // Reset date filters
-    const startDateInput = document.getElementById('start-date');
-    const endDateInput = document.getElementById('end-date');
-    const agentFilter = document.getElementById('agent-filter');
-    
-    if (startDateInput) startDateInput.value = '';
-    if (endDateInput) endDateInput.value = '';
-    if (agentFilter) agentFilter.value = '';
-    
-    // Reset filtered data
-    filteredOrderData = [...allOrderData];
-    
-    // Hide active filters
-    const activeFiltersDiv = document.getElementById('active-filters');
-    if (activeFiltersDiv) {
-        activeFiltersDiv.classList.add('hidden');
-    }
-    
-    // Update analytics
-    updateAnalytics();
-}
-
-function updateActiveFiltersDisplay() {
-    const activeFiltersDiv = document.getElementById('active-filters');
-    const filterTagsDiv = document.getElementById('filter-tags');
-    
-    if (!activeFiltersDiv || !filterTagsDiv) return;
-    
-    const startDate = document.getElementById('start-date')?.value;
-    const endDate = document.getElementById('end-date')?.value;
-    const selectedAgent = document.getElementById('agent-filter')?.value;
-    
-    let tags = [];
-    
-    if (startDate) tags.push(`From: ${startDate}`);
-    if (endDate) tags.push(`To: ${endDate}`);
-    if (selectedAgent) tags.push(`Team: ${selectedAgent}`);
-    
-    if (tags.length > 0) {
-        filterTagsDiv.innerHTML = tags.map(tag => 
-            `<span class="filter-tag">${tag}</span>`
-        ).join('');
-        activeFiltersDiv.classList.remove('hidden');
-    } else {
-        activeFiltersDiv.classList.add('hidden');
-    }
-}
-
-function updateAnalytics() {
-    updateStatistics();
-    updateCharts();
-    updateBreakdowns();
-    updateRecentOrders();
-}
-
-function updateStatistics() {
-    const data = filteredOrderData;
-    
-    // Calculate basic stats
-    const totalRevenue = data.reduce((sum, order) => sum + (order.total_rm || 0), 0);
-    const totalOrders = data.length;
-    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    const activePlatforms = new Set(data.map(order => order.platform)).size;
-    
-    // Today's stats
-    const today = new Date().toISOString().split('T')[0];
-    const todayOrders = data.filter(order => order.tarikh === today);
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total_rm || 0), 0);
-    const todayAvg = todayOrders.length > 0 ? todayRevenue / todayOrders.length : 0;
-    
-    // Update main statistics  
-    updateElement('total-order-revenue', `RM ${totalRevenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
-    updateElement('total-order-count', totalOrders.toLocaleString());
-    updateElement('avg-order-value', `RM ${avgOrderValue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
-    updateElement('active-platforms', activePlatforms.toString());
-    
-    // Update today's stats
-    updateElement('total-orders-today', todayOrders.length.toString());
-    updateElement('total-revenue-today', `RM ${todayRevenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
-    updateElement('avg-order-today', `RM ${todayAvg.toLocaleString('ms-MY', {minimumFractionDigits: 2})}`);
-    
-    // Update period text
-    updateElement('revenue-period', `dari ${totalOrders} order`);
-    updateElement('volume-period', 'jumlah order');
-    updateElement('avg-period', 'purata per order');
-    updateElement('platform-period', 'platform aktif');
-}
-
-function initializeCharts() {
-    // Initialize Order Trend Chart
-    const trendCtx = document.getElementById('orderTrendChart');
-    if (trendCtx) {
-        charts.trend = new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Orders',
-                    data: [],
-                    borderColor: '#60a5fa',
-                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }, {
-                    label: 'Revenue (RM)',
-                    data: [],
-                    borderColor: '#34d399',
-                    backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    yAxisID: 'y1'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: { color: '#e2e8f0' }
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    },
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        ticks: { color: '#94a3b8' },
-                        grid: { drawOnChartArea: false }
-                    }
-                }
-            }
-        });
-    }
-    
-    // Initialize Timeline Chart
-    const timelineCtx = document.getElementById('orderTimelineChart');
-    if (timelineCtx) {
-        charts.timeline = new Chart(timelineCtx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Orders',
-                    data: [],
-                    backgroundColor: 'rgba(96, 165, 250, 0.8)',
-                    borderColor: '#60a5fa',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: { color: '#e2e8f0' }
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    },
-                    y: {
-                        ticks: { color: '#94a3b8' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                    }
-                }
-            }
-        });
-    }
-}
-
-function updateCharts() {
-    updateTrendChart();
-    updateTimelineChart();
-}
-
-function updateTrendChart() {
-    if (!charts.trend) return;
-    
-    const data = filteredOrderData;
-    
-    // Group data by date (last 30 days)
-    const dateGroups = {};
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 29); // 30 days total
-    
-    // Initialize all dates with 0
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
-        dateGroups[dateStr] = { count: 0, revenue: 0 };
-    }
-    
-    // Populate with actual data
-    data.forEach(order => {
-        const date = order.tarikh;
-        if (dateGroups[date]) {
-            dateGroups[date].count++;
-            dateGroups[date].revenue += order.total_rm || 0;
-        }
-    });
-    
-    const labels = Object.keys(dateGroups).sort().map(date => {
-        const d = new Date(date);
-        return d.toLocaleDateString('ms-MY', { month: 'short', day: 'numeric' });
-    });
-    
-    const orderData = Object.keys(dateGroups).sort().map(date => dateGroups[date].count);
-    const revenueData = Object.keys(dateGroups).sort().map(date => dateGroups[date].revenue);
-    
-    charts.trend.data.labels = labels;
-    charts.trend.data.datasets[0].data = orderData;
-    charts.trend.data.datasets[1].data = revenueData;
-    charts.trend.update();
-}
-
-function updateTimelineChart() {
-    if (!charts.timeline) return;
-    
-    const data = filteredOrderData;
-    
-    // Group by current view (daily for now)
-    const hourGroups = {};
-    
-    // Initialize 24 hours
-    for (let i = 0; i < 24; i++) {
-        hourGroups[i] = 0;
-    }
-    
-    // Group by hour of creation (using createdAt if available, otherwise use tarikh)
-    data.forEach(order => {
-        let hour;
-        if (order.createdAt instanceof Date) {
-            hour = order.createdAt.getHours();
-        } else {
-            // Fallback to midday if no time info
-            hour = 12;
-        }
-        hourGroups[hour]++;
-    });
-    
-    const labels = Object.keys(hourGroups).map(hour => `${hour}:00`);
-    const orderData = Object.values(hourGroups);
-    
-    charts.timeline.data.labels = labels;
-    charts.timeline.data.datasets[0].data = orderData;
-    charts.timeline.update();
-}
-
-function updateBreakdowns() {
-    updatePlatformBreakdown();
-    updateTeamBreakdown();
-}
-
-function updatePlatformBreakdown() {
-    const platformBreakdownDiv = document.getElementById('platform-breakdown');
-    if (!platformBreakdownDiv) return;
-    
-    const data = filteredOrderData;
-    
-    // Group by platform
-    const platformStats = {};
-    data.forEach(order => {
-        const platform = order.platform || 'Unknown';
-        if (!platformStats[platform]) {
-            platformStats[platform] = { count: 0, revenue: 0 };
-        }
-        platformStats[platform].count++;
-        platformStats[platform].revenue += order.total_rm || 0;
-    });
-    
-    // Sort by count descending
-    const sortedPlatforms = Object.entries(platformStats)
-        .sort((a, b) => b[1].count - a[1].count);
-    
-    const total = data.length;
-    
-    platformBreakdownDiv.innerHTML = sortedPlatforms.map(([platform, stats]) => {
-        const percentage = total > 0 ? (stats.count / total * 100).toFixed(1) : 0;
-        return `
-            <div class="breakdown-item">
-                <div class="breakdown-info">
-                    <span class="breakdown-name">${platform}</span>
-                    <span class="breakdown-value">${stats.count} orders</span>
-                </div>
-                <div class="breakdown-bar">
-                    <div class="breakdown-fill" style="width: ${percentage}%"></div>
-                </div>
-                <div class="breakdown-stats">
-                    <span class="breakdown-percent">${percentage}%</span>
-                    <span class="breakdown-revenue">RM ${stats.revenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function updateTeamBreakdown() {
-    const teamBreakdownDiv = document.getElementById('team-breakdown');
-    if (!teamBreakdownDiv) return;
-    
-    const data = filteredOrderData;
-    
-    // Group by team
-    const teamStats = {};
-    data.forEach(order => {
-        const team = order.team_sale || 'Unknown';
-        if (!teamStats[team]) {
-            teamStats[team] = { count: 0, revenue: 0 };
-        }
-        teamStats[team].count++;
-        teamStats[team].revenue += order.total_rm || 0;
-    });
-    
-    // Sort by revenue descending
-    const sortedTeams = Object.entries(teamStats)
-        .sort((a, b) => b[1].revenue - a[1].revenue);
-    
-    const totalRevenue = data.reduce((sum, order) => sum + (order.total_rm || 0), 0);
-    
-    teamBreakdownDiv.innerHTML = sortedTeams.map(([team, stats]) => {
-        const percentage = totalRevenue > 0 ? (stats.revenue / totalRevenue * 100).toFixed(1) : 0;
-        return `
-            <div class="breakdown-item">
-                <div class="breakdown-info">
-                    <span class="breakdown-name">${team}</span>
-                    <span class="breakdown-value">${stats.count} orders</span>
-                </div>
-                <div class="breakdown-bar">
-                    <div class="breakdown-fill" style="width: ${percentage}%"></div>
-                </div>
-                <div class="breakdown-stats">
-                    <span class="breakdown-percent">${percentage}%</span>
-                    <span class="breakdown-revenue">RM ${stats.revenue.toLocaleString('ms-MY', {minimumFractionDigits: 2})}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function updateRecentOrders() {
-    const tbody = document.getElementById('recent-orders-tbody');
-    if (!tbody) return;
-    
-    // Get 10 most recent orders
-    const recentOrders = [...filteredOrderData]
-        .sort((a, b) => {
-            const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.tarikh);
-            const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.tarikh);
-            return dateB - dateA;
-        })
-        .slice(0, 10);
-    
-    if (recentOrders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="loading-placeholder">Tiada order dijumpai</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = recentOrders.map(order => {
-        const displayDate = new Date(order.tarikh).toLocaleDateString('ms-MY');
-        const customerName = truncateText(order.nama_customer || 'N/A', 20);
-        const platform = order.platform || 'N/A';
-        const team = order.team_sale || 'N/A';
-        const codeKain = order.code_kain || 'N/A';
-        const jenisOrder = truncateText(order.jenis_order || 'N/A', 15);
-        const amount = `RM ${(order.total_rm || 0).toLocaleString('ms-MY', {minimumFractionDigits: 2})}`;
-        const invoice = truncateText(order.nombor_po_invoice || 'N/A', 15);
-        
-        // Add source indicator
-        const sourceIcon = getSourceIcon(order.source);
-        
-        return `
-            <tr>
-                <td>
-                    <div class="order-code-cell">
-                        ${codeKain}
-                        <span class="source-indicator" title="Source: ${order.source}">${sourceIcon}</span>
-                    </div>
-                </td>
-                <td>${displayDate}</td>
-                <td>${customerName}</td>
-                <td><span class="team-badge team-${team.toLowerCase()}">${team}</span></td>
-                <td><span class="platform-badge platform-${platform.toLowerCase().replace(/\s+/g, '-')}">${platform}</span></td>
-                <td>${jenisOrder}</td>
-                <td class="amount-cell">${amount}</td>
-                <td>${invoice}</td>
-            </tr>
-        `;
-    }).join('');
-}
-
-function getSourceIcon(source) {
-    switch (source) {
-        case 'csv_upload':
-            return '<i class="fas fa-file-csv" style="color: #22c55e;"></i>';
-        case 'auto_extracted':
-            return '<i class="fas fa-robot" style="color: #60a5fa;"></i>';
-        case 'manual_form':
-            return '<i class="fas fa-edit" style="color: #f59e0b;"></i>';
-        default:
-            return '<i class="fas fa-question" style="color: #94a3b8;"></i>';
-    }
-}
-
-function truncateText(text, maxLength) {
-    if (!text) return 'N/A';
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-}
-
-function updateElement(id, value) {
-    const element = document.getElementById(id);
-    if (element) {
-        element.textContent = value;
-    }
-}
-
-function showError(message) {
-    // Create error notification
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-notification';
-    errorDiv.innerHTML = `
-        <div class="error-content">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="error-close">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(errorDiv);
-    
-    // Auto remove after 5 seconds
+    // Sembunyikan mesej selepas 5 saat
     setTimeout(() => {
-        if (errorDiv.parentElement) {
-            errorDiv.remove();
-        }
+        feedbackDiv.className = 'feedback-message';
     }, 5000);
 }
 
-// Add timeline button functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Timeline buttons for trend chart
-    const timelineButtons = document.querySelectorAll('.timeline-btn[data-period]');
-    timelineButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            // Remove active class from all buttons
-            timelineButtons.forEach(b => b.classList.remove('active'));
-            // Add active class to clicked button
-            this.classList.add('active');
-            
-            // Update trend chart based on period
-            const period = parseInt(this.dataset.period);
-            updateTrendChartForPeriod(period);
-        });
-    });
-    
-    // Timeline view buttons
-    const viewButtons = document.querySelectorAll('.timeline-btn[data-view]');
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            // Remove active class from all view buttons
-            viewButtons.forEach(b => b.classList.remove('active'));
-            // Add active class to clicked button
-            this.classList.add('active');
-            
-            // Update timeline chart based on view
-            const view = this.dataset.view;
-            updateTimelineChartForView(view);
-        });
-    });
-});
-
-function updateTrendChartForPeriod(days) {
-    if (!charts.trend) return;
-    
-    const data = filteredOrderData;
-    
-    // Group data by date for specified period
-    const dateGroups = {};
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - (days - 1));
-    
-    // Initialize all dates with 0
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
-        dateGroups[dateStr] = { count: 0, revenue: 0 };
-    }
-    
-    // Populate with actual data
-    data.forEach(order => {
-        const date = order.tarikh;
-        if (dateGroups[date]) {
-            dateGroups[date].count++;
-            dateGroups[date].revenue += order.total_rm || 0;
-        }
-    });
-    
-    const labels = Object.keys(dateGroups).sort().map(date => {
-        const d = new Date(date);
-        if (days <= 7) {
-            return d.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric' });
-        } else {
-            return d.toLocaleDateString('ms-MY', { month: 'short', day: 'numeric' });
-        }
-    });
-    
-    const orderData = Object.keys(dateGroups).sort().map(date => dateGroups[date].count);
-    const revenueData = Object.keys(dateGroups).sort().map(date => dateGroups[date].revenue);
-    
-    charts.trend.data.labels = labels;
-    charts.trend.data.datasets[0].data = orderData;
-    charts.trend.data.datasets[1].data = revenueData;
-    charts.trend.update();
+/**
+ * Menyembunyikan semua penunjuk proses upload
+ */
+function hideIndicators() {
+    document.getElementById('processingIndicator').classList.remove('show');
+    document.getElementById('successIndicator').classList.remove('show');
 }
-
-function updateTimelineChartForView(view) {
-    if (!charts.timeline) return;
-    
-    const data = filteredOrderData;
-    let groups = {};
-    let labels = [];
-    
-    if (view === 'daily') {
-        // Group by hour
-        for (let i = 0; i < 24; i++) {
-            groups[i] = 0;
-        }
-        
-        data.forEach(order => {
-            let hour;
-            if (order.createdAt instanceof Date) {
-                hour = order.createdAt.getHours();
-            } else {
-                hour = 12; // Default to midday
-            }
-            groups[hour]++;
-        });
-        
-        labels = Object.keys(groups).map(hour => `${hour}:00`);
-        
-    } else if (view === 'weekly') {
-        // Group by day of week
-        const dayNames = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
-        
-        for (let i = 0; i < 7; i++) {
-            groups[i] = 0;
-        }
-        
-        data.forEach(order => {
-            const date = new Date(order.tarikh);
-            const dayOfWeek = date.getDay();
-            groups[dayOfWeek]++;
-        });
-        
-        labels = dayNames;
-        
-    } else if (view === 'monthly') {
-        // Group by day of month (last 30 days)
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 29);
-        
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0];
-            groups[dateStr] = 0;
-        }
-        
-        data.forEach(order => {
-            const date = order.tarikh;
-            if (groups.hasOwnProperty(date)) {
-                groups[date]++;
-            }
-        });
-        
-        labels = Object.keys(groups).sort().map(date => {
-            const d = new Date(date);
-            return d.getDate().toString();
-        });
-    }
-    
-    const orderData = Object.values(groups);
-    
-    charts.timeline.data.labels = labels;
-    charts.timeline.data.datasets[0].data = orderData;
-    charts.timeline.update();
-}
-
-// Export functions for global access
-window.loadOrderData = loadOrderData;
-window.applyFilters = applyFilters;
-window.clearFilters = clearFilters;
