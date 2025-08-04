@@ -538,7 +538,6 @@ function updateCharts(data) {
     updateChannelChart(data);
     
     // REPLACE this line:
-    // updateEnhancedLeadsChart(data); // ← Remove this old call
     
     // The new enhanced chart is called from applyFilters() instead
     updateTeamChart(data);
@@ -1861,14 +1860,421 @@ if (typeof window !== 'undefined') {
     window.updateEnhancedPowerMetricsDisplay = updateEnhancedPowerMetricsDisplay;
     window.integrateToDashboard = integrateToDashboard;
 }
+// COMPLETE FIX for Marketing Charts in dashboard.js
+// Replace the existing enhanced leads chart functions with these corrected versions
+
 // ============================================================================
-// 3. ADD ALL THESE NEW FUNCTIONS (before the utility functions section)
+// 1. FIXED MARKETING DATA PROCESSING
 // ============================================================================
 
-// 1. ADD THIS GLOBAL VARIABLE (after existing global variables)
-let enhancedLeadChart = null;
+function processMarketingLeadData(marketingData, salesTeamData, selectedTeam, selectedTime, selectedSource) {
+    console.log('🔍 Processing Marketing Lead Data...');
+    
+    const marketingLeads = {};
+    const marketingCosts = {};
+    let totalMarketingLeads = 0;
+    let totalMarketingSpend = 0;
+    
+    // Process Marketing Lead Semasa Data (CORRECTED)
+    if (!selectedSource || selectedSource === 'marketing') {
+        const leadSemasaData = marketingData.filter(item => item.type === 'lead_semasa');
+        
+        // Group by team_sale to find latest entry
+        const teamMarketingData = {};
+        
+        leadSemasaData.forEach(item => {
+            const teamSale = item.team_sale || 'Unknown Marketing';
+            const itemTime = item.masa;
+            const itemDate = item.tarikh;
+            const spend = parseFloat(item.spend) || 0;
+            
+            // Skip if team filter is applied and doesn't match
+            if (selectedTeam && teamSale !== selectedTeam) return;
+            
+            const itemDateTime = new Date(`${itemDate} ${itemTime || '00:00'}`);
+            
+            if (!teamMarketingData[teamSale]) {
+                teamMarketingData[teamSale] = {
+                    latestEntry: null,
+                    latestDateTime: null,
+                    timeEntries: {},
+                    source: 'marketing'
+                };
+            }
+            
+            if (itemTime) {
+                if (!teamMarketingData[teamSale].timeEntries[itemTime] || 
+                    itemDateTime > new Date(`${teamMarketingData[teamSale].timeEntries[itemTime].tarikh} ${teamMarketingData[teamSale].timeEntries[itemTime].masa}`)) {
+                    teamMarketingData[teamSale].timeEntries[itemTime] = item;
+                }
+            }
+            
+            if (!teamMarketingData[teamSale].latestDateTime || itemDateTime > teamMarketingData[teamSale].latestDateTime) {
+                teamMarketingData[teamSale].latestDateTime = itemDateTime;
+                teamMarketingData[teamSale].latestEntry = item;
+            }
+        });
+        
+        // Extract marketing lead data (FIXED CALCULATION)
+        Object.entries(teamMarketingData).forEach(([teamSale, data]) => {
+            let displayData = null;
+            
+            if (selectedTime) {
+                displayData = data.timeEntries[selectedTime];
+            } else {
+                displayData = data.latestEntry;
+            }
+            
+            if (displayData) {
+                const spend = parseFloat(displayData.spend) || 0;
+                
+                // CORRECTED: Get actual lead count from marketing data
+                // Check if there's a lead_dari_team_sale field or use spend-based estimation
+                let actualLeads = 0;
+                
+                // Look for corresponding detail_ads data for this team
+                const adsData = marketingData.filter(item => 
+                    item.type === 'detail_ads' && 
+                    item.team_sale === teamSale &&
+                    item.tarikh === displayData.tarikh
+                );
+                
+                if (adsData.length > 0) {
+                    // Sum up lead_dari_team_sale from ads data
+                    actualLeads = adsData.reduce((sum, ad) => sum + (parseInt(ad.lead_dari_team_sale) || 0), 0);
+                } else {
+                    // Fallback: estimate based on spend (you can adjust this logic)
+                    actualLeads = spend > 0 ? Math.max(1, Math.round(spend / 30)) : 0; // RM30 per lead estimation
+                }
+                
+                marketingLeads[`${teamSale} (Marketing)`] = {
+                    totalLeads: actualLeads,
+                    spend: spend,
+                    costPerLead: actualLeads > 0 ? spend / actualLeads : 0,
+                    time: displayData.masa,
+                    date: displayData.tarikh,
+                    source: 'marketing',
+                    team_sale: teamSale
+                };
+                
+                totalMarketingLeads += actualLeads;
+                totalMarketingSpend += spend;
+            }
+        });
+    }
+    
+    console.log('📊 Marketing processed data:', {
+        teams: Object.keys(marketingLeads).length,
+        totalLeads: totalMarketingLeads,
+        totalSpend: totalMarketingSpend,
+        avgCostPerLead: totalMarketingLeads > 0 ? totalMarketingSpend / totalMarketingLeads : 0
+    });
+    
+    return {
+        marketingLeads: marketingLeads,
+        totalMarketingLeads: totalMarketingLeads,
+        totalMarketingSpend: totalMarketingSpend
+    };
+}
 
-// 2. REPLACE the updateEnhancedLeadsChart function with this COMPLETE NEW VERSION
+// ============================================================================
+// 2. SEPARATE SALES TEAM DATA PROCESSING
+// ============================================================================
+
+function processSalesTeamLeadData(salesTeamData, selectedTeam, selectedTime, selectedSource) {
+    console.log('🔍 Processing Sales Team Lead Data...');
+    
+    const salesLeads = {};
+    let totalSalesLeads = 0;
+    
+    // Process Sales Team Lead Data
+    if (!selectedSource || selectedSource === 'salesteam') {
+        const salesLeadData = salesTeamData.filter(item => item.type === 'lead');
+        
+        // Group by team to find latest entry
+        const teamLatestData = {};
+        
+        salesLeadData.forEach(item => {
+            const team = item.team || item.agent || 'Unknown Sales';
+            const itemTime = item.masa;
+            const itemDate = item.tarikh;
+            
+            // Skip if team filter is applied and doesn't match
+            if (selectedTeam && team !== selectedTeam) return;
+            
+            const itemDateTime = new Date(`${itemDate} ${itemTime || '00:00'}`);
+            
+            if (!teamLatestData[team]) {
+                teamLatestData[team] = {
+                    latestEntry: null,
+                    latestDateTime: null,
+                    timeEntries: {},
+                    source: 'salesteam'
+                };
+            }
+            
+            if (itemTime) {
+                if (!teamLatestData[team].timeEntries[itemTime] || 
+                    itemDateTime > new Date(`${teamLatestData[team].timeEntries[itemTime].tarikh} ${teamLatestData[team].timeEntries[itemTime].masa}`)) {
+                    teamLatestData[team].timeEntries[itemTime] = item;
+                }
+            }
+            
+            if (!teamLatestData[team].latestDateTime || itemDateTime > teamLatestData[team].latestDateTime) {
+                teamLatestData[team].latestDateTime = itemDateTime;
+                teamLatestData[team].latestEntry = item;
+            }
+        });
+        
+        // Extract sales team data
+        Object.entries(teamLatestData).forEach(([team, data]) => {
+            let displayData = null;
+            
+            if (selectedTime) {
+                displayData = data.timeEntries[selectedTime];
+            } else {
+                displayData = data.latestEntry;
+            }
+            
+            if (displayData) {
+                const leads = parseInt(displayData.total_lead) || 0;
+                salesLeads[`${team} (Sales)`] = {
+                    totalLeads: leads,
+                    cold: parseInt(displayData.cold) || 0,
+                    warm: parseInt(displayData.warm) || 0,
+                    hot: parseInt(displayData.hot) || 0,
+                    time: displayData.masa,
+                    date: displayData.tarikh,
+                    source: 'salesteam',
+                    team_sale: team
+                };
+                totalSalesLeads += leads;
+            }
+        });
+    }
+    
+    console.log('📊 Sales processed data:', {
+        teams: Object.keys(salesLeads).length,
+        totalLeads: totalSalesLeads
+    });
+    
+    return {
+        salesLeads: salesLeads,
+        totalSalesLeads: totalSalesLeads
+    };
+}
+
+// ============================================================================
+// 3. UPDATED MAIN CHART UPDATE FUNCTION
+// ============================================================================
+// COMPLETE FIX for Marketing Charts in dashboard.js
+// Replace the existing enhanced leads chart functions with these corrected versions
+
+// ============================================================================
+// 1. FIXED MARKETING DATA PROCESSING
+// ============================================================================
+
+function processMarketingLeadData(marketingData, salesTeamData, selectedTeam, selectedTime, selectedSource) {
+    console.log('🔍 Processing Marketing Lead Data...');
+    
+    const marketingLeads = {};
+    const marketingCosts = {};
+    let totalMarketingLeads = 0;
+    let totalMarketingSpend = 0;
+    
+    // Process Marketing Lead Semasa Data (CORRECTED)
+    if (!selectedSource || selectedSource === 'marketing') {
+        const leadSemasaData = marketingData.filter(item => item.type === 'lead_semasa');
+        
+        // Group by team_sale to find latest entry
+        const teamMarketingData = {};
+        
+        leadSemasaData.forEach(item => {
+            const teamSale = item.team_sale || 'Unknown Marketing';
+            const itemTime = item.masa;
+            const itemDate = item.tarikh;
+            const spend = parseFloat(item.spend) || 0;
+            
+            // Skip if team filter is applied and doesn't match
+            if (selectedTeam && teamSale !== selectedTeam) return;
+            
+            const itemDateTime = new Date(`${itemDate} ${itemTime || '00:00'}`);
+            
+            if (!teamMarketingData[teamSale]) {
+                teamMarketingData[teamSale] = {
+                    latestEntry: null,
+                    latestDateTime: null,
+                    timeEntries: {},
+                    source: 'marketing'
+                };
+            }
+            
+            if (itemTime) {
+                if (!teamMarketingData[teamSale].timeEntries[itemTime] || 
+                    itemDateTime > new Date(`${teamMarketingData[teamSale].timeEntries[itemTime].tarikh} ${teamMarketingData[teamSale].timeEntries[itemTime].masa}`)) {
+                    teamMarketingData[teamSale].timeEntries[itemTime] = item;
+                }
+            }
+            
+            if (!teamMarketingData[teamSale].latestDateTime || itemDateTime > teamMarketingData[teamSale].latestDateTime) {
+                teamMarketingData[teamSale].latestDateTime = itemDateTime;
+                teamMarketingData[teamSale].latestEntry = item;
+            }
+        });
+        
+        // Extract marketing lead data (FIXED CALCULATION)
+        Object.entries(teamMarketingData).forEach(([teamSale, data]) => {
+            let displayData = null;
+            
+            if (selectedTime) {
+                displayData = data.timeEntries[selectedTime];
+            } else {
+                displayData = data.latestEntry;
+            }
+            
+            if (displayData) {
+                const spend = parseFloat(displayData.spend) || 0;
+                
+                // CORRECTED: Get actual lead count from marketing data
+                // Check if there's a lead_dari_team_sale field or use spend-based estimation
+                let actualLeads = 0;
+                
+                // Look for corresponding detail_ads data for this team
+                const adsData = marketingData.filter(item => 
+                    item.type === 'detail_ads' && 
+                    item.team_sale === teamSale &&
+                    item.tarikh === displayData.tarikh
+                );
+                
+                if (adsData.length > 0) {
+                    // Sum up lead_dari_team_sale from ads data
+                    actualLeads = adsData.reduce((sum, ad) => sum + (parseInt(ad.lead_dari_team_sale) || 0), 0);
+                } else {
+                    // Fallback: estimate based on spend (you can adjust this logic)
+                    actualLeads = spend > 0 ? Math.max(1, Math.round(spend / 30)) : 0; // RM30 per lead estimation
+                }
+                
+                marketingLeads[`${teamSale} (Marketing)`] = {
+                    totalLeads: actualLeads,
+                    spend: spend,
+                    costPerLead: actualLeads > 0 ? spend / actualLeads : 0,
+                    time: displayData.masa,
+                    date: displayData.tarikh,
+                    source: 'marketing',
+                    team_sale: teamSale
+                };
+                
+                totalMarketingLeads += actualLeads;
+                totalMarketingSpend += spend;
+            }
+        });
+    }
+    
+    console.log('📊 Marketing processed data:', {
+        teams: Object.keys(marketingLeads).length,
+        totalLeads: totalMarketingLeads,
+        totalSpend: totalMarketingSpend,
+        avgCostPerLead: totalMarketingLeads > 0 ? totalMarketingSpend / totalMarketingLeads : 0
+    });
+    
+    return {
+        marketingLeads: marketingLeads,
+        totalMarketingLeads: totalMarketingLeads,
+        totalMarketingSpend: totalMarketingSpend
+    };
+}
+
+// ============================================================================
+// 2. SEPARATE SALES TEAM DATA PROCESSING
+// ============================================================================
+
+function processSalesTeamLeadData(salesTeamData, selectedTeam, selectedTime, selectedSource) {
+    console.log('🔍 Processing Sales Team Lead Data...');
+    
+    const salesLeads = {};
+    let totalSalesLeads = 0;
+    
+    // Process Sales Team Lead Data
+    if (!selectedSource || selectedSource === 'salesteam') {
+        const salesLeadData = salesTeamData.filter(item => item.type === 'lead');
+        
+        // Group by team to find latest entry
+        const teamLatestData = {};
+        
+        salesLeadData.forEach(item => {
+            const team = item.team || item.agent || 'Unknown Sales';
+            const itemTime = item.masa;
+            const itemDate = item.tarikh;
+            
+            // Skip if team filter is applied and doesn't match
+            if (selectedTeam && team !== selectedTeam) return;
+            
+            const itemDateTime = new Date(`${itemDate} ${itemTime || '00:00'}`);
+            
+            if (!teamLatestData[team]) {
+                teamLatestData[team] = {
+                    latestEntry: null,
+                    latestDateTime: null,
+                    timeEntries: {},
+                    source: 'salesteam'
+                };
+            }
+            
+            if (itemTime) {
+                if (!teamLatestData[team].timeEntries[itemTime] || 
+                    itemDateTime > new Date(`${teamLatestData[team].timeEntries[itemTime].tarikh} ${teamLatestData[team].timeEntries[itemTime].masa}`)) {
+                    teamLatestData[team].timeEntries[itemTime] = item;
+                }
+            }
+            
+            if (!teamLatestData[team].latestDateTime || itemDateTime > teamLatestData[team].latestDateTime) {
+                teamLatestData[team].latestDateTime = itemDateTime;
+                teamLatestData[team].latestEntry = item;
+            }
+        });
+        
+        // Extract sales team data
+        Object.entries(teamLatestData).forEach(([team, data]) => {
+            let displayData = null;
+            
+            if (selectedTime) {
+                displayData = data.timeEntries[selectedTime];
+            } else {
+                displayData = data.latestEntry;
+            }
+            
+            if (displayData) {
+                const leads = parseInt(displayData.total_lead) || 0;
+                salesLeads[`${team} (Sales)`] = {
+                    totalLeads: leads,
+                    cold: parseInt(displayData.cold) || 0,
+                    warm: parseInt(displayData.warm) || 0,
+                    hot: parseInt(displayData.hot) || 0,
+                    time: displayData.masa,
+                    date: displayData.tarikh,
+                    source: 'salesteam',
+                    team_sale: team
+                };
+                totalSalesLeads += leads;
+            }
+        });
+    }
+    
+    console.log('📊 Sales processed data:', {
+        teams: Object.keys(salesLeads).length,
+        totalLeads: totalSalesLeads
+    });
+    
+    return {
+        salesLeads: salesLeads,
+        totalSalesLeads: totalSalesLeads
+    };
+}
+
+// ============================================================================
+// 3. UPDATED MAIN CHART UPDATE FUNCTION
+// ============================================================================
+
 function updateEnhancedLeadsChart(data) {
     console.log('🔍 Enhanced Lead Distribution - Processing comprehensive data:', data);
     
@@ -1884,20 +2290,638 @@ function updateEnhancedLeadsChart(data) {
     const selectedTime = timeFilter?.value || '';
     const selectedSource = sourceFilter?.value || '';
     
-    console.log('📊 Enhanced Filters:', { selectedTeam, selectedTime, selectedSource });
+    // Process data separately
+    const marketingData = processMarketingLeadData(data.marketing, data.salesteam, selectedTeam, selectedTime, selectedSource);
+    const salesData = processSalesTeamLeadData(data.salesteam, selectedTeam, selectedTime, selectedSource);
     
-    // Process comprehensive lead data from both sources
-    const processedData = processComprehensiveLeadData(data.salesteam, data.marketing, selectedTeam, selectedTime, selectedSource);
+    // Render both charts
+    renderLeadDistributionChart(marketingData, salesData, selectedSource);
+    renderCostPerLeadChart(marketingData);
     
-    // Calculate enhanced metrics
-    const enhancedMetrics = calculateEnhancedLeadMetrics(data.marketing, processedData);
-    
-    // Render enhanced chart
-    renderEnhancedLeadDistributionChart(processedData, enhancedMetrics);
-    
-    // Update comprehensive info display
-    updateEnhancedLeadDistributionInfo(processedData, enhancedMetrics);
+    // Update info displays
+    updateEnhancedLeadDistributionInfo(marketingData, salesData);
 }
+
+// ============================================================================
+// 4. RENDER LEAD DISTRIBUTION CHART
+// ============================================================================
+
+function renderLeadDistributionChart(marketingData, salesData, selectedSource) {
+    const ctx = document.getElementById('leadsChart')?.getContext('2d');
+    if (!ctx) {
+        console.error('❌ Canvas element "leadsChart" not found');
+        return;
+    }
+    
+    // Destroy existing chart
+    if (window.leadDistributionChart) {
+        window.leadDistributionChart.destroy();
+        window.leadDistributionChart = null;
+    }
+    
+    // Combine data based on filter
+    let chartData = {};
+    let totalLeads = 0;
+    
+    if (!selectedSource || selectedSource === 'marketing') {
+        Object.assign(chartData, marketingData.marketingLeads);
+        totalLeads += marketingData.totalMarketingLeads;
+    }
+    
+    if (!selectedSource || selectedSource === 'salesteam') {
+        Object.assign(chartData, salesData.salesLeads);
+        totalLeads += salesData.totalSalesLeads;
+    }
+    
+    const teams = Object.keys(chartData);
+    const leadCounts = teams.map(team => chartData[team].totalLeads);
+    
+    console.log('📊 Rendering lead distribution chart:', {
+        teams: teams,
+        leadCounts: leadCounts,
+        totalLeads: totalLeads
+    });
+    
+    if (teams.length === 0 || totalLeads === 0) {
+        renderEmptyChart(ctx, 'leadsChart');
+        return;
+    }
+    
+    // Color coding
+    const colors = teams.map(team => {
+        if (team.includes('Marketing')) {
+            return '#8B5CF6'; // Purple for marketing
+        } else {
+            return '#10B981'; // Green for sales team
+        }
+    });
+    
+    // Create the chart
+    window.leadDistributionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: teams,
+            datasets: [{
+                data: leadCounts,
+                backgroundColor: colors,
+                borderColor: '#1F2937',
+                borderWidth: 2,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '50%',
+            
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#D1D5DB',
+                        padding: 15,
+                        usePointStyle: true,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            return data.labels.map((label, i) => {
+                                const value = data.datasets[0].data[i];
+                                const percentage = ((value / totalLeads) * 100).toFixed(1);
+                                return {
+                                    text: `${label}: ${value} leads (${percentage}%)`,
+                                    fillStyle: colors[i],
+                                    hidden: false,
+                                    index: i
+                                };
+                            });
+                        }
+                    }
+                },
+                
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#F9FAFB',
+                    bodyColor: '#D1D5DB',
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label;
+                            const teamData = chartData[label];
+                            const percentage = ((teamData.totalLeads / totalLeads) * 100).toFixed(1);
+                            
+                            let details = [`Total: ${teamData.totalLeads} leads (${percentage}%)`];
+                            
+                            if (teamData.cold !== undefined) {
+                                details.push(`🧊 Cold: ${teamData.cold} | 🔥 Warm: ${teamData.warm} | ⚡ Hot: ${teamData.hot}`);
+                            }
+                            
+                            if (teamData.spend > 0) {
+                                details.push(`💰 Spend: RM ${teamData.spend.toFixed(2)}`);
+                                details.push(`💵 Cost/Lead: RM ${teamData.costPerLead.toFixed(2)}`);
+                            }
+                            
+                            details.push(`📅 ${teamData.date} ${teamData.time || ''}`);
+                            
+                            return details;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ============================================================================
+// 5. RENDER COST PER LEAD CHART (NEW)
+// ============================================================================
+
+function renderCostPerLeadChart(marketingData) {
+    const ctx = document.getElementById('costPerLeadChart')?.getContext('2d');
+    if (!ctx) {
+        console.warn('❌ Canvas element "costPerLeadChart" not found - skipping cost chart');
+        return;
+    }
+    
+    // Destroy existing chart
+    if (window.costPerLeadChart) {
+        window.costPerLeadChart.destroy();
+        window.costPerLeadChart = null;
+    }
+    
+    const teams = Object.keys(marketingData.marketingLeads);
+    const costs = teams.map(team => marketingData.marketingLeads[team].costPerLead);
+    const spends = teams.map(team => marketingData.marketingLeads[team].spend);
+    
+    if (teams.length === 0) {
+        renderEmptyChart(ctx, 'costPerLeadChart');
+        return;
+    }
+    
+    // Create the chart
+    window.costPerLeadChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: teams.map(team => team.replace(' (Marketing)', '')),
+            datasets: [
+                {
+                    label: 'Cost per Lead (RM)',
+                    data: costs,
+                    backgroundColor: '#F59E0B',
+                    borderColor: '#D97706',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Total Spend (RM)',
+                    data: spends,
+                    backgroundColor: '#8B5CF6',
+                    borderColor: '#7C3AED',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    yAxisID: 'y1',
+                    type: 'line',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Cost per Lead (RM)',
+                        color: '#D1D5DB'
+                    },
+                    ticks: {
+                        color: '#9CA3AF',
+                        callback: function(value) {
+                            return 'RM ' + value.toFixed(2);
+                        }
+                    },
+                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Total Spend (RM)',
+                        color: '#D1D5DB'
+                    },
+                    ticks: {
+                        color: '#9CA3AF',
+                        callback: function(value) {
+                            return 'RM ' + value.toFixed(0);
+                        }
+                    },
+                    grid: { drawOnChartArea: false }
+                },
+                x: {
+                    ticks: { color: '#9CA3AF' },
+                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                }
+            },
+            
+            plugins: {
+                legend: {
+                    labels: { color: '#D1D5DB' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#F9FAFB',
+                    bodyColor: '#D1D5DB',
+                    callbacks: {
+                        label: function(context) {
+                            const team = teams[context.dataIndex];
+                            const teamData = marketingData.marketingLeads[team];
+                            
+                            if (context.datasetIndex === 0) {
+                                return `Cost per Lead: RM ${teamData.costPerLead.toFixed(2)}`;
+                            } else {
+                                return `Total Spend: RM ${teamData.spend.toFixed(2)} (${teamData.totalLeads} leads)`;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ============================================================================
+// 6. RENDER EMPTY CHART
+// ============================================================================
+
+function renderEmptyChart(ctx, chartId) {
+    const chartName = chartId === 'leadsChart' ? 'leadDistributionChart' : 'costPerLeadChart';
+    
+    if (window[chartName]) {
+        window[chartName].destroy();
+    }
+    
+    window[chartName] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Tiada Data'],
+            datasets: [{
+                data: [1],
+                backgroundColor: ['#374151'],
+                borderColor: '#1F2937',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '45%',
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#9CA3AF',
+                        generateLabels: function() {
+                            return [{
+                                text: 'Tiada data tersedia - Sila submit data',
+                                fillStyle: '#374151'
+                            }];
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: () => 'Submit data melalui borang Marketing'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ============================================================================
+// 7. UPDATE INFO DISPLAY
+// ============================================================================
+
+function updateEnhancedLeadDistributionInfo(marketingData, salesData) {
+    const chartContainer = document.querySelector('#leadsChart')?.parentElement;
+    if (!chartContainer) return;
+    
+    let infoDisplay = chartContainer.querySelector('.enhanced-lead-info-display');
+    if (!infoDisplay) {
+        infoDisplay = document.createElement('div');
+        infoDisplay.className = 'enhanced-lead-info-display mt-6';
+        chartContainer.appendChild(infoDisplay);
+    }
+    
+    const totalLeads = marketingData.totalMarketingLeads + salesData.totalSalesLeads;
+    const avgCostPerLead = marketingData.totalMarketingLeads > 0 ? 
+        marketingData.totalMarketingSpend / marketingData.totalMarketingLeads : 0;
+    
+    infoDisplay.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Total Leads -->
+            <div class="info-card bg-gradient-to-br from-blue-900/40 to-blue-800/40 border border-blue-500/30 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users text-white"></i>
+                    </div>
+                    <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">Total</span>
+                </div>
+                <div class="text-2xl font-bold text-white mb-1">${totalLeads}</div>
+                <div class="text-sm text-blue-300">Total Leads</div>
+                <div class="text-xs text-gray-400 mt-1">
+                    Sales: ${salesData.totalSalesLeads} | Marketing: ${marketingData.totalMarketingLeads}
+                </div>
+            </div>
+
+            <!-- Marketing Spend -->
+            <div class="info-card bg-gradient-to-br from-purple-900/40 to-purple-800/40 border border-purple-500/30 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-dollar-sign text-white"></i>
+                    </div>
+                    <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">Spend</span>
+                </div>
+                <div class="text-2xl font-bold text-white mb-1">RM ${marketingData.totalMarketingSpend.toFixed(0)}</div>
+                <div class="text-sm text-purple-300">Marketing Spend</div>
+                <div class="text-xs text-gray-400 mt-1">
+                    ${Object.keys(marketingData.marketingLeads).length} marketing teams
+                </div>
+            </div>
+
+            <!-- Cost per Lead -->
+            <div class="info-card bg-gradient-to-br from-orange-900/40 to-orange-800/40 border border-orange-500/30 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-calculator text-white"></i>
+                    </div>
+                    <span class="text-xs bg-orange-500/20 text-orange-300 px-2 py-1 rounded-full">Avg</span>
+                </div>
+                <div class="text-2xl font-bold text-white mb-1">RM ${avgCostPerLead.toFixed(2)}</div>
+                <div class="text-sm text-orange-300">Avg Cost/Lead</div>
+                <div class="text-xs text-gray-400 mt-1">
+                    ${avgCostPerLead < 30 ? '💚 Excellent' : avgCostPerLead < 50 ? '✅ Good' : '⚠️ Review needed'}
+                </div>
+            </div>
+
+            <!-- Efficiency -->
+            <div class="info-card bg-gradient-to-br from-green-900/40 to-green-800/40 border border-green-500/30 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white"></i>
+                    </div>
+                    <span class="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full">Ratio</span>
+                </div>
+                <div class="text-2xl font-bold text-white mb-1">
+                    ${salesData.totalSalesLeads}:${marketingData.totalMarketingLeads}
+                </div>
+                <div class="text-sm text-green-300">Sales:Marketing</div>
+                <div class="text-xs text-gray-400 mt-1">Lead source ratio</div>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// 8. INITIALIZE DROPDOWNS (UPDATED)
+// ============================================================================
+
+function initializeEnhancedLeadDistributionDropdowns() {
+    const chartContainer = document.querySelector('#leadsChart')?.parentElement;
+    if (!chartContainer) return;
+    
+    // Check if dropdowns already exist
+    if (chartContainer.querySelector('.enhanced-lead-filters')) {
+        return;
+    }
+    
+    // Create enhanced filter container
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'enhanced-lead-filters mb-6';
+    filterContainer.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-800/50 rounded-lg border border-gray-600/30">
+            <div class="filter-item">
+                <label for="lead-source-filter" class="block text-sm font-medium text-gray-300 mb-2">
+                    📊 Data Source
+                </label>
+                <select id="lead-source-filter" class="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white">
+                    <option value="">Semua Source</option>
+                    <option value="salesteam">Sales Team Only</option>
+                    <option value="marketing">Marketing Only</option>
+                </select>
+            </div>
+            
+            <div class="filter-item">
+                <label for="lead-team-filter" class="block text-sm font-medium text-gray-300 mb-2">
+                    👥 Team
+                </label>
+                <select id="lead-team-filter" class="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white">
+                    <option value="">Semua Team</option>
+                </select>
+            </div>
+            
+            <div class="filter-item">
+                <label for="lead-time-filter" class="block text-sm font-medium text-gray-300 mb-2">
+                    ⏰ Masa
+                </label>
+                <select id="lead-time-filter" class="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white">
+                    <option value="">Latest Data</option>
+                </select>
+            </div>
+        </div>
+    `;
+    
+    // Insert before chart
+    chartContainer.insertBefore(filterContainer, chartContainer.firstChild);
+    
+    // Populate dropdowns
+    populateEnhancedTeamDropdown();
+    populateTimeDropdown();
+    
+    // Add event listeners
+    document.getElementById('lead-source-filter')?.addEventListener('change', () => {
+        updateTeamDropdownBasedOnSource();
+        applyFilters();
+    });
+    
+    document.getElementById('lead-team-filter')?.addEventListener('change', applyFilters);
+    document.getElementById('lead-time-filter')?.addEventListener('change', applyFilters);
+}
+
+// ============================================================================
+// 9. POPULATE DROPDOWNS (UPDATED)
+// ============================================================================
+
+function populateEnhancedTeamDropdown() {
+    const teamSelect = document.getElementById('lead-team-filter');
+    const sourceFilter = document.getElementById('lead-source-filter');
+    
+    if (!teamSelect || !allData) return;
+    
+    const selectedSource = sourceFilter?.value || '';
+    const teams = new Set();
+    
+    // Add teams from sales team data
+    if (!selectedSource || selectedSource === 'salesteam') {
+        allData.salesteam
+            .filter(item => item.type === 'lead')
+            .forEach(item => {
+                const team = item.team || item.agent;
+                if (team) teams.add(team);
+            });
+    }
+    
+    // Add teams from marketing data
+    if (!selectedSource || selectedSource === 'marketing') {
+        allData.marketing
+            .filter(item => item.type === 'lead_semasa')
+            .forEach(item => {
+                const team = item.team_sale;
+                if (team) teams.add(team);
+            });
+    }
+    
+    // Clear and repopulate
+    teamSelect.innerHTML = '<option value="">Semua Team</option>';
+    Array.from(teams).sort().forEach(team => {
+        const option = document.createElement('option');
+        option.value = team;
+        option.textContent = team;
+        teamSelect.appendChild(option);
+    });
+}
+
+function populateTimeDropdown() {
+    const timeSelect = document.getElementById('lead-time-filter');
+    if (!timeSelect || !allData) return;
+    
+    const times = new Set();
+    
+    // Get times from both sources
+    [...allData.salesteam, ...allData.marketing].forEach(item => {
+        if (item.masa) {
+            times.add(item.masa);
+        }
+    });
+    
+    // Clear and repopulate
+    timeSelect.innerHTML = '<option value="">Latest Data</option>';
+    Array.from(times).sort().forEach(time => {
+        const option = document.createElement('option');
+        option.value = time;
+        option.textContent = time;
+        timeSelect.appendChild(option);
+    });
+}
+
+function updateTeamDropdownBasedOnSource() {
+    populateEnhancedTeamDropdown();
+}
+
+// ============================================================================
+// 10. DEBUG FUNCTIONS
+// ============================================================================
+
+window.debugMarketingCharts = function() {
+    console.log('🔍 === MARKETING CHARTS DEBUG ===');
+    
+    if (!allData) {
+        console.log('❌ No data available');
+        return;
+    }
+
+    console.log('📊 Marketing data:', allData.marketing?.length || 0, 'records');
+    console.log('📊 Sales Team data:', allData.salesteam?.length || 0, 'records');
+    
+    // Show sample marketing lead semasa data
+    const marketingLeads = allData.marketing?.filter(item => item.type === 'lead_semasa') || [];
+    console.log('📋 Marketing Lead Semasa:', marketingLeads.length);
+    marketingLeads.slice(0, 3).forEach((item, index) => {
+        console.log(`[Marketing ${index}]`, {
+            team_sale: item.team_sale,
+            spend: item.spend,
+            date: item.tarikh,
+            time: item.masa
+        });
+    });
+    
+    // Show sample marketing detail ads data
+    const marketingAds = allData.marketing?.filter(item => item.type === 'detail_ads') || [];
+    console.log('📋 Marketing Detail Ads:', marketingAds.length);
+    marketingAds.slice(0, 3).forEach((item, index) => {
+        console.log(`[Ads ${index}]`, {
+            team_sale: item.team_sale,
+            lead_dari_team_sale: item.lead_dari_team_sale,
+            amount_spent: item.amount_spent,
+            date: item.tarikh
+        });
+    });
+    
+    // Show sample sales team lead data
+    const salesLeads = allData.salesteam?.filter(item => item.type === 'lead') || [];
+    console.log('📋 Sales Team Leads:', salesLeads.length);
+    salesLeads.slice(0, 3).forEach((item, index) => {
+        console.log(`[Sales ${index}]`, {
+            team: item.team,
+            total_lead: item.total_lead,
+            cold: item.cold,
+            warm: item.warm,
+            hot: item.hot,
+            date: item.tarikh,
+            time: item.masa
+        });
+    });
+    
+    console.log('🔍 === END DEBUG ===');
+    
+    // Force refresh charts
+    if (typeof applyFilters === 'function') {
+        applyFilters();
+    }
+};
+
+// Test enhanced charts
+window.testMarketingCharts = function() {
+    console.log('🧪 Testing Marketing Charts...');
+    window.debugMarketingCharts();
+    
+    // Show current filter states
+    const teamFilter = document.getElementById('lead-team-filter');
+    const timeFilter = document.getElementById('lead-time-filter');
+    const sourceFilter = document.getElementById('lead-source-filter');
+    
+    console.log('🔧 Current Filters:', {
+        team: teamFilter?.value || 'None',
+        time: timeFilter?.value || 'None',
+        source: sourceFilter?.value || 'None'
+    });
+    
+    // Check if both charts exist
+    const leadsChart = document.getElementById('leadsChart');
+    const costChart = document.getElementById('costPerLeadChart');
+    
+    console.log('📊 Chart Elements:', {
+        leadsChart: !!leadsChart,
+        costChart: !!costChart,
+        leadsChartVisible: leadsChart ? leadsChart.offsetWidth > 0 : false,
+        costChartVisible: costChart ? costChart.offsetWidth > 0 : false
+    });
+};
+
+console.log('✅ Fixed Marketing Charts loaded successfully!');
+console.log('🚀 Try running: debugMarketingCharts() to see marketing data');
+console.log('🧪 Run: testMarketingCharts() to test both charts');
+console.log('📋 Make sure you have costPerLeadChart canvas in HTML!');
+
 
 // 3. Enhanced dropdown initialization with source filter
 function initializeEnhancedLeadDistributionDropdowns() {
@@ -2763,10 +3787,7 @@ window.testEnhancedLeadChart = function() {
 // 12. Enhanced Lead Chart Integration - UPDATE these in your applyFilters function
 // ADD this to your existing applyFilters function (after the existing updateEnhancedPowerMetricsDisplay line)
 
-/*
-// In your applyFilters function, replace the existing updateEnhancedLeadsChart call with:
-updateEnhancedLeadsChart(filteredData);
-*/
+
 // Update marketing budget display
 function updateMarketingBudgetDisplay(marketingData) {
     const totalSpend = marketingData

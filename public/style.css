@@ -3354,3 +3354,504 @@ canvas {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
 }
+/* ==========================================
+   MARKETING CHARTS - ADDITIONAL CSS FIXES
+   Add this to the end of your style.css file
+   ========================================== */
+
+/* Enhanced Cost Chart Styling */
+.enhanced-cost-chart {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(245, 158, 11, 0.1) 100%);
+    border: 2px solid rgba(245, 158, 11, 0.3);
+}
+
+.enhanced-cost-chart:hover {
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 20px 40px rgba(245, 158, 11, 0.1);
+}
+
+/* Chart Badge Styling */
+.badge-sources {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--secondary-500);
+    background: rgba(139, 92, 246, 0.1);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* Enhanced Chart Containers - FIXED */
+.enhanced-chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
+}
+
+/* Make sure canvases display properly */
+#leadsChart,
+#costPerLeadChart {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+/* Chart subtitle styling */
+.chart-subtitle {
+    font-size: var(--text-sm);
+    color: var(--gray-400);
+    font-weight: 400;
+    margin-top: var(--space-1);
+}
+
+/* Enhanced Lead Filters Grid - IMPROVED */
+.enhanced-lead-filters {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    margin-bottom: var(--space-8);
+    backdrop-filter: blur(10px);
+}
+
+.enhanced-lead-filters .filter-item label {
+    color: var(--gray-300);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.enhanced-lead-filters select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    color: var(--gray-50);
+    font-size: var(--text-sm);
+    transition: var(--transition-normal);
+    outline: none;
+    width: 100%;
+}
+
+.enhanced-lead-filters select:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.enhanced-lead-filters select:hover {
+    border-color: var(--primary-400);
+    background: var(--bg-secondary);
+}
+
+/* Info Cards Grid - ENHANCED */
+.enhanced-lead-info-display {
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--glass-border);
+}
+
+.info-card {
+    transition: var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-xl);
+}
+
+.info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, currentColor, transparent);
+    opacity: 0.6;
+}
+
+/* Cost Analysis Info Styling */
+#cost-analysis-info {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-top: var(--space-6);
+}
+
+.cost-insight {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3);
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.cost-insight:last-child {
+    margin-bottom: 0;
+}
+
+.cost-insight-label {
+    font-size: var(--text-sm);
+    color: var(--gray-300);
+    font-weight: 500;
+}
+
+.cost-insight-value {
+    font-size: var(--text-sm);
+    color: var(--warning-400);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Mobile Responsive for Marketing Charts */
+@media (max-width: 1200px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-8);
+    }
+    
+    .main-chart {
+        grid-column: 1;
+    }
+    
+    .enhanced-chart-container {
+        height: 350px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .enhanced-chart-container {
+        height: 300px !important;
+        padding: var(--space-2);
+    }
+    
+    .enhanced-lead-filters {
+        padding: var(--space-4);
+    }
+    
+    .enhanced-lead-filters .grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+    
+    .chart-badge {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+    
+    .chart-subtitle {
+        font-size: var(--text-xs);
+    }
+    
+    .enhanced-lead-info-display .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-4);
+    }
+}
+
+@media (max-width: 480px) {
+    .enhanced-chart-container {
+        height: 250px !important;
+        padding: var(--space-1);
+    }
+    
+    .enhanced-leads-chart,
+    .enhanced-cost-chart {
+        min-height: 450px !important;
+        padding: var(--space-4);
+    }
+    
+    .chart-header {
+        text-align: center;
+    }
+    
+    .chart-badge {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .enhanced-lead-info-display .grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+    
+    .info-card {
+        padding: var(--space-3);
+    }
+    
+    .info-card .text-2xl {
+        font-size: var(--text-xl);
+    }
+}
+
+/* Chart Loading States */
+.chart-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--gray-400);
+    text-align: center;
+}
+
+.chart-loading-state i {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-4);
+    animation: pulse 2s infinite;
+}
+
+.chart-loading-state p {
+    font-size: var(--text-sm);
+    font-weight: 500;
+}
+
+/* Empty State for Charts */
+.chart-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--gray-500);
+    text-align: center;
+    border: 2px dashed var(--glass-border);
+    border-radius: var(--radius-lg);
+    margin: var(--space-4);
+}
+
+.chart-empty-state i {
+    font-size: var(--text-4xl);
+    margin-bottom: var(--space-4);
+    color: var(--gray-600);
+}
+
+.chart-empty-state h4 {
+    color: var(--gray-400);
+    margin-bottom: var(--space-2);
+}
+
+.chart-empty-state p {
+    font-size: var(--text-sm);
+    color: var(--gray-500);
+}
+
+/* Animation for chart appearance */
+.enhanced-leads-chart,
+.enhanced-cost-chart {
+    animation: slideInUp 0.8s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ensure proper chart rendering */
+.chart-container canvas {
+    image-rendering: auto;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+/* Fix for chart legend positioning */
+.enhanced-chart-container .chartjs-legend {
+    margin-top: var(--space-4) !important;
+}
+
+/* Grid utilities for info cards */
+.grid {
+    display: grid;
+}
+
+.grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.gap-3 {
+    gap: var(--space-3);
+}
+
+.gap-4 {
+    gap: var(--space-4);
+}
+
+.gap-6 {
+    gap: var(--space-6);
+}
+
+/* Text utilities */
+.text-xs {
+    font-size: var(--text-xs);
+}
+
+.text-sm {
+    font-size: var(--text-sm);
+}
+
+.text-2xl {
+    font-size: var(--text-2xl);
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+/* Margin utilities */
+.mt-1 {
+    margin-top: var(--space-1);
+}
+
+.mt-4 {
+    margin-top: var(--space-4);
+}
+
+.mt-6 {
+    margin-top: var(--space-6);
+}
+
+.mb-1 {
+    margin-bottom: var(--space-1);
+}
+
+.mb-3 {
+    margin-bottom: var(--space-3);
+}
+
+/* Padding utilities */
+.px-2 {
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+}
+
+.py-1 {
+    padding-top: var(--space-1);
+    padding-bottom: var(--space-1);
+}
+
+.p-4 {
+    padding: var(--space-4);
+}
+
+/* Border utilities */
+.border {
+    border-width: 1px;
+}
+
+.rounded-full {
+    border-radius: var(--radius-full);
+}
+
+.rounded-lg {
+    border-radius: var(--radius-lg);
+}
+
+.rounded-xl {
+    border-radius: var(--radius-xl);
+}
+
+/* Background utilities */
+.bg-blue-500 {
+    background-color: var(--primary-500);
+}
+
+.bg-purple-500 {
+    background-color: var(--secondary-500);
+}
+
+.bg-orange-500 {
+    background-color: var(--warning-500);
+}
+
+.bg-green-500 {
+    background-color: var(--success-500);
+}
+
+/* Text color utilities */
+.text-white {
+    color: white;
+}
+
+.text-blue-300 {
+    color: var(--primary-300);
+}
+
+.text-purple-300 {
+    color: var(--secondary-300);
+}
+
+.text-orange-300 {
+    color: var(--warning-300);
+}
+
+.text-green-300 {
+    color: var(--success-300);
+}
+
+.text-gray-400 {
+    color: var(--gray-400);
+}
+
+/* Flexbox utilities */
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+/* Width utilities */
+.w-10 {
+    width: 2.5rem;
+}
+
+.h-10 {
+    height: 2.5rem;
+}
+
+/* Final performance optimization */
+.enhanced-leads-chart,
+.enhanced-cost-chart,
+.enhanced-chart-container {
+    will-change: transform;
+    transform: translateZ(0);
+}
