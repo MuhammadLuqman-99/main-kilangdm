@@ -3247,3 +3247,171 @@ section:not(:last-child) {
         font-size: var(--text-xs);
     }
 }
+/* Enhanced Lead Distribution Chart Styles */
+.enhanced-leads-chart {
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(31, 41, 55, 0.95) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.1);
+}
+
+.enhanced-leads-chart .chart-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+}
+
+.enhanced-leads-chart .chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #F9FAFB;
+    display: flex;
+    align-items: center;
+}
+
+.enhanced-leads-chart .chart-subtitle {
+    font-size: 0.875rem;
+    color: #9CA3AF;
+    margin-top: 0.25rem;
+}
+
+.chart-badge {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.badge-live {
+    background: linear-gradient(45deg, #10B981, #34D399);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge-sources {
+    background: linear-gradient(45deg, #8B5CF6, #A78BFA);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.enhanced-chart-container {
+    height: 500px; /* Increased height for better visibility */
+    padding: 2rem;
+}
+
+/* Enhanced Filter Styles */
+.enhanced-lead-filters {
+    padding: 1.5rem;
+    background: rgba(17, 24, 39, 0.5);
+    border-top: 1px solid rgba(75, 85, 99, 0.3);
+    border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.filter-header h5 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.filter-group label {
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-banner {
+    backdrop-filter: blur(10px);
+}
+
+/* Enhanced Info Display */
+.enhanced-lead-info-display {
+    padding: 1.5rem;
+    background: rgba(17, 24, 39, 0.3);
+    border-top: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.info-card {
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.insight-item {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(75, 85, 99, 0.2);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .enhanced-chart-container {
+        height: 400px;
+        padding: 1rem;
+    }
+    
+    .enhanced-lead-filters .grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .enhanced-lead-info-display .grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+/* Animation for chart loading */
+@keyframes chartFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.enhanced-leads-chart canvas {
+    animation: chartFadeIn 0.8s ease-out;
+}
+
+/* Status indicators */
+.metric-status {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+
+/* Chart grid adjustment for bigger lead chart */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.charts-grid .main-chart {
+    grid-column: span 2; /* Make main charts span 2 columns */
+}
+
+@media (max-width: 1024px) {
+    .charts-grid .main-chart {
+        grid-column: span 1; /* On smaller screens, use 1 column */
+    }
+}

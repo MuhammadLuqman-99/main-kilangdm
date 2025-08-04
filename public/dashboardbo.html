@@ -31,6 +31,67 @@
     console.log('Firebase initialized successfully');
     </script>
     <style>
+        /* Platform badges styling */
+.platform-shopee { 
+    background-color: #ff5e4d30; 
+    color: #ff5e4d; 
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.platform-tiktok { 
+    background-color: #00000030; 
+    color: #ffffff; 
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.platform-website { 
+    background-color: #3b82f630; 
+    color: #3b82f6; 
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.platform-default { 
+    background-color: #64748b30; 
+    color: #64748b; 
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* Expand button styling */
+.expand-btn {
+    background: transparent;
+    border: 1px solid #475569;
+    color: #94a3b8;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.expand-btn:hover {
+    background-color: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* Order invoice styling */
+.order-invoice strong {
+    color: #60a5fa !important;
+    font-weight: 600;
+}
     /* ===== General Styling for the Section ===== */
     .recent-orders {
         background-color: #1e293b; /* Warna latar belakang sedikit cerah dari body */
@@ -676,7 +737,7 @@
     </div>
 </div>
 </section>>
-    <script type="module" src="js/enhanced-order-analytics.js"></script>
+    <script type="module" src="js/order-analytics.js"></script>
       <script>
         // Home button functionality
         document.getElementById('homeBtn').addEventListener('click', function() {

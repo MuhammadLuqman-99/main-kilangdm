@@ -587,29 +587,7 @@ getPlatformClass(platform) {
     if (platformLower.includes('website')) return 'platform-website';
     
     return 'platform-default';
-}
-
-// Global function untuk expand/collapse order details
-window.toggleOrderDetails = function(button) {
-    const icon = button.querySelector('i');
-    const row = button.closest('tr');
-    
-    if (icon.classList.contains('fa-plus')) {
-        icon.classList.remove('fa-plus');
-        icon.classList.add('fa-minus');
-        
-        // Add expanded details row (jika perlu)
-        // Ini boleh ditambah kemudian untuk show more details
-        
-    } else {
-        icon.classList.remove('fa-minus');
-        icon.classList.add('fa-plus');
-        
-        // Remove expanded details row
-    }
-};
-    
-    
+} 
     setupPagination(category, orders, currentPage) {
         const paginationContainer = document.getElementById(`pagination-${category}`);
         const ordersPerPage = 10;
@@ -1031,5 +1009,24 @@ document.addEventListener('DOMContentLoaded', () => {
     initWithTimeout();
 });
 
+// Global function untuk expand/collapse order details
+window.toggleOrderDetails = function(button) {
+    const icon = button.querySelector('i');
+    const row = button.closest('tr');
+    
+    if (icon.classList.contains('fa-plus')) {
+        icon.classList.remove('fa-plus');
+        icon.classList.add('fa-minus');
+        
+        // Add expanded details row (jika perlu)
+        // Ini boleh ditambah kemudian untuk show more details
+        
+    } else {
+        icon.classList.remove('fa-minus');
+        icon.classList.add('fa-plus');
+        
+        // Remove expanded details row
+    }
+};
 // Export for potential use in other modules
 export default OrderAnalytics;
