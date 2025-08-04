@@ -1,5 +1,7 @@
 // dashboard.js - COMPLETE FIXED VERSION
 import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// Import the marketing cost chart functions
+import './marketing-cost-chart.js'; // Create this file with the previous code
 
 // Global variables
 let charts = {};
@@ -50,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showErrorState();
         }
     }, 100);
+    
 });
 
 function setupMobileMenu() {
@@ -74,6 +77,8 @@ function setupMobileMenu() {
 async function initializeDashboard() {
     try {
         console.log('🚀 Starting enhanced dashboard initialization...');
+
+        
         
         // Show loading state
         showLoadingState();
@@ -110,6 +115,19 @@ async function initializeDashboard() {
         setInterval(updateCurrentTime, 60000); // Update every minute
         
         console.log('✅ Enhanced dashboard initialized successfully');
+
+        // Initialize all charts including the new marketing cost chart
+        await Promise.all([
+            // Your existing chart functions...
+            createSalesTrendChart(),
+            createLeadsDistributionChart(),
+            createMarketingCostChart(), // Add this line
+            createChannelChart(),
+            createTeamChart(),
+            createSpendChart(),
+            createLeadQualityChart()
+        ]);
+        console.log('✅ All charts initialized successfully');
         
     } catch (error) {
         console.error('❌ Error initializing dashboard:', error);
@@ -1861,9 +1879,6 @@ if (typeof window !== 'undefined') {
     window.updateEnhancedPowerMetricsDisplay = updateEnhancedPowerMetricsDisplay;
     window.integrateToDashboard = integrateToDashboard;
 }
-// ============================================================================
-// 3. ADD ALL THESE NEW FUNCTIONS (before the utility functions section)
-// ============================================================================
 
 // 1. ADD THIS GLOBAL VARIABLE (after existing global variables)
 let enhancedLeadChart = null;
@@ -2450,3 +2465,196 @@ window.debugLeadData = function() {
         console.log(`Latest for ${team}:`, entries[0]);
     });
 };
+
+// 12. test mrketing budget display
+// Enhanced function to load marketing cost data
+async function loadMarketingCostData() {
+    try {
+        // Get marketing spend data (from marketingData collection)
+        const marketingQuery = query(
+            collection(window.db, "marketingData"),
+            where("type", "==", "lead_semasa"),
+            orderBy("createdAt", "desc"),
+            limit(50)
+        );
+        
+        const marketingSnapshot = await getDocs(marketingQuery);
+        const marketingSpendData = {};
+        
+        marketingSnapshot.forEach((doc) => {
+            const data = doc.data();
+            const key = `${data.tarikh}_${data.team_sale}`;
+            
+            if (!marketingSpendData[key]) {
+                marketingSpendData[key] = {
+                    date: data.tarikh,
+                    team: data.team_sale,
+                    totalSpend: 0,
+                    entries: 0
+                };
+            }
+            
+            marketingSpendData[key].totalSpend += (data.spend || 0);
+            marketingSpendData[key].entries += 1;
+        });
+
+        // Get sales team lead data (from salesTeamData collection)
+        const salesQuery = query(
+            collection(window.db, "salesTeamData"),
+            where("type", "==", "lead"),
+            orderBy("createdAt", "desc"),
+            limit(50)
+        );
+        
+        const salesSnapshot = await getDocs(salesQuery);
+        const salesLeadData = {};
+        
+        salesSnapshot.forEach((doc) => {
+            const data = doc.data();
+            const key = `${data.tarikh}_${data.team}`;
+            
+            if (!salesLeadData[key]) {
+                salesLeadData[key] = {
+                    date: data.tarikh,
+                    team: data.team,
+                    totalLeads: 0,
+                    entries: 0
+                };
+            }
+            
+            salesLeadData[key].totalLeads += (data.total_lead || 0);
+            salesLeadData[key].entries += 1;
+        });
+
+        // Combine data and calculate cost per lead
+        const combinedData = [];
+        
+        Object.keys(marketingSpendData).forEach(key => {
+            const marketing = marketingSpendData[key];
+            const sales = salesLeadData[key];
+            
+            if (sales && sales.totalLeads > 0) {
+                combinedData.push({
+                    date: marketing.date,
+                    team: marketing.team,
+                    totalSpend: marketing.totalSpend,
+                    totalLeads: sales.totalLeads,
+                    costPerLead: marketing.totalSpend / sales.totalLeads,
+                    marketingEntries: marketing.entries,
+                    salesEntries: sales.entries
+                });
+            }
+        });
+
+        return combinedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    } catch (error) {
+        console.error('Error loading marketing cost data:', error);
+        return [];
+    }
+}
+
+// Function to update cost per lead KPI card (if you want to add one)
+function updateCostPerLeadKPI(costData) {
+    if (costData.length === 0) return;
+
+    const totalSpend = costData.reduce((sum, item) => sum + item.totalSpend, 0);
+    const totalLeads = costData.reduce((sum, item) => sum + item.totalLeads, 0);
+    const avgCostPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
+
+    // Find existing KPI card or create new one
+    let kpiCard = document.querySelector('.cost-per-lead-kpi');
+    
+    if (!kpiCard) {
+        // Create new KPI card and add to KPI grid
+        const kpiGrid = document.querySelector('.kpi-grid');
+        if (kpiGrid) {
+            kpiCard = document.createElement('div');
+            kpiCard.className = 'kpi-card cost-per-lead-kpi cost-card';
+            kpiCard.innerHTML = `
+                <div class="kpi-header">
+                    <div class="kpi-icon cost-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <span class="kpi-trend" id="cost-trend">-</span>
+                </div>
+                <div class="kpi-content">
+                    <h4 class="kpi-title">Cost per Lead</h4>
+                    <p class="kpi-value" id="avg-cost-per-lead">RM 0.00</p>
+                    <p class="kpi-meta" id="cost-efficiency">-</p>
+                </div>
+            `;
+            kpiGrid.appendChild(kpiCard);
+        }
+    }
+
+    // Update KPI values
+    const valueElement = document.getElementById('avg-cost-per-lead');
+    const metaElement = document.getElementById('cost-efficiency');
+    const trendElement = document.getElementById('cost-trend');
+
+    if (valueElement) {
+        valueElement.textContent = `RM ${avgCostPerLead.toFixed(2)}`;
+    }
+
+    if (metaElement) {
+        const efficiency = avgCostPerLead < 10 ? 'Excellent' : 
+                         avgCostPerLead < 20 ? 'Good' : 
+                         avgCostPerLead < 50 ? 'Fair' : 'Needs Improvement';
+        metaElement.textContent = `${efficiency} efficiency`;
+    }
+
+    if (trendElement) {
+        // Calculate trend based on recent data
+        if (costData.length >= 2) {
+            const recent = costData.slice(-3);
+            const older = costData.slice(-6, -3);
+            
+            if (older.length > 0) {
+                const recentAvg = recent.reduce((sum, item) => sum + item.costPerLead, 0) / recent.length;
+                const olderAvg = older.reduce((sum, item) => sum + item.costPerLead, 0) / older.length;
+                
+                if (recentAvg < olderAvg) {
+                    trendElement.innerHTML = '<i class="fas fa-arrow-down"></i>'; // Improving (cost decreasing)
+                    trendElement.className = 'kpi-trend trend-up'; // Green for good trend
+                } else if (recentAvg > olderAvg) {
+                    trendElement.innerHTML = '<i class="fas fa-arrow-up"></i>'; // Worsening (cost increasing)
+                    trendElement.className = 'kpi-trend trend-down'; // Red for bad trend
+                } else {
+                    trendElement.innerHTML = '<i class="fas fa-minus"></i>';
+                    trendElement.className = 'kpi-trend trend-stable';
+                }
+            }
+        }
+    }
+}
+
+// Add refresh button functionality for the cost chart
+document.addEventListener('DOMContentLoaded', () => {
+    // Add refresh button to the cost chart if it doesn't exist
+    const costChartCard = document.querySelector('.enhanced-cost-chart');
+    if (costChartCard) {
+        const chartHeader = costChartCard.querySelector('.chart-header');
+        if (chartHeader && !chartHeader.querySelector('.cost-refresh-btn')) {
+            const refreshBtn = document.createElement('button');
+            refreshBtn.className = 'cost-refresh-btn btn btn-outline btn-sm ml-2';
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            refreshBtn.title = 'Refresh Cost Analysis';
+            
+            refreshBtn.addEventListener('click', async () => {
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                await refreshCostAnalysis();
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            });
+            
+            const headerRight = chartHeader.querySelector('.header-right') || chartHeader.querySelector('.chart-badge').parentElement;
+            if (headerRight) {
+                headerRight.appendChild(refreshBtn);
+            }
+        }
+    }
+});
+
+// Export for external use
+window.loadMarketingCostData = loadMarketingCostData;
+window.updateCostPerLeadKPI = updateCostPerLeadKPI;
