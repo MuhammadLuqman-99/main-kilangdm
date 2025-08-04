@@ -386,118 +386,110 @@
                 </div>
             </div>
         </section>
-
+        
         <!-- Charts Section -->
-        <!-- REPLACE the existing Charts Section in your dashboard.html with this enhanced version -->
-<!-- Charts Section -->
-<section class="charts-section">
-    <div class="section-header">
-        <div class="header-left">
-            <h3 class="section-title">Analytics Charts</h3>
-            <p class="section-subtitle">Visual data representation</p>
-        </div>
-    </div>
-
-    <div class="charts-grid">
-        <!-- Main Sales Trend Chart -->
-        <div class="chart-card main-chart">
-            <div class="chart-header">
-                <h4 class="chart-title">Sales Trend Analysis</h4>
-                <div class="chart-controls">
-                    <button class="period-btn active" data-period="7">7 Hari</button>
-                    <button class="period-btn" data-period="30">30 Hari</button>
-                    <button class="period-btn" data-period="90">90 Hari</button>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="salesTrendChart"></canvas>
-            </div>
-        </div>
-
-        <!-- ENHANCED Lead Distribution - NOW MAIN CHART SIZE -->
-        <div class="chart-card main-chart enhanced-leads-chart">
-            <div class="chart-header">
+        <section class="charts-section">
+            <div class="section-header">
                 <div class="header-left">
-                    <h4 class="chart-title">
-                        <i class="fas fa-users-cog mr-2"></i>
-                        Comprehensive Lead Distribution
-                    </h4>
-                    <p class="chart-subtitle">Sales Team + Marketing Lead Analysis</p>
-                </div>
-                <div class="chart-badge">
-                    <span class="badge-live">
-                        <i class="fas fa-circle animate-pulse"></i>
-                        Real-time Data
-                    </span>
-                    <span class="badge-sources">
-                        <i class="fas fa-database"></i>
-                        Multi-Source
-                    </span>
+                    <h3 class="section-title">Analytics Charts</h3>
+                    <p class="section-subtitle">Visual data representation</p>
                 </div>
             </div>
-            
-            <!-- Enhanced filters will be inserted here by JavaScript -->
-            
-            <div class="chart-container enhanced-chart-container">
-                <canvas id="leadsChart"></canvas>
-            </div>
-            
-            <!-- Enhanced info display will be inserted here by JavaScript -->
-        </div>
 
-        <!-- Sales by Channel - Smaller -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h4 class="chart-title">Sales by Channel</h4>
-                <div class="chart-info">
-                    <i class="fas fa-info-circle"></i>
+            <div class="charts-grid">
+                <!-- Main Sales Trend Chart -->
+                <div class="chart-card main-chart">
+                    <div class="chart-header">
+                        <h4 class="chart-title">Sales Trend Analysis</h4>
+                        <div class="chart-controls">
+                            <button class="period-btn active" data-period="7">7 Hari</button>
+                            <button class="period-btn" data-period="30">30 Hari</button>
+                            <button class="period-btn" data-period="90">90 Hari</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="channelChart"></canvas>
-            </div>
-        </div>
 
-        <!-- Team Performance - Smaller -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h4 class="chart-title">Team Performance</h4>
-                <div class="chart-info">
-                    <i class="fas fa-users"></i>
+                <!-- Lead Distribution Chart -->
+                <div class="chart-card main-chart enhanced-leads-chart">
+                    <div class="chart-header">
+                        <div class="header-left">
+                            <h4 class="chart-title">
+                                <i class="fas fa-users-cog mr-2"></i>
+                                Lead Distribution Analysis
+                            </h4>
+                            <p class="chart-subtitle">Sales Team + Marketing Lead Breakdown</p>
+                        </div>
+                        <div class="chart-badge">
+                            <span class="badge-live">
+                                <i class="fas fa-circle animate-pulse"></i>
+                                Real-time Data
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container enhanced-chart-container">
+                        <canvas id="leadsChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="teamChart"></canvas>
-            </div>
-        </div>
 
-        <!-- Marketing Spend - Smaller -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h4 class="chart-title">Marketing Spend</h4>
-                <div class="chart-info">
-                    <i class="fas fa-chart-pie"></i>
+                <!-- Marketing Cost Analysis Chart -->
+                <div class="chart-card main-chart enhanced-cost-chart">
+                    <div class="chart-header">
+                        <div class="header-left">
+                            <h4 class="chart-title">
+                                <i class="fas fa-dollar-sign mr-2"></i>
+                                Marketing Cost Analysis
+                            </h4>
+                            <p class="chart-subtitle">Cost per Lead & Total Spend Tracking</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container enhanced-chart-container">
+                        <canvas id="costPerLeadChart"></canvas>
+                    </div>
                 </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="spendChart"></canvas>
-            </div>
-        </div>
 
-        <!-- Lead Quality Trends - New Chart -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h4 class="chart-title">Lead Quality Trends</h4>
-                <div class="chart-info">
-                    <i class="fas fa-fire"></i>
+                <!-- Smaller Charts -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4 class="chart-title">Sales by Channel</h4>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="channelChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4 class="chart-title">Team Performance</h4>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="teamChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4 class="chart-title">Marketing Spend</h4>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="spendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h4 class="chart-title">Lead Quality Trends</h4>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="leadQualityChart"></canvas>
+                    </div>
                 </div>
             </div>
-            <div class="chart-container">
-                <canvas id="leadQualityChart"></canvas>
-            </div>
-        </div>
-    </div>
-</section>
+        </section>
 
         <!-- Recent Activity -->
         <section class="activity-section">
@@ -520,143 +512,6 @@
                 </div>
             </div>
         </section>
-        <!-- Charts Section -->
-<section class="charts-section">
-    <div class="section-header">
-        <div class="header-left">
-            <h3 class="section-title">Analytics Charts</h3>
-            <p class="section-subtitle">Visual data representation</p>
-        </div>
-    </div>
-
-    <div class="charts-grid">
-        <!-- Main Sales Trend Chart -->
-        <div class="chart-card main-chart">
-            <div class="chart-header">
-                <h4 class="chart-title">Sales Trend Analysis</h4>
-                <div class="chart-controls">
-                    <button class="period-btn active" data-period="7">7 Hari</button>
-                    <button class="period-btn" data-period="30">30 Hari</button>
-                    <button class="period-btn" data-period="90">90 Hari</button>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="salesTrendChart"></canvas>
-            </div>
-        </div>
-
-        <!-- FIXED: Lead Distribution Chart - Main Size -->
-        <div class="chart-card main-chart enhanced-leads-chart">
-            <div class="chart-header">
-                <div class="header-left">
-                    <h4 class="chart-title">
-                        <i class="fas fa-users-cog mr-2"></i>
-                        Lead Distribution Analysis
-                    </h4>
-                    <p class="chart-subtitle">Sales Team + Marketing Lead Breakdown</p>
-                </div>
-                <div class="chart-badge">
-                    <span class="badge-live">
-                        <i class="fas fa-circle animate-pulse"></i>
-                        Real-time Data
-                    </span>
-                    <span class="badge-sources">
-                        <i class="fas fa-database"></i>
-                        Multi-Source
-                    </span>
-                </div>
-            </div>
-            
-            <!-- Enhanced filters will be inserted here by JavaScript -->
-            
-            <div class="chart-container enhanced-chart-container">
-                <canvas id="leadsChart"></canvas>
-            </div>
-            
-            <!-- Enhanced info display will be inserted here by JavaScript -->
-        </div>
-
-        <!-- NEW: Marketing Cost per Lead Chart - Main Size -->
-        <div class="chart-card main-chart enhanced-cost-chart">
-            <div class="chart-header">
-                <div class="header-left">
-                    <h4 class="chart-title">
-                        <i class="fas fa-dollar-sign mr-2"></i>
-                        Marketing Cost Analysis
-                    </h4>
-                    <p class="chart-subtitle">Cost per Lead & Total Spend Tracking</p>
-                </div>
-                <div class="chart-badge">
-                    <span class="badge-live">
-                        <i class="fas fa-calculator"></i>
-                        Cost Efficiency
-                    </span>
-                </div>
-            </div>
-            
-            <div class="chart-container enhanced-chart-container">
-                <canvas id="costPerLeadChart"></canvas>
-            </div>
-            
-            <!-- Cost analysis info will be added by JavaScript -->
-            <div id="cost-analysis-info" class="mt-4">
-                <!-- JavaScript will populate this -->
-            </div>
-        </div>
-
-        <!-- Sales by Channel - Smaller -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h4 class="chart-title">Sales by Channel</h4>
-                <div class="chart-info">
-                    <i class="fas fa-info-circle"></i>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="channelChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Team Performance - Smaller -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h4 class="chart-title">Team Performance</h4>
-                <div class="chart-info">
-                    <i class="fas fa-users"></i>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="teamChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Marketing Spend - Smaller -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h4 class="chart-title">Marketing Spend</h4>
-                <div class="chart-info">
-                    <i class="fas fa-chart-pie"></i>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="spendChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Lead Quality Trends - Smaller -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h4 class="chart-title">Lead Quality Trends</h4>
-                <div class="chart-info">
-                    <i class="fas fa-fire"></i>
-                </div>
-            </div>
-            <div class="chart-container">
-                <canvas id="leadQualityChart"></canvas>
-            </div>
-        </div>
-    </div>
-</section>
     </main>
 
     <!-- Load Dashboard JavaScript -->
