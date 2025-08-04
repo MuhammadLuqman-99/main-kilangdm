@@ -2318,83 +2318,6 @@ function renderEnhancedEmptyChart(ctx) {
     });
 }
 
-// Additional fix for chart container height
-// Add this CSS fix to your style.css or inline styles
-const chartContainerFix = `
-/* Fix for chart container */
-.enhanced-chart-container {
-    position: relative;
-    height: 400px; /* Fixed height */
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#leadsChart {
-    max-width: 100% !important;
-    max-height: 100% !important;
-}
-
-/* Ensure the parent container has proper dimensions */
-.chart-card.enhanced-leads-chart {
-    min-height: 600px;
-}
-
-/* Fix canvas rendering */
-.chart-container canvas,
-.enhanced-chart-container canvas {
-    position: relative !important;
-    height: 100% !important;
-    width: 100% !important;
-}
-`;
-
-// 9. Populate enhanced team dropdown with both sources
-function populateEnhancedTeamDropdown() {
-    updateTeamDropdownBasedOnSource();
-}
-
-function updateTeamDropdownBasedOnSource() {
-    const teamSelect = document.getElementById('lead-team-filter');
-    const sourceFilter = document.getElementById('lead-source-filter');
-    
-    if (!teamSelect || !allData) return;
-    
-    const selectedSource = sourceFilter?.value || '';
-    const teams = new Set();
-    
-    // Add teams from sales team data
-    if (!selectedSource || selectedSource === 'salesteam') {
-        allData.salesteam
-            .filter(item => item.type === 'lead')
-            .forEach(item => {
-                const team = item.team || item.agent;
-                if (team) teams.add(team);
-            });
-    }
-    
-    // Add teams from marketing data
-    if (!selectedSource || selectedSource === 'marketing') {
-        allData.marketing
-            .filter(item => item.type === 'lead_semasa')
-            .forEach(item => {
-                const team = item.team_sale;
-                if (team) teams.add(team);
-            });
-    }
-    
-    // Clear and repopulate
-    teamSelect.innerHTML = '<option value="">Semua Team</option>';
-    Array.from(teams).sort().forEach(team => {
-        const option = document.createElement('option');
-        option.value = team;
-        option.textContent = team;
-        teamSelect.appendChild(option);
-    });
-}
-
-
 // 10. Debug functions for troubleshooting
 window.debugEnhancedLeadChart = function() {
     console.log('🔍 === ENHANCED LEAD CHART DEBUG ===');
@@ -2459,13 +2382,6 @@ window.testEnhancedLeadChart = function() {
     });
 };
 
-// 12. Enhanced Lead Chart Integration - UPDATE these in your applyFilters function
-// ADD this to your existing applyFilters function (after the existing updateEnhancedPowerMetricsDisplay line)
-
-/*
-// In your applyFilters function, replace the existing updateEnhancedLeadsChart call with:
-updateEnhancedLeadsChart(filteredData);
-*/
 // Update marketing budget display
 function updateMarketingBudgetDisplay(marketingData) {
     const totalSpend = marketingData
@@ -2499,27 +2415,6 @@ function updateLeadEfficiencyDisplay(salesTeamData) {
     return efficiency;
 }
 
-// 9. Populate team dropdown with available teams
-function populateTeamDropdown() {
-    const teamSelect = document.getElementById('lead-team-filter');
-    if (!teamSelect || !allData.salesteam) return;
-    
-    // Get unique teams from lead data
-    const teams = [...new Set(allData.salesteam
-        .filter(item => item.type === 'lead')
-        .map(item => item.team || item.agent)
-        .filter(Boolean)
-    )].sort();
-    
-    // Clear and repopulate
-    teamSelect.innerHTML = '<option value="">Semua Team</option>';
-    teams.forEach(team => {
-        const option = document.createElement('option');
-        option.value = team;
-        option.textContent = team;
-        teamSelect.appendChild(option);
-    });
-}
 
 // 10. Debug function to check lead data
 window.debugLeadData = function() {
