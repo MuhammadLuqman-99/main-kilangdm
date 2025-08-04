@@ -800,60 +800,6 @@ function updateChannelChart(data) {
     });
 }
 
-function updateLeadsChart(data) {
-    // Group leads by agent
-    const leadsByAgent = {};
-    
-    data.salesteam
-        .filter(item => item.type === 'lead')
-        .forEach(item => {
-            const agent = item.team || 'Unknown';
-            const leads = parseInt(item.total_lead) || 0;
-            leadsByAgent[agent] = (leadsByAgent[agent] || 0) + leads;
-        });
-
-    const ctx = document.getElementById('leadsChart').getContext('2d');
-    
-    if (charts.leads) {
-        charts.leads.destroy();
-    }
-
-    const colors = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#6366F1'];
-
-    charts.leads = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: Object.keys(leadsByAgent),
-            datasets: [{
-                data: Object.values(leadsByAgent),
-                backgroundColor: colors.slice(0, Object.keys(leadsByAgent).length),
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: { 
-                        color: '#D1D5DB',
-                        padding: 15,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.label + ': ' + context.parsed + ' leads';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
 function updateTeamChart(data) {
     // Calculate performance metrics by team
     const teamPerformance = {};
@@ -2238,177 +2184,97 @@ function calculateEnhancedLeadMetrics(marketingData, processedData) {
     };
 }
 
-// ============================================================================
-// FIX CHART DISPLAY - FULL CIRCLE DOUGHNUT CHART
-// Replace your renderEnhancedLeadDistributionChart function with this fixed version
-// ============================================================================
+// COMPLETE FIX for Enhanced Lead Distribution Chart
+// Replace the entire renderEnhancedLeadDistributionChart function in dashboard.js
 
 function renderEnhancedLeadDistributionChart(processedData, enhancedMetrics) {
     const ctx = document.getElementById('leadsChart')?.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+        console.error('❌ Canvas element "leadsChart" not found');
+        return;
+    }
     
     // Destroy existing chart
-    if (enhancedLeadChart) {
-        enhancedLeadChart.destroy();
+    if (window.enhancedLeadChart) {
+        window.enhancedLeadChart.destroy();
+        window.enhancedLeadChart = null;
     }
     
     const teams = Object.keys(processedData.teams);
     const leadCounts = teams.map(team => processedData.teams[team].totalLeads);
     
-    // Handle empty data - show full empty chart
+    console.log('📊 Rendering chart with data:', {
+        teams: teams,
+        leadCounts: leadCounts,
+        totalLeads: processedData.totalLeads
+    });
+    
+    // Handle empty or single data scenarios
     if (teams.length === 0 || processedData.totalLeads === 0) {
         renderEnhancedEmptyChart(ctx);
         return;
     }
     
-    // FIXED: Enhanced color palette with proper alpha values
-    const baseColors = teams.map(team => {
+    // For single data point, add a placeholder segment for visual balance
+    let chartLabels = [...teams];
+    let chartData = [...leadCounts];
+    let chartColors = [];
+    
+    // Enhanced color palette
+    const colorPalette = {
+        salesTeam: ['#10B981', '#059669', '#047857', '#065F46', '#064E3B'],
+        marketing: ['#8B5CF6', '#7C3AED', '#6D28D9', '#5B21B6', '#4C1D95'],
+        default: ['#3B82F6', '#F59E0B', '#EF4444', '#EC4899', '#14B8A6']
+    };
+    
+    // Assign colors based on source
+    teams.forEach((team, index) => {
         const teamData = processedData.teams[team];
         if (teamData.source === 'marketing') {
-            return '#8B5CF6'; // Purple for marketing
+            chartColors.push(colorPalette.marketing[index % colorPalette.marketing.length]);
+        } else if (teamData.source === 'salesteam') {
+            chartColors.push(colorPalette.salesTeam[index % colorPalette.salesTeam.length]);
         } else {
-            return '#10B981'; // Green for sales team
+            chartColors.push(colorPalette.default[index % colorPalette.default.length]);
         }
     });
     
-    // Create proper background colors (no gradients for doughnut charts)
-    const backgroundColors = baseColors.map((color, index) => {
-        // Add variation for multiple teams of same source
-        const opacity = 0.8 - (index * 0.1);
-        return color + Math.floor(opacity * 255).toString(16).padStart(2, '0');
-    });
+    // If only one data point, add a small placeholder for visual balance
+    if (teams.length === 1) {
+        chartLabels.push('Others (Pending)');
+        chartData.push(0.1); // Very small value just for visual
+        chartColors.push('#374151'); // Gray color for placeholder
+    }
     
-    // FIXED: Proper chart configuration
-    enhancedLeadChart = new Chart(ctx, {
+    // Create the chart with enhanced configuration
+    window.enhancedLeadChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: teams,
+            labels: chartLabels,
             datasets: [{
-                data: leadCounts,
-                backgroundColor: backgroundColors,
-                borderColor: baseColors,
+                data: chartData,
+                backgroundColor: chartColors,
+                borderColor: '#1F2937',
                 borderWidth: 2,
-                hoverOffset: 8,
+                hoverOffset: 12,
                 hoverBorderWidth: 3,
-                // IMPORTANT: Remove any cutout or rotation that might cause partial display
-                cutout: '60%' // This controls the inner circle size
+                hoverBorderColor: '#FFFFFF',
+                hoverBackgroundColor: chartColors.map(color => color + 'DD') // Add transparency on hover
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            // FIXED: Proper layout configuration
-            layout: {
-                padding: {
-                    top: 20,
-                    bottom: 20,
-                    left: 20,
-                    right: 20
-                }
-            },
-            // FIXED: Chart area configuration
-            aspectRatio: 1, // Force square aspect ratio
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: { 
-                        color: '#D1D5DB',
-                        padding: 20,
-                        usePointStyle: true,
-                        font: { 
-                            size: 12,
-                            weight: '500'
-                        },
-                        generateLabels: function(chart) {
-                            const data = chart.data;
-                            return data.labels.map((label, i) => {
-                                const value = data.datasets[0].data[i];
-                                const teamData = processedData.teams[label];
-                                const percentage = ((value / processedData.totalLeads) * 100).toFixed(1);
-                                return {
-                                    text: `${label}: ${value} leads (${percentage}%)`,
-                                    fillStyle: baseColors[i],
-                                    hidden: false,
-                                    index: i
-                                };
-                            });
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                    titleColor: '#F9FAFB',
-                    bodyColor: '#F9FAFB',
-                    borderColor: '#374151',
-                    borderWidth: 2,
-                    padding: 16,
-                    displayColors: true,
-                    usePointStyle: true,
-                    callbacks: {
-                        title: function(tooltipItems) {
-                            const team = tooltipItems[0].label;
-                            return `📊 ${team}`;
-                        },
-                        label: function(context) {
-                            const team = context.label;
-                            const teamData = processedData.teams[team];
-                            const percentage = ((teamData.totalLeads / processedData.totalLeads) * 100).toFixed(1);
-                            
-                            const tooltipLines = [
-                                `📈 Total Leads: ${teamData.totalLeads} (${percentage}%)`,
-                                `🧊 Cold: ${teamData.cold} | 🔥 Warm: ${teamData.warm} | ⚡ Hot: ${teamData.hot}`,
-                                `📅 Update: ${teamData.date} ${teamData.time}`,
-                                `📊 Source: ${teamData.source === 'marketing' ? 'Marketing' : 'Sales Team'}`
-                            ];
-                            
-                            if (teamData.spend > 0) {
-                                tooltipLines.push(`💰 Spend: RM ${teamData.spend.toFixed(2)}`);
-                                tooltipLines.push(`💵 Cost/Lead: RM ${(teamData.spend / teamData.totalLeads).toFixed(2)}`);
-                            }
-                            
-                            return tooltipLines;
-                        }
-                    }
-                }
-            },
-            // FIXED: Animation configuration
+            
+            // Animation settings
             animation: {
                 animateRotate: true,
-                animateScale: false, // Don't animate scale to avoid display issues
+                animateScale: false,
                 duration: 1000,
                 easing: 'easeInOutQuart'
             },
-            elements: {
-                arc: {
-                    borderRadius: 4 // Smaller border radius for better display
-                }
-            },
-            // FIXED: Ensure full circle display
-            circumference: 360, // Full circle
-            rotation: 0, // Start from top
-            cutout: '60%' // Inner circle size
-        }
-    });
-}
-
-// FIXED: Empty chart also should be full circle
-function renderEnhancedEmptyChart(ctx) {
-    enhancedLeadChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Tiada Data Lead'],
-            datasets: [{
-                data: [1],
-                backgroundColor: ['#374151'],
-                borderColor: ['#4B5563'],
-                borderWidth: 2,
-                cutout: '60%'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            aspectRatio: 1, // Force square
+            
+            // Layout settings
             layout: {
                 padding: {
                     top: 20,
@@ -2417,34 +2283,304 @@ function renderEnhancedEmptyChart(ctx) {
                     right: 20
                 }
             },
+            
+            // Chart appearance
+            cutout: '45%', // Slightly smaller hole for better visual
+            
             plugins: {
-                legend: { 
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    align: 'center',
+                    labels: {
+                        color: '#D1D5DB',
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: {
+                            size: 12,
+                            weight: '500',
+                            family: "'Inter', sans-serif"
+                        },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    // Skip placeholder in legend
+                                    if (label === 'Others (Pending)') {
+                                        return null;
+                                    }
+                                    
+                                    const value = data.datasets[0].data[i];
+                                    const total = processedData.totalLeads;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                    
+                                    return {
+                                        text: `${label}: ${value} leads (${percentage}%)`,
+                                        fillStyle: chartColors[i],
+                                        strokeStyle: chartColors[i],
+                                        lineWidth: 0,
+                                        hidden: false,
+                                        index: i,
+                                        pointStyle: 'circle'
+                                    };
+                                }).filter(item => item !== null);
+                            }
+                            return [];
+                        }
+                    }
+                },
+                
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#F9FAFB',
+                    bodyColor: '#D1D5DB',
+                    borderColor: '#374151',
+                    borderWidth: 1,
+                    padding: 14,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    usePointStyle: true,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 12
+                    },
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const label = tooltipItems[0].label;
+                            // Don't show tooltip for placeholder
+                            if (label === 'Others (Pending)') {
+                                return '';
+                            }
+                            return `📊 ${label}`;
+                        },
+                        label: function(context) {
+                            const label = context.label;
+                            // Don't show tooltip content for placeholder
+                            if (label === 'Others (Pending)') {
+                                return 'Data akan dikemas kini';
+                            }
+                            
+                            const teamData = processedData.teams[label];
+                            if (!teamData) return '';
+                            
+                            const percentage = ((teamData.totalLeads / processedData.totalLeads) * 100).toFixed(1);
+                            return `Total: ${teamData.totalLeads} leads (${percentage}%)`;
+                        },
+                        afterLabel: function(context) {
+                            const label = context.label;
+                            if (label === 'Others (Pending)') {
+                                return '';
+                            }
+                            
+                            const teamData = processedData.teams[label];
+                            if (!teamData) return '';
+                            
+                            const details = [];
+                            
+                            // Lead quality breakdown
+                            if (teamData.cold > 0 || teamData.warm > 0 || teamData.hot > 0) {
+                                details.push(`🧊 Cold: ${teamData.cold} | 🔥 Warm: ${teamData.warm} | ⚡ Hot: ${teamData.hot}`);
+                            }
+                            
+                            // Date and time
+                            if (teamData.date) {
+                                details.push(`📅 ${teamData.date} ${teamData.time || ''}`);
+                            }
+                            
+                            // Source
+                            details.push(`Source: ${teamData.source === 'marketing' ? '📢 Marketing' : '👥 Sales Team'}`);
+                            
+                            // Spend if available
+                            if (teamData.spend > 0) {
+                                details.push(`💰 Spend: RM ${teamData.spend.toFixed(2)}`);
+                                const costPerLead = teamData.totalLeads > 0 ? (teamData.spend / teamData.totalLeads).toFixed(2) : '0.00';
+                                details.push(`💵 Cost/Lead: RM ${costPerLead}`);
+                            }
+                            
+                            return details;
+                        }
+                    },
+                    filter: function(tooltipItem) {
+                        // Hide tooltip for placeholder
+                        return tooltipItem.label !== 'Others (Pending)';
+                    }
+                }
+            },
+            
+            elements: {
+                arc: {
+                    borderRadius: 6,
+                    borderAlign: 'inner'
+                }
+            }
+        }
+    });
+    
+    // Force update after render
+    setTimeout(() => {
+        if (window.enhancedLeadChart) {
+            window.enhancedLeadChart.update('none');
+            console.log('✅ Chart rendered and updated successfully');
+        }
+    }, 100);
+}
+
+// Enhanced empty chart with better messaging
+function renderEnhancedEmptyChart(ctx) {
+    if (window.enhancedLeadChart) {
+        window.enhancedLeadChart.destroy();
+    }
+    
+    window.enhancedLeadChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Tiada Data', 'Menunggu Data'],
+            datasets: [{
+                data: [1, 1],
+                backgroundColor: ['#374151', '#4B5563'],
+                borderColor: '#1F2937',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '45%',
+            
+            layout: {
+                padding: 20
+            },
+            
+            plugins: {
+                legend: {
                     display: true,
                     position: 'bottom',
                     labels: {
                         color: '#9CA3AF',
-                        font: { size: 12 }
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        padding: 15,
+                        generateLabels: function() {
+                            return [{
+                                text: 'Tiada data lead tersedia - Sila submit data',
+                                fillStyle: '#374151',
+                                strokeStyle: '#374151',
+                                lineWidth: 0,
+                                hidden: false,
+                                index: 0
+                            }];
+                        }
                     }
                 },
                 tooltip: {
                     callbacks: {
-                        label: () => 'Tiada data lead untuk paparan - Sila submit data melalui borang Sales Team atau Marketing'
+                        label: () => 'Submit data melalui borang Sales Team atau Marketing'
                     }
                 }
             },
+            
             animation: {
                 animateRotate: true,
-                animateScale: false,
-                duration: 800
-            },
-            // Ensure full circle for empty chart too
-            circumference: 360,
-            rotation: 0,
-            cutout: '60%'
+                duration: 600
+            }
         }
     });
 }
 
+// Debug function to verify chart rendering
+window.verifyChartRendering = function() {
+    console.log('🔍 === CHART RENDERING VERIFICATION ===');
+    
+    const canvas = document.getElementById('leadsChart');
+    if (!canvas) {
+        console.error('❌ Canvas element not found');
+        return false;
+    }
+    
+    const container = canvas.parentElement;
+    const rect = canvas.getBoundingClientRect();
+    
+    console.log('📐 Canvas dimensions:', {
+        container: {
+            width: container.offsetWidth,
+            height: container.offsetHeight
+        },
+        canvas: {
+            width: canvas.width,
+            height: canvas.height,
+            clientWidth: canvas.clientWidth,
+            clientHeight: canvas.clientHeight
+        },
+        boundingRect: {
+            width: rect.width,
+            height: rect.height,
+            visible: rect.width > 0 && rect.height > 0
+        }
+    });
+    
+    if (window.enhancedLeadChart) {
+        console.log('✅ Chart instance exists');
+        console.log('📊 Chart configuration:', {
+            type: window.enhancedLeadChart.config.type,
+            dataCount: window.enhancedLeadChart.data.datasets[0].data.length,
+            labels: window.enhancedLeadChart.data.labels,
+            cutout: window.enhancedLeadChart.options.cutout
+        });
+        
+        // Force resize and update
+        window.enhancedLeadChart.resize();
+        window.enhancedLeadChart.update();
+        console.log('🔄 Chart refreshed');
+        
+        return true;
+    } else {
+        console.error('❌ No chart instance found');
+        return false;
+    }
+};
+
+// Auto-fix function for common issues
+window.autoFixChart = function() {
+    console.log('🔧 Running auto-fix for chart display...');
+    
+    // 1. Check if canvas exists
+    const canvas = document.getElementById('leadsChart');
+    if (!canvas) {
+        console.error('❌ Canvas not found - cannot fix');
+        return;
+    }
+    
+    // 2. Set explicit dimensions
+    const container = canvas.parentElement;
+    container.style.height = '400px';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // 3. Force chart recreation
+    if (window.enhancedLeadChart) {
+        window.enhancedLeadChart.destroy();
+        window.enhancedLeadChart = null;
+    }
+    
+    // 4. Trigger data refresh
+    if (typeof applyFilters === 'function') {
+        console.log('🔄 Triggering data refresh...');
+        applyFilters();
+    }
+    
+    console.log('✅ Auto-fix completed');
+};
+
+console.log('✅ Enhanced chart fix loaded');
+console.log('🔧 Run verifyChartRendering() to check status');
+console.log('🔧 Run autoFixChart() to attempt auto-repair');
 // 8. Update comprehensive lead distribution info display
 function updateEnhancedLeadDistributionInfo(processedData, enhancedMetrics) {
     const chartContainer = document.querySelector('#leadsChart')?.parentElement;
