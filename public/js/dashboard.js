@@ -1913,57 +1913,7 @@ function initializeEnhancedLeadDistributionDropdowns() {
     const filterContainer = document.createElement('div');
     filterContainer.className = 'enhanced-lead-filters mb-6';
     filterContainer.innerHTML = `
-        <div class="filter-header mb-4">
-            <div class="flex items-center space-x-2">
-                <div class="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
-                <h5 class="text-white font-medium">Lead Analysis Filters</h5>
-                <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">Real-time</span>
-            </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div class="filter-group">
-                <label class="text-xs text-gray-400 block mb-2 font-medium">📊 Data Source</label>
-                <select id="lead-source-filter" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 text-sm border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all">
-                    <option value="">Semua Sumber</option>
-                    <option value="salesteam">Sales Team</option>
-                    <option value="marketing">Marketing (Lead Semasa)</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label class="text-xs text-gray-400 block mb-2 font-medium">👥 Team/Agent</label>
-                <select id="lead-team-filter" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 text-sm border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all">
-                    <option value="">Semua Team</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label class="text-xs text-gray-400 block mb-2 font-medium">🕐 Masa Update</label>
-                <select id="lead-time-filter" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 text-sm border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all">
-                    <option value="">Semua Masa (Latest)</option>
-                    <option value="09:30">9:30 AM</option>
-                    <option value="14:00">2:00 PM</option>
-                    <option value="16:00">4:00 PM</option>
-                    <option value="20:30">8:30 PM</option>
-                </select>
-            </div>
-        </div>
-        
-        <div class="info-banner bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-lg p-3">
-            <div class="flex items-start space-x-3">
-                <div class="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <i class="fas fa-info text-white text-xs"></i>
-                </div>
-                <div class="text-sm text-gray-300">
-                    <div class="font-medium mb-1">Comprehensive Lead Analysis</div>
-                    <div class="text-xs text-gray-400">
-                        Data digabungkan dari borang Sales Team dan Marketing Lead Semasa untuk analisis menyeluruh.
-                        Chart menunjukkan distribution dan trend leads dari semua sumber.
-                    </div>
-                </div>
-            </div>
-        </div>
+    
     `;
     
     // Insert before chart
