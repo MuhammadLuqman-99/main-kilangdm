@@ -1,7 +1,8 @@
 // dashboard.js - COMPLETE FIXED VERSION
 import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 // Import the marketing cost chart functions
-import './marketing-cost-chart.js'; // Create this file with the previous code
+// KEPADA:
+import { createMarketingCostChart } from './marketing-cost-chart.js';
 
 // Global variables
 let charts = {};
@@ -116,17 +117,16 @@ async function initializeDashboard() {
         
         console.log('✅ Enhanced dashboard initialized successfully');
 
-        // Initialize all charts including the new marketing cost chart
-        await Promise.all([
-            // Your existing chart functions...
-            createSalesTrendChart(),
-            createLeadsDistributionChart(),
-            createMarketingCostChart(), // Add this line
-            createChannelChart(),
-            createTeamChart(),
-            createSpendChart(),
-            createLeadQualityChart()
-        ]);
+          // Panggil fungsi update untuk carta, bukan 'create'
+        updateSalesTrendChart(allData);
+        updateEnhancedLeadsChart(allData);
+        updateChannelChart(allData);
+        updateTeamChart(allData);
+        updateSpendChart(allData);
+        updateLeadQualityChart(allData);
+        
+        // Fungsi ini adalah async dan perlu ditunggu
+        await createMarketingCostChart(); 
         console.log('✅ All charts initialized successfully');
         
     } catch (error) {
