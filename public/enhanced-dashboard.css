@@ -176,17 +176,6 @@
     position: relative;
 }
 
-
-.enhanced-orders-table tbody tr:hover::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, #3b82f6, #8b5cf6);
-}
-
 /* ===== Product Details Enhanced Styling ===== */
 .product-details {
     min-width: 350px;
