@@ -128,12 +128,170 @@ async function initializeDashboard() {
         // Fungsi ini adalah async dan perlu ditunggu
         await createMarketingCostChart(); 
         console.log('✅ All charts initialized successfully');
+
+        // ADD THIS LINE: Initialize marketing cost chart
+        await updateMarketingCostChart(allData);
+        console.log('✅ Enhanced dashboard initialized successfully');
         
     } catch (error) {
         console.error('❌ Error initializing dashboard:', error);
         showErrorState();
     }
 }
+
+// 6. ADD helper function to make filter functions globally available
+window.filterByDate = filterByDate;
+window.filterSalesTeamData = filterSalesTeamData;
+window.applyFilters = applyFilters;
+
+// 7. ADD function to manually refresh marketing cost chart
+window.refreshMarketingCostChart = async function() {
+    console.log('🔄 Manually refreshing marketing cost chart...');
+    
+    try {
+        // Get current filtered data
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        const selectedAgent = document.getElementById('agent-filter').value;
+
+        const filteredData = {
+            orders: filterByDate(allData.orders, startDate, endDate),
+            marketing: filterByDate(allData.marketing, startDate, endDate),
+            salesteam: filterSalesTeamData(allData.salesteam, startDate, endDate, selectedAgent)
+        };
+
+        await updateMarketingCostChart(filteredData);
+        console.log('✅ Marketing cost chart refreshed successfully');
+    } catch (error) {
+        console.error('❌ Failed to refresh marketing cost chart:', error);
+    }
+};
+
+// 8. ADD event listeners for manual refresh
+document.addEventListener('DOMContentLoaded', () => {
+    // Add refresh button to marketing cost chart if it exists
+    setTimeout(() => {
+        const costChartCard = document.querySelector('.enhanced-cost-chart');
+        if (costChartCard) {
+            const chartHeader = costChartCard.querySelector('.chart-header .header-left');
+            if (chartHeader && !chartHeader.querySelector('.refresh-btn')) {
+                const refreshBtn = document.createElement('button');
+                refreshBtn.className = 'refresh-btn ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700';
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i>Refresh';
+                refreshBtn.title = 'Refresh cost analysis with current filters';
+                
+                refreshBtn.addEventListener('click', async () => {
+                    const originalText = refreshBtn.innerHTML;
+                    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Loading...';
+                    refreshBtn.disabled = true;
+                    
+                    try {
+                        await window.refreshMarketingCostChart();
+                    } finally {
+                        refreshBtn.innerHTML = originalText;
+                        refreshBtn.disabled = false;
+                    }
+                });
+                
+                chartHeader.appendChild(refreshBtn);
+            }
+        }
+    }, 2000); // Wait 2 seconds for DOM to be ready
+});
+
+// 9. ADD CSS for the refresh button (add to your style.css or inline)
+const refreshButtonStyles = `
+<style>
+.refresh-btn {
+    transition: all 0.2s ease;
+    font-size: 11px;
+    padding: 4px 8px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.refresh-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.enhanced-cost-chart .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.enhanced-cost-chart .header-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+</style>
+`;
+
+// Add styles to document head
+if (!document.getElementById('refresh-btn-styles')) {
+    const styleElement = document.createElement('div');
+    styleElement.id = 'refresh-btn-styles';
+    styleElement.innerHTML = refreshButtonStyles;
+    document.head.appendChild(styleElement);
+}
+
+// 10. ADD console commands for debugging
+window.debugMarketingCost = function() {
+    console.log('🔍 === MARKETING COST DEBUG INFO ===');
+    
+    console.log('Current filters:', {
+        startDate: document.getElementById('start-date')?.value || 'None',
+        endDate: document.getElementById('end-date')?.value || 'None',
+        agent: document.getElementById('agent-filter')?.value || 'None'
+    });
+    
+    if (window.allData) {
+        const marketingLeadSemasa = allData.marketing.filter(item => item.type === 'lead_semasa');
+        const salesTeamLeads = allData.salesteam.filter(item => item.type === 'lead');
+        
+        console.log('Available data:', {
+            marketingLeadSemasa: marketingLeadSemasa.length,
+            salesTeamLeads: salesTeamLeads.length
+        });
+        
+        console.log('Sample marketing lead semasa:', marketingLeadSemasa.slice(0, 2));
+        console.log('Sample sales team leads:', salesTeamLeads.slice(0, 2));
+        
+        // Check for date matches
+        const marketingDates = [...new Set(marketingLeadSemasa.map(item => item.tarikh))];
+        const salesDates = [...new Set(salesTeamLeads.map(item => item.tarikh))];
+        const commonDates = marketingDates.filter(date => salesDates.includes(date));
+        
+        console.log('Date analysis:', {
+            marketingDates: marketingDates.length,
+            salesDates: salesDates.length,
+            commonDates: commonDates.length,
+            commonDatesList: commonDates
+        });
+    }
+    
+    console.log('Chart element exists:', !!document.getElementById('costPerLeadChart'));
+    console.log('createMarketingCostChart function available:', typeof createMarketingCostChart);
+    
+    console.log('🔍 === END DEBUG ===');
+};
+
+console.log('✅ Dashboard integration updates loaded');
+console.log('🔧 Available commands:');
+console.log('  - refreshMarketingCostChart() : Manually refresh the cost chart');
+console.log('  - debugMarketingCost() : Debug marketing cost data and chart');
+console.log('  - debugMarketingCostChart() : Debug chart creation process');
 
 // 7. ADD helper function to verify data structure
 function verifyDataStructure() {
@@ -365,7 +523,7 @@ function applyFilters() {
    // Update displays
     updateActiveFiltersDisplay();
     updateKPIs(filteredData);
-    updateCharts(filteredData);
+    updateCharts(filteredData); // This will now include marketing cost chart
     updateRecentActivity(filteredData);
     updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
     
@@ -564,8 +722,25 @@ function updateCharts(data) {
     
     // ADD new chart for lead quality trends
     updateLeadQualityChart(data);
+
+     // ADD THIS LINE: Update marketing cost chart with filtered data
+    updateMarketingCostChart(data);
 }
 
+// 2. ADD this new function to handle marketing cost chart updates
+async function updateMarketingCostChart(data) {
+    try {
+        // Check if marketing cost chart function is available
+        if (typeof createMarketingCostChart === 'function') {
+            console.log('🔄 Updating marketing cost chart with filtered data...');
+            await createMarketingCostChart(data);
+        } else {
+            console.warn('⚠️ createMarketingCostChart function not found - check if marketing-cost-chart.js is loaded');
+        }
+    } catch (error) {
+        console.error('❌ Error updating marketing cost chart:', error);
+    }
+}
 
 // 4. ADD this new function for lead quality trends chart
 function updateLeadQualityChart(data) {
