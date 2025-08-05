@@ -1236,38 +1236,69 @@ class EnhancedPowerMetricsCalculator {
         return kpiMTD;
     }
 
-    // Extract Sale MTD from sales team data
-    getSaleMTD(salesTeamData) {
-        const currentMonth = this.currentMonth;
-        const currentYear = this.currentYear;
+    // REPLACE getSaleMTD method:
+getSaleMTD(salesTeamData) {
+    const currentMonth = this.currentMonth;
+    const currentYear = this.currentYear;
+    
+    console.log(`🔍 Getting Sale MTD for ${currentMonth}/${currentYear}...`);
+    
+    // Filter power_metrics data for current month
+    const currentMonthData = salesTeamData.filter(item => {
+        if (item.type !== 'power_metrics') return false;
         
-        const saleMTD = salesTeamData
-            .filter(item => {
-                // Check if item is power_metrics type
-                if (item.type !== 'power_metrics') return false;
-                
-                let itemDate;
-                // Handle different date formats
-                if (item.tarikh) {
-                    itemDate = new Date(item.tarikh);
-                } else if (item.createdAt) {
-                    // Handle Firestore timestamp
-                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-                } else {
-                    return false;
-                }
-                
-                return itemDate.getMonth() + 1 === currentMonth && 
-                       itemDate.getFullYear() === currentYear;
-            })
-            .reduce((total, item) => {
-                const saleAmount = parseFloat(item.total_sale_bulan) || 0;
-                return total + saleAmount;
-            }, 0);
+        let itemDate;
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.createdAt) {
+            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        } else {
+            return false;
+        }
+        
+        return itemDate.getMonth() + 1 === currentMonth && 
+               itemDate.getFullYear() === currentYear;
+    });
 
-        console.log(`💰 Current Sale MTD: RM ${saleMTD.toLocaleString()}`);
-        return saleMTD;
-    }
+    console.log(`📊 Found ${currentMonthData.length} power metrics entries for current month`);
+
+    // Group by team and get latest entry for each team
+    const teamLatestData = {};
+    
+    currentMonthData.forEach(item => {
+        const team = item.team || 'Unknown';
+        let itemDate;
+        
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.createdAt) {
+            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        } else {
+            itemDate = new Date();
+        }
+        
+        // If this is the first entry for the team, or if this entry is newer
+        if (!teamLatestData[team] || itemDate > teamLatestData[team].date) {
+            teamLatestData[team] = {
+                data: item,
+                date: itemDate
+            };
+        }
+    });
+
+    console.log(`👥 Found latest data for ${Object.keys(teamLatestData).length} teams:`, 
+               Object.keys(teamLatestData));
+
+    // Sum the LATEST total_sale_bulan from each team
+    const saleMTD = Object.values(teamLatestData).reduce((total, teamData) => {
+        const saleAmount = parseFloat(teamData.data.total_sale_bulan) || 0;
+        console.log(`   - ${teamData.data.team}: RM ${saleAmount.toLocaleString()} (${teamData.date.toLocaleDateString()})`);
+        return total + saleAmount;
+    }, 0);
+
+    console.log(`💰 Total Sale MTD (Latest from each team): RM ${saleMTD.toLocaleString()}`);
+    return saleMTD;
+}
 
     // Calculate Balance Bulanan (Remaining to reach monthly target)
     calculateBalanceBulanan(saleMTD) {
@@ -1284,65 +1315,122 @@ class EnhancedPowerMetricsCalculator {
         return balance;
     }
 
-    // Get total sales count (bilangan terjual)
-    getTotalCloseCount(salesTeamData) {
-        const currentMonth = this.currentMonth;
-        const currentYear = this.currentYear;
+    // REPLACE getTotalCloseCount method:
+getTotalCloseCount(salesTeamData) {
+    const currentMonth = this.currentMonth;
+    const currentYear = this.currentYear;
+    
+    console.log(`🔍 Getting Total Close Count for ${currentMonth}/${currentYear}...`);
+    
+    // Filter power_metrics data for current month
+    const currentMonthData = salesTeamData.filter(item => {
+        if (item.type !== 'power_metrics') return false;
         
-        const totalClose = salesTeamData
-            .filter(item => {
-                if (item.type !== 'power_metrics') return false;
-                
-                let itemDate;
-                if (item.tarikh) {
-                    itemDate = new Date(item.tarikh);
-                } else if (item.createdAt) {
-                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-                } else {
-                    return false;
-                }
-                
-                return itemDate.getMonth() + 1 === currentMonth && 
-                       itemDate.getFullYear() === currentYear;
-            })
-            .reduce((total, item) => {
-                const closeCount = parseInt(item.total_close_bulan) || 0;
-                return total + closeCount;
-            }, 0);
-
-        console.log(`🎯 Total Close Count: ${totalClose} units`);
-        return totalClose;
-    }
-
-    // Get total lead count
-    getTotalLeadCount(salesTeamData) {
-        const currentMonth = this.currentMonth;
-        const currentYear = this.currentYear;
+        let itemDate;
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.createdAt) {
+            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        } else {
+            return false;
+        }
         
-        const totalLead = salesTeamData
-            .filter(item => {
-                if (item.type !== 'power_metrics') return false;
-                
-                let itemDate;
-                if (item.tarikh) {
-                    itemDate = new Date(item.tarikh);
-                } else if (item.createdAt) {
-                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-                } else {
-                    return false;
-                }
-                
-                return itemDate.getMonth() + 1 === currentMonth && 
-                       itemDate.getFullYear() === currentYear;
-            })
-            .reduce((total, item) => {
-                const leadCount = parseInt(item.total_lead_bulan) || 0;
-                return total + leadCount;
-            }, 0);
+        return itemDate.getMonth() + 1 === currentMonth && 
+               itemDate.getFullYear() === currentYear;
+    });
 
-        console.log(`📋 Total Lead Count: ${totalLead} leads`);
-        return totalLead;
-    }
+    // Group by team and get latest entry for each team
+    const teamLatestData = {};
+    
+    currentMonthData.forEach(item => {
+        const team = item.team || 'Unknown';
+        let itemDate;
+        
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.createdAt) {
+            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        } else {
+            itemDate = new Date();
+        }
+        
+        if (!teamLatestData[team] || itemDate > teamLatestData[team].date) {
+            teamLatestData[team] = {
+                data: item,
+                date: itemDate
+            };
+        }
+    });
+
+    // Sum the LATEST total_close_bulan from each team
+    const totalClose = Object.values(teamLatestData).reduce((total, teamData) => {
+        const closeCount = parseInt(teamData.data.total_close_bulan) || 0;
+        console.log(`   - ${teamData.data.team}: ${closeCount} closes (${teamData.date.toLocaleDateString()})`);
+        return total + closeCount;
+    }, 0);
+
+    console.log(`🎯 Total Close Count (Latest from each team): ${totalClose} units`);
+    return totalClose;
+}
+
+
+    // REPLACE getTotalLeadCount method:
+getTotalLeadCount(salesTeamData) {
+    const currentMonth = this.currentMonth;
+    const currentYear = this.currentYear;
+    
+    console.log(`🔍 Getting Total Lead Count for ${currentMonth}/${currentYear}...`);
+    
+    // Filter power_metrics data for current month
+    const currentMonthData = salesTeamData.filter(item => {
+        if (item.type !== 'power_metrics') return false;
+        
+        let itemDate;
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.createdAt) {
+            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        } else {
+            return false;
+        }
+        
+        return itemDate.getMonth() + 1 === currentMonth && 
+               itemDate.getFullYear() === currentYear;
+    });
+
+    // Group by team and get latest entry for each team
+    const teamLatestData = {};
+    
+    currentMonthData.forEach(item => {
+        const team = item.team || 'Unknown';
+        let itemDate;
+        
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.createdAt) {
+            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        } else {
+            itemDate = new Date();
+        }
+        
+        if (!teamLatestData[team] || itemDate > teamLatestData[team].date) {
+            teamLatestData[team] = {
+                data: item,
+                date: itemDate
+            };
+        }
+    });
+
+    // Sum the LATEST total_lead_bulan from each team
+    const totalLead = Object.values(teamLatestData).reduce((total, teamData) => {
+        const leadCount = parseInt(teamData.data.total_lead_bulan) || 0;
+        console.log(`   - ${teamData.data.team}: ${leadCount} leads (${teamData.date.toLocaleDateString()})`);
+        return total + leadCount;
+    }, 0);
+
+    console.log(`📋 Total Lead Count (Latest from each team): ${totalLead} leads`);
+    return totalLead;
+}
 
     // Calculate close rate percentage
     calculateTotalCloseRate(salesTeamData) {
@@ -1495,6 +1583,70 @@ class EnhancedPowerMetricsCalculator {
             isAchievable: requiredKPI <= (this.calculateStaticKPIHarian() * 2) // 2x normal is still achievable
         };
     }
+    // ADD tambahan debugging method (optional):
+debugDataProcessing(salesTeamData) {
+    console.log(`\n🔍 === DEBUGGING POWER METRICS DATA PROCESSING ===`);
+    
+    const currentMonth = this.currentMonth;
+    const currentYear = this.currentYear;
+    
+    // Show all power_metrics data for current month
+    const currentMonthData = salesTeamData.filter(item => {
+        if (item.type !== 'power_metrics') return false;
+        
+        let itemDate;
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.createdAt) {
+            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        } else {
+            return false;
+        }
+        
+        return itemDate.getMonth() + 1 === currentMonth && 
+               itemDate.getFullYear() === currentYear;
+    });
+
+    console.log(`📊 All Power Metrics entries for ${currentMonth}/${currentYear}:`, currentMonthData.length);
+    
+    currentMonthData.forEach((item, index) => {
+        const date = item.tarikh || (item.createdAt ? (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt)).toISOString().split('T')[0] : 'Unknown');
+        console.log(`[${index + 1}] Team: ${item.team}, Date: ${date}, Sale: RM ${item.total_sale_bulan || 0}, Close: ${item.total_close_bulan || 0}, Lead: ${item.total_lead_bulan || 0}`);
+    });
+
+    // Show which entries are selected as "latest" for each team
+    const teamLatestData = {};
+    
+    currentMonthData.forEach(item => {
+        const team = item.team || 'Unknown';
+        let itemDate;
+        
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.createdAt) {
+            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        } else {
+            itemDate = new Date();
+        }
+        
+        if (!teamLatestData[team] || itemDate > teamLatestData[team].date) {
+            teamLatestData[team] = {
+                data: item,
+                date: itemDate
+            };
+        }
+    });
+
+    console.log(`\n👥 Latest entry selected for each team:`);
+    Object.entries(teamLatestData).forEach(([team, teamData]) => {
+        console.log(`[${team}] Date: ${teamData.date.toLocaleDateString()}, Sale: RM ${teamData.data.total_sale_bulan || 0}, Close: ${teamData.data.total_close_bulan || 0}, Lead: ${teamData.data.total_lead_bulan || 0}`);
+    });
+
+    console.log(`\n🔍 === END DEBUGGING ===`);
+    
+    return teamLatestData;
+}
+
 }
 
 // Usage Examples and Test Functions
