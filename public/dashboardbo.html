@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Analytics Section</title>
+    <title>Enhanced Order Dashboard - KilangDM</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="enhanced-dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <!-- Firebase SDK -->
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -30,294 +32,19 @@
     
     console.log('Firebase initialized successfully');
     </script>
-    <style>
-        /* Platform badges styling */
-.platform-shopee { 
-    background-color: #ff5e4d30; 
-    color: #ff5e4d; 
-    padding: 0.25rem 0.6rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.75rem;
-}
-
-.platform-tiktok { 
-    background-color: #00000030; 
-    color: #ffffff; 
-    padding: 0.25rem 0.6rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.75rem;
-}
-
-.platform-website { 
-    background-color: #3b82f630; 
-    color: #3b82f6; 
-    padding: 0.25rem 0.6rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.75rem;
-}
-
-.platform-default { 
-    background-color: #64748b30; 
-    color: #64748b; 
-    padding: 0.25rem 0.6rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.75rem;
-}
-
-/* Expand button styling */
-.expand-btn {
-    background: transparent;
-    border: 1px solid #475569;
-    color: #94a3b8;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.75rem;
-    transition: all 0.2s ease;
-}
-
-.expand-btn:hover {
-    background-color: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-}
-
-/* Order invoice styling */
-.order-invoice strong {
-    color: #60a5fa !important;
-    font-weight: 600;
-}
-    /* ===== General Styling for the Section ===== */
-    .recent-orders {
-        background-color: #1e293b; /* Warna latar belakang sedikit cerah dari body */
-        padding: 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #334155;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-        margin-top: 2rem;
-    }
-
-    .recent-orders-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #334155;
-        margin-bottom: 1.5rem;
-    }
-
-    .recent-orders-header h4 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #e2e8f0;
-        margin: 0;
-    }
-
-    /* ===== Tab Styling - Kunci kepada rupa profesional ===== */
-    .tabs-container {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .tab-link {
-        background-color: transparent;
-        color: #94a3b8;
-        border: 1px solid #334155;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.875rem;
-        transition: all 0.3s ease;
-        position: relative;
-        bottom: -1px; /* Untuk efek 'merge' dengan border bawah */
-    }
-
-    .tab-link:hover {
-        background-color: #334155;
-        color: #f1f5f9;
-    }
-
-    .tab-link.active {
-        color: #f9fafb;
-        background-color: #3b82f6; /* Warna accent untuk tab aktif */
-        border-color: #3b82f6;
-        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
-    }
-    
-    .tab-content {
-        display: none; /* Sembunyikan semua tab content secara lalai */
-    }
-
-    .tab-content.active {
-        display: block; /* Paparkan hanya yang aktif */
-        animation: fadeIn 0.5s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ===== Table Styling yang Lebih Kemas ===== */
-    .table-container {
-        overflow-x: auto; /* Untuk paparan mobile */
-    }
-
-    .orders-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .orders-table th, .orders-table td {
-        padding: 0.9rem 1rem;
-        text-align: left;
-        vertical-align: middle;
-    }
-
-    .orders-table thead {
-        background-color: #283446; /* Latar header table */
-    }
-
-    .orders-table th {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .orders-table tbody tr {
-        border-bottom: 1px solid #334155;
-        transition: background-color 0.2s ease;
-    }
-
-    .orders-table tbody tr:last-child {
-        border-bottom: none;
-    }
-
-    .orders-table tbody tr:hover {
-        background-color: #283446; /* Efek hover pada baris */
-    }
-
-    .orders-table td {
-        color: #cbd5e1;
-        font-size: 0.875rem;
-    }
-
-    .order-platform, .order-type {
-        padding: 0.25rem 0.6rem;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.75rem;
-    }
-
-    /* Spesifik warna untuk platform */
-    .platform-shopee { background-color: #ff5e4d30; color: #ff5e4d; }
-    .platform-tiktok { background-color: #ffffff30; color: #ffffff; }
-    /* Tambah lagi jika perlu */
-
-    /* ===== Pagination Styling ===== */
-    .pagination-controls {
-        display: flex;
-        justify-content: flex-start; /* Letak di sebelah kiri bawah */
-        align-items: center;
-        padding-top: 1.5rem;
-        gap: 1rem;
-    }
-
-    .pagination-controls .btn {
-        background-color: #283446;
-        border: 1px solid #475569;
-    }
-
-    .pagination-controls .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .pagination-controls .page-info {
-        color: #94a3b8;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-    /* Enhanced styling untuk product details column */
-.product-details {
-    min-width: 300px;
-    max-width: 400px;
-}
-
-.product-summary {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #e2e8f0;
-}
-
-.product-count-badge {
-    background-color: #3b82f6;
-    color: white;
-    padding: 0.125rem 0.5rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.product-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.product-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.25rem 0.5rem;
-    background-color: rgba(51, 65, 85, 0.3);
-    border-radius: 6px;
-    font-size: 0.75rem;
-}
-
-.product-name {
-    color: #cbd5e1;
-    font-weight: 500;
-    flex: 1;
-    margin-right: 0.5rem;
-}
-
-.product-qty {
-    background-color: #10b981;
-    color: white;
-    padding: 0.125rem 0.375rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.7rem;
-}
-
-    /* ===== Responsive Adjustments (Penting!) ===== */
-    @media (max-width: 768px) {
-        .recent-orders-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .tabs-container {
-            flex-wrap: wrap;
-        }
-    }
-</style>
-    
 </head>
+
 <body style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f9fafb; font-family: 'Inter', sans-serif; padding: 2rem;">
+    
+    <!-- Auto-Detection Status Indicator -->
+    <div class="auto-detection-status">
+        <div class="status-dot"></div>
+        <span>
+            <i class="fas fa-magic"></i>
+            Auto PDF Detection Active
+        </span>
+    </div>
+
     <!-- Floating Action Button for Home -->
     <div class="floating-home-btn">
         <button id="homeBtn" class="home-btn" title="Kembali ke Halaman Utama">
@@ -335,19 +62,19 @@
                 </div>
                 <div class="brand-text">
                     <h2>KilangDM</h2>
-                    <span>Analytics Dashboard</span>
+                    <span>Enhanced Analytics Dashboard</span>
                 </div>
             </div>
 
             <!-- Navigation Links -->
             <div class="nav-links" id="navLinks">
-                <a href="dashboard.html" class="nav-link ">
+                <a href="dashboard.html" class="nav-link">
                     <i class="fas fa-tachometer-alt"></i>
                     <span>Dashboard</span>
                 </a>
                 <a href="dashboardbo.html" class="nav-link active">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard Order</span>
+                    <i class="fas fa-list-alt"></i>
+                    <span>Enhanced Orders</span>
                 </a>
                 <a href="ecommerce.html" class="nav-link">
                     <i class="fas fa-shopping-cart"></i>
@@ -378,42 +105,40 @@
                 <i class="fas fa-bars"></i>
             </button>
         </div>
-        
-
     </nav>
 
-   <!-- Order Analytics Section - Insert this into your dashboard.html before Recent Activity section -->
-<section class="order-analytics-section">
-    <!-- Section Header -->
-    <div class="order-analytics-header">
-        <div class="header-left">
-            <div class="analytics-icon">
-                <i class="fas fa-chart-bar"></i>
+    <!-- Order Analytics Section -->
+    <section class="order-analytics-section">
+        <!-- Section Header -->
+        <div class="order-analytics-header">
+            <div class="header-left">
+                <div class="analytics-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div>
+                    <h3 class="section-title">Enhanced Order Analytics</h3>
+                    <p class="section-subtitle">Auto-detection + detailed product breakdown analysis</p>
+                </div>
             </div>
-            <div>
-                <h3 class="section-title">Order Analytics</h3>
-                <p class="section-subtitle">Comprehensive order data analysis & insights</p>
+            <div class="header-right">
+                <div class="analytics-summary">
+                    <div class="summary-stat">
+                        <span class="stat-number" id="total-orders-today">0</span>
+                        <span class="stat-text">Hari Ini</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="stat-number" id="total-revenue-today">RM 0</span>
+                        <span class="stat-text">Revenue Hari Ini</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="stat-number" id="avg-order-today">RM 0</span>
+                        <span class="stat-text">Avg Order Hari Ini</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="header-right">
-            <div class="analytics-summary">
-                <div class="summary-stat">
-                    <span class="stat-number" id="total-orders-today">0</span>
-                    <span class="stat-text">Hari Ini</span>
-                </div>
-                <div class="summary-stat">
-                    <span class="stat-number" id="total-revenue-today">RM 0</span>
-                    <span class="stat-text">Revenue Hari Ini</span>
-                </div>
-                <div class="summary-stat">
-                    <span class="stat-number" id="avg-order-today">RM 0</span>
-                    <span class="stat-text">Avg Order Hari Ini</span>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Filter Section -->
+        <!-- Filter Section -->
         <section class="filter-section">
             <div class="section-header">
                 <div class="header-left">
@@ -457,301 +182,313 @@
                     <div id="filter-tags" class="filter-tags"></div>
                 </div>
             </div>
+        </section>
 
-    <!-- Order Statistics Cards -->
-    <div class="order-stats-grid">
-        <!-- Total Revenue -->
-        <div class="order-stat-card revenue">
-            <div class="stat-header">
-                <div class="stat-icon revenue-icon">
-                    <i class="fas fa-money-bill-wave"></i>
+        <!-- Order Statistics Cards -->
+        <div class="order-stats-grid">
+            <!-- Total Revenue -->
+            <div class="order-stat-card revenue">
+                <div class="stat-header">
+                    <div class="stat-icon revenue-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <span class="stat-trend trend-up" id="revenue-trend">+0%</span>
                 </div>
-                <span class="stat-trend trend-up" id="revenue-trend">+0%</span>
+                <div class="stat-content">
+                    <h4 class="stat-title">Total Revenue</h4>
+                    <p class="stat-value" id="total-order-revenue">RM 0.00</p>
+                    <p class="stat-meta" id="revenue-period">daripada semua order</p>
+                </div>
             </div>
-            <div class="stat-content">
-                <h4 class="stat-title">Total Revenue</h4>
-                <p class="stat-value" id="total-order-revenue">RM 0.00</p>
-                <p class="stat-meta" id="revenue-period">daripada semua order</p>
+
+            <!-- Order Volume -->
+            <div class="order-stat-card volume">
+                <div class="stat-header">
+                    <div class="stat-icon volume-icon">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <span class="stat-trend trend-up" id="volume-trend">+0%</span>
+                </div>
+                <div class="stat-content">
+                    <h4 class="stat-title">Order Volume</h4>
+                    <p class="stat-value" id="total-order-count">0</p>
+                    <p class="stat-meta" id="volume-period">jumlah order</p>
+                </div>
+            </div>
+
+            <!-- Average Order Value -->
+            <div class="order-stat-card avg-order">
+                <div class="stat-header">
+                    <div class="stat-icon avg-order-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <span class="stat-trend trend-stable" id="avg-trend">stable</span>
+                </div>
+                <div class="stat-content">
+                    <h4 class="stat-title">Average Order Value</h4>
+                    <p class="stat-value" id="avg-order-value">RM 0.00</p>
+                    <p class="stat-meta" id="avg-period">purata per order</p>
+                </div>
+            </div>
+
+            <!-- Active Platforms -->
+            <div class="order-stat-card platforms">
+                <div class="stat-header">
+                    <div class="stat-icon platforms-icon">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <span class="stat-trend trend-up" id="platform-trend">+0</span>
+                </div>
+                <div class="stat-content">
+                    <h4 class="stat-title">Active Platforms</h4>
+                    <p class="stat-value" id="active-platforms">0</p>
+                    <p class="stat-meta" id="platform-period">platform aktif</p>
+                </div>
             </div>
         </div>
 
-        <!-- Order Volume -->
-        <div class="order-stat-card volume">
-            <div class="stat-header">
-                <div class="stat-icon volume-icon">
-                    <i class="fas fa-shopping-bag"></i>
+        <!-- Detailed Analytics -->
+        <div class="detailed-analytics">
+            <!-- Order Trend Chart -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h4>Order Trend Analysis</h4>
+                    <div class="chart-controls">
+                        <button class="timeline-btn active" data-period="7">7 Hari</button>
+                        <button class="timeline-btn" data-period="30">30 Hari</button>
+                        <button class="timeline-btn" data-period="90">90 Hari</button>
+                    </div>
                 </div>
-                <span class="stat-trend trend-up" id="volume-trend">+0%</span>
+                <div class="chart-container-timeline">
+                    <canvas id="orderTrendChart"></canvas>
+                </div>
             </div>
-            <div class="stat-content">
-                <h4 class="stat-title">Order Volume</h4>
-                <p class="stat-value" id="total-order-count">0</p>
-                <p class="stat-meta" id="volume-period">jumlah order</p>
+
+            <!-- Breakdowns -->
+            <div class="breakdown-section">
+                <!-- Platform Breakdown -->
+                <div class="breakdown-card">
+                    <h4 class="breakdown-title">
+                        <div class="breakdown-icon">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        Platform Breakdown
+                    </h4>
+                    <div class="breakdown-list" id="platform-breakdown">
+                        <div class="loading-placeholder">Loading platform data...</div>
+                    </div>
+                </div>
+
+                <!-- Team Performance -->
+                <div class="breakdown-card">
+                    <h4 class="breakdown-title">
+                        <div class="breakdown-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        Team Performance
+                    </h4>
+                    <div class="breakdown-list" id="team-breakdown">
+                        <div class="loading-placeholder">Loading team data...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Average Order Value -->
-        <div class="order-stat-card avg-order">
-            <div class="stat-header">
-                <div class="stat-icon avg-order-icon">
-                    <i class="fas fa-calculator"></i>
-                </div>
-                <span class="stat-trend trend-stable" id="avg-trend">stable</span>
-            </div>
-            <div class="stat-content">
-                <h4 class="stat-title">Average Order Value</h4>
-                <p class="stat-value" id="avg-order-value">RM 0.00</p>
-                <p class="stat-meta" id="avg-period">purata per order</p>
-            </div>
-        </div>
-
-        <!-- Active Platforms -->
-        <div class="order-stat-card platforms">
-            <div class="stat-header">
-                <div class="stat-icon platforms-icon">
-                    <i class="fas fa-store"></i>
-                </div>
-                <span class="stat-trend trend-up" id="platform-trend">+0</span>
-            </div>
-            <div class="stat-content">
-                <h4 class="stat-title">Active Platforms</h4>
-                <p class="stat-value" id="active-platforms">0</p>
-                <p class="stat-meta" id="platform-period">platform aktif</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Detailed Analytics -->
-    <div class="detailed-analytics">
-        <!-- Order Trend Chart -->
-        <div class="chart-section">
-            <div class="chart-header">
-                <h4>Order Trend Analysis</h4>
-                <div class="chart-controls">
-                    <button class="timeline-btn active" data-period="7">7 Hari</button>
-                    <button class="timeline-btn" data-period="30">30 Hari</button>
-                    <button class="timeline-btn" data-period="90">90 Hari</button>
+        <!-- Order Timeline -->
+        <div class="order-timeline">
+            <div class="timeline-header">
+                <h4>Order Timeline</h4>
+                <div class="timeline-controls">
+                    <button class="timeline-btn active" data-view="daily">Harian</button>
+                    <button class="timeline-btn" data-view="weekly">Mingguan</button>
+                    <button class="timeline-btn" data-view="monthly">Bulanan</button>
                 </div>
             </div>
             <div class="chart-container-timeline">
-                <canvas id="orderTrendChart"></canvas>
+                <canvas id="orderTimelineChart"></canvas>
             </div>
         </div>
 
-        <!-- Breakdowns -->
-        <div class="breakdown-section">
-            <!-- Platform Breakdown -->
-            <div class="breakdown-card">
-                <h4 class="breakdown-title">
-                    <div class="breakdown-icon">
-                        <i class="fas fa-store"></i>
-                    </div>
-                    Platform Breakdown
-                </h4>
-                <div class="breakdown-list" id="platform-breakdown">
-                    <div class="loading-placeholder">Loading platform data...</div>
+        <!-- Enhanced Recent Orders Section -->
+        <div class="enhanced-order-details">
+            <div class="order-details-header">
+                <h3 class="order-details-title">
+                    <i class="fas fa-list-alt"></i>
+                    Enhanced Order Details
+                </h3>
+                <div class="order-details-badge">
+                    Auto-detection dengan detailed product & size breakdown
                 </div>
             </div>
 
-            <!-- Team Performance -->
-            <div class="breakdown-card">
-                <h4 class="breakdown-title">
-                    <div class="breakdown-icon">
-                        <i class="fas fa-users"></i>
+            <div class="recent-orders">
+                <div class="recent-orders-header">
+                    <h4>Recent Orders dengan Product Breakdown</h4>
+                    <div class="tabs-container">
+                        <button class="tab-link active" data-tab="all">Semua</button>
+                        <button class="tab-link" data-tab="shopee">Shopee</button>
+                        <button class="tab-link" data-tab="tiktok">TikTok</button>
+                        <button class="tab-link" data-tab="qilah">Qilah</button>
+                        <button class="tab-link" data-tab="nisya">Nisya</button>
+                        <button class="tab-link" data-tab="wiyah">Wiyah</button>
                     </div>
-                    Team Performance
-                </h4>
-                <div class="breakdown-list" id="team-breakdown">
-                    <div class="loading-placeholder">Loading team data...</div>
+                </div>
+
+                <!-- Tab Content untuk All Orders -->
+                <div id="all" class="tab-content active">
+                    <div class="table-container">
+                        <table class="enhanced-orders-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
+                                    <th>INVOICE/PO</th>
+                                    <th>TARIKH</th>
+                                    <th>CUSTOMER</th>
+                                    <th>TEAM</th>
+                                    <th>PLATFORM</th>
+                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
+                                    <th>TOTAL QTY</th>
+                                    <th>AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders-tbody-all"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls" id="pagination-all"></div>
+                </div>
+
+                <!-- Tab Content untuk Shopee -->
+                <div id="shopee" class="tab-content">
+                    <div class="table-container">
+                        <table class="enhanced-orders-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
+                                    <th>INVOICE/PO</th>
+                                    <th>TARIKH</th>
+                                    <th>CUSTOMER</th>
+                                    <th>TEAM</th>
+                                    <th>PLATFORM</th>
+                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
+                                    <th>TOTAL QTY</th>
+                                    <th>AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders-tbody-shopee"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls" id="pagination-shopee"></div>
+                </div>
+
+                <!-- Tab Content untuk TikTok -->
+                <div id="tiktok" class="tab-content">
+                    <div class="table-container">
+                        <table class="enhanced-orders-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
+                                    <th>INVOICE/PO</th>
+                                    <th>TARIKH</th>
+                                    <th>CUSTOMER</th>
+                                    <th>TEAM</th>
+                                    <th>PLATFORM</th>
+                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
+                                    <th>TOTAL QTY</th>
+                                    <th>AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders-tbody-tiktok"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls" id="pagination-tiktok"></div>
+                </div>
+
+                <!-- Tab Content untuk Qilah -->
+                <div id="qilah" class="tab-content">
+                    <div class="table-container">
+                        <table class="enhanced-orders-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
+                                    <th>INVOICE/PO</th>
+                                    <th>TARIKH</th>
+                                    <th>CUSTOMER</th>
+                                    <th>TEAM</th>
+                                    <th>PLATFORM</th>
+                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
+                                    <th>TOTAL QTY</th>
+                                    <th>AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders-tbody-qilah"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls" id="pagination-qilah"></div>
+                </div>
+
+                <!-- Tab Content untuk Nisya -->
+                <div id="nisya" class="tab-content">
+                    <div class="table-container">
+                        <table class="enhanced-orders-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
+                                    <th>INVOICE/PO</th>
+                                    <th>TARIKH</th>
+                                    <th>CUSTOMER</th>
+                                    <th>TEAM</th>
+                                    <th>PLATFORM</th>
+                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
+                                    <th>TOTAL QTY</th>
+                                    <th>AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders-tbody-nisya"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls" id="pagination-nisya"></div>
+                </div>
+
+                <!-- Tab Content untuk Wiyah -->
+                <div id="wiyah" class="tab-content">
+                    <div class="table-container">
+                        <table class="enhanced-orders-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
+                                    <th>INVOICE/PO</th>
+                                    <th>TARIKH</th>
+                                    <th>CUSTOMER</th>
+                                    <th>TEAM</th>
+                                    <th>PLATFORM</th>
+                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
+                                    <th>TOTAL QTY</th>
+                                    <th>AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders-tbody-wiyah"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-controls" id="pagination-wiyah"></div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Order Timeline -->
-    <div class="order-timeline">
-        <div class="timeline-header">
-            <h4>Order Timeline</h4>
-            <div class="timeline-controls">
-                <button class="timeline-btn active" data-view="daily">Harian</button>
-                <button class="timeline-btn" data-view="weekly">Mingguan</button>
-                <button class="timeline-btn" data-view="monthly">Bulanan</button>
-            </div>
-        </div>
-        <div class="chart-container-timeline">
-            <canvas id="orderTimelineChart"></canvas>
-        </div>
-    </div>
-    <!-- Gantikan bahagian Recent Orders Table dalam dashboardbo.html dengan kod ini -->
-
-    <div class="recent-orders">
-        <div class="recent-orders-header">
-            <h4>Enhanced Recent Orders</h4>
-            <div class="tabs-container">
-                <button class="tab-link active" data-tab="all">Semua</button>
-                <button class="tab-link" data-tab="shopee">Shopee</button>
-                <button class="tab-link" data-tab="tiktok">TikTok</button>
-                <button class="tab-link" data-tab="qilah">Qilah</button>
-                <button class="tab-link" data-tab="nisya">Nisya</button>
-                <button class="tab-link" data-tab="wiyah">Wiyah</button>
-            </div>
-        </div>
-
-        <!-- Tab Content untuk All Orders -->
-        <div id="all" class="tab-content active">
-            <div class="table-container">
-                <table class="orders-table enhanced-orders-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 30px;"></th> <!-- Expand button -->
-                            <th>PO/Invoice</th>
-                            <th>Tarikh</th>
-                            <th>Customer</th>
-                            <th>Team</th>
-                            <th>Platform</th>
-                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
-                            <th>Total Qty</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-orders-tbody-all"></tbody>
-                </table>
-            </div>
-            <div class="pagination-controls" id="pagination-all"></div>
-        </div>
-
-        <!-- Tab Content untuk Shopee -->
-        <div id="shopee" class="tab-content">
-            <div class="table-container">
-                <table class="orders-table enhanced-orders-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 30px;"></th>
-                            <th>PO/Invoice</th>
-                            <th>Tarikh</th>
-                            <th>Customer</th>
-                            <th>Team</th>
-                            <th>Platform</th>
-                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
-                            <th>Total Qty</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-orders-tbody-shopee"></tbody>
-                </table>
-            </div>
-            <div class="pagination-controls" id="pagination-shopee"></div>
-        </div>
-
-        <!-- Tab Content untuk TikTok -->
-        <div id="tiktok" class="tab-content">
-            <div class="table-container">
-                <table class="orders-table enhanced-orders-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 30px;"></th>
-                            <th>PO/Invoice</th>
-                            <th>Tarikh</th>
-                            <th>Customer</th>
-                            <th>Team</th>
-                            <th>Platform</th>
-                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
-                            <th>Total Qty</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-orders-tbody-tiktok"></tbody>
-                </table>
-            </div>
-            <div class="pagination-controls" id="pagination-tiktok"></div>
-        </div>
-
-        <!-- Tab Content untuk Qilah -->
-        <div id="qilah" class="tab-content">
-            <div class="table-container">
-                <table class="orders-table enhanced-orders-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 30px;"></th>
-                            <th>PO/Invoice</th>
-                            <th>Tarikh</th>
-                            <th>Customer</th>
-                            <th>Team</th>
-                            <th>Platform</th>
-                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
-                            <th>Total Qty</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-orders-tbody-qilah"></tbody>
-                </table>
-            </div>
-            <div class="pagination-controls" id="pagination-qilah"></div>
-        </div>
-
-        <!-- Tab Content untuk Nisya -->
-        <div id="nisya" class="tab-content">
-            <div class="table-container">
-                <table class="orders-table enhanced-orders-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 30px;"></th>
-                            <th>PO/Invoice</th>
-                            <th>Tarikh</th>
-                            <th>Customer</th>
-                            <th>Team</th>
-                            <th>Platform</th>
-                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
-                            <th>Total Qty</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-orders-tbody-nisya"></tbody>
-                </table>
-            </div>
-            <div class="pagination-controls" id="pagination-nisya"></div>
-        </div>
-
-        <!-- Tab Content untuk Wiyah -->
-        <div id="wiyah" class="tab-content">
-            <div class="table-container">
-                <table class="orders-table enhanced-orders-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 30px;"></th>
-                            <th>PO/Invoice</th>
-                            <th>Tarikh</th>
-                            <th>Customer</th>
-                            <th>Team</th>
-                            <th>Platform</th>
-                            <th style="min-width: 300px;">Detail Produk & Saiz</th>
-                            <th>Total Qty</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-orders-tbody-wiyah"></tbody>
-                </table>
-            </div>
-            <div class="pagination-controls" id="pagination-wiyah"></div>
-        </div>
-    </div>
-</div>
-</section>>
-    <script type="module" src="js/order-analytics.js"></script>
-      <script>
-        // Home button functionality
+    <!-- Load Scripts -->
+    <script type="module" src="js/enhanced-order-detection.js"></script>
+    
+    <script>
+        // Basic functionality
         document.getElementById('homeBtn').addEventListener('click', function() {
-            // Replace with your actual homepage URL
             window.location.href = 'index.html';
         });
 
-        // Mobile menu toggle
         document.getElementById('mobileMenuBtn').addEventListener('click', function() {
             const navLinks = document.getElementById('navLinks');
             navLinks.classList.toggle('mobile-active');
         });
 
-        // Update current time
         function updateCurrentTime() {
             const now = new Date();
             const timeString = now.toLocaleTimeString('ms-MY', {
@@ -764,6 +501,43 @@
 
         setInterval(updateCurrentTime, 1000);
         updateCurrentTime();
+
+        // Global function untuk expand/collapse
+        window.toggleOrderDetails = function(button) {
+            const icon = button.querySelector('i');
+            const isExpanded = button.classList.contains('expanded');
+            
+            if (isExpanded) {
+                button.classList.remove('expanded');
+                icon.className = 'fas fa-plus';
+            } else {
+                button.classList.add('expanded');
+                icon.className = 'fas fa-minus';
+            }
+            
+            // Animation effect
+            button.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 150);
+        };
+
+        // Tab switching functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.tab-link').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    
+                    // Update active tab
+                    document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    // Update active content
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        });
     </script>
 </body>
 </html>
