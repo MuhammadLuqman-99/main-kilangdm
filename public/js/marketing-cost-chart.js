@@ -1,3 +1,5 @@
+import { collection, getDocs, query, orderBy, where, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
 // GANTIKAN FUNGSI INI DALAM marketing-cost-chart.js
 
 export async function createMarketingCostChart() {
