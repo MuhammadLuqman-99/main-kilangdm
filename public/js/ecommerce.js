@@ -153,12 +153,7 @@ async function handleFile(file) {
 }
 
 /**
- * Mem-parse fail PDF invoice untuk mendapatkan data order.
- * @param {File} file Objek fail PDF.
- * @returns {Promise<Array<Object>>} Array yang mengandungi satu objek order dengan senarai produk.
- */
-/**
- * ENHANCED PDF PARSER - Fixed untuk structured display
+ * ENHANCED PDF PARSER - Fixed untuk Firestore compatibility
  * Mem-parse fail PDF invoice dengan structured product breakdown
  */
 async function parsePdfInvoice(file) {
@@ -261,8 +256,8 @@ async function parsePdfInvoice(file) {
                     formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
                 }
 
-                // ===== CREATE STRUCTURED ORDER OBJECT =====
-                const structuredProducts = createStructuredProducts(enhancedProducts);
+                // ===== CREATE FIRESTORE-COMPATIBLE ORDER OBJECT =====
+                const structuredProducts = createFirestoreCompatibleProducts(enhancedProducts);
                 const totalQuantity = enhancedProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
                 const uniqueSizes = extractUniqueSizes(enhancedProducts);
 
@@ -278,11 +273,11 @@ async function parsePdfInvoice(file) {
                     jenis_order: getDominantProductName(structuredProducts),
                     code_kain: getDominantSKU(structuredProducts),
                     
-                    // ===== STRUCTURED DATA FOR ENHANCED DISPLAY =====
-                    products: enhancedProducts, // Raw product data
-                    structuredProducts: structuredProducts, // For display
+                    // ===== FIRESTORE-COMPATIBLE STRUCTURED DATA =====
+                    products: enhancedProducts, // Raw product data (plain objects)
+                    structuredProducts: structuredProducts, // For display (plain objects)
                     totalQuantity: totalQuantity,
-                    uniqueSizes: uniqueSizes,
+                    uniqueSizes: uniqueSizes, // Plain array
                     productCount: structuredProducts.length,
                     sizeCount: uniqueSizes.length,
                     
@@ -292,7 +287,7 @@ async function parsePdfInvoice(file) {
                     pdf_processed_at: new Date().toISOString()
                 };
 
-                console.log('Final structured order:', {
+                console.log('Final Firestore-compatible order:', {
                     invoice: order.nombor_po_invoice,
                     customer: order.nama_customer,
                     products: order.productCount,
@@ -319,47 +314,54 @@ async function parsePdfInvoice(file) {
         fileReader.readAsArrayBuffer(file);
     });
 }
+
 /**
- * Create structured products untuk display dalam table
+ * Create Firestore-compatible structured products (NO MAP OBJECTS)
  * @param {Array} products Raw products array
- * @returns {Array} Structured products for display
+ * @returns {Array} Structured products for display (plain objects only)
  */
-function createStructuredProducts(products) {
-    const productGroups = new Map();
+function createFirestoreCompatibleProducts(products) {
+    const productGroups = {}; // Use plain object instead of Map
     
     // Group products by base name
     products.forEach(product => {
         const baseName = product.base_name || product.product_name;
         
-        if (!productGroups.has(baseName)) {
-            productGroups.set(baseName, {
+        if (!productGroups[baseName]) {
+            productGroups[baseName] = {
                 name: baseName,
                 sku: product.sku,
                 totalQty: 0,
-                sizes: new Map(),
+                sizes: {}, // Use plain object instead of Map
                 type: product.type,
                 products: []
-            });
+            };
         }
         
-        const group = productGroups.get(baseName);
+        const group = productGroups[baseName];
         group.totalQty += product.quantity;
         group.products.push(product);
         
-        // Add to sizes map
-        if (group.sizes.has(product.size)) {
-            group.sizes.set(product.size, group.sizes.get(product.size) + product.quantity);
+        // Add to sizes object
+        if (group.sizes[product.size]) {
+            group.sizes[product.size] += product.quantity;
         } else {
-            group.sizes.set(product.size, product.quantity);
+            group.sizes[product.size] = product.quantity;
         }
     });
     
-    // Convert to array dengan sorted sizes
-    const structuredProducts = Array.from(productGroups.values()).map(group => ({
-        ...group,
-        sizeBreakdown: Array.from(group.sizes.entries())
+    // Convert to array dengan sorted sizes (plain objects only)
+    const structuredProducts = Object.values(productGroups).map(group => ({
+        name: group.name,
+        sku: group.sku,
+        totalQty: group.totalQty,
+        type: group.type,
+        products: group.products,
+        sizeBreakdown: Object.entries(group.sizes)
             .map(([size, qty]) => ({ size, quantity: qty }))
-            .sort((a, b) => sortSizes(a.size, b.size))
+            .sort((a, b) => sortSizes(a.size, b.size)),
+        // Store sizes as plain object for Firestore
+        sizesObject: group.sizes
     }));
     
     return structuredProducts;
@@ -369,7 +371,7 @@ function createStructuredProducts(products) {
  * Parse product section dengan enhanced detection
  * @param {string} sectionText Text dari section Ready Stock atau Pre-Order
  * @param {string} type Type produk (Ready Stock / Pre-Order)
- * @returns {Array} Array of parsed products
+ * @returns {Array} Array of parsed products (plain objects only)
  */
 function parseProductSection(sectionText, type) {
     const products = [];
@@ -383,6 +385,7 @@ function parseProductSection(sectionText, type) {
     while ((match = productLineRegex.exec(sectionText)) !== null) {
         const [, sku, productName, size, quantity, price] = match;
         
+        // Create plain object (no Map, no complex objects)
         products.push({
             sku: sku.trim(),
             product_name: `${productName.trim()} - (Size: ${size.trim()})`,
@@ -405,6 +408,7 @@ function parseProductSection(sectionText, type) {
             const sizeMatch = productName.match(/\(Size:\s*([^)]+)\)|\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i);
             const extractedSize = sizeMatch ? (sizeMatch[1] || sizeMatch[2]) : 'Unknown';
             
+            // Create plain object (no Map, no complex objects)
             products.push({
                 sku: sku.trim(),
                 product_name: productName.trim(),
@@ -420,6 +424,7 @@ function parseProductSection(sectionText, type) {
     console.log(`Extracted ${products.length} products from ${type} section`);
     return products;
 }
+
 function extractUniqueSizes(products) {
     const sizes = new Set();
     products.forEach(product => {
@@ -592,9 +597,23 @@ function getSizeColor(size) {
     return sizeColors[size] || '#64748b'; // default gray
 }
 
-// Export functions untuk integration
-window.parsePdfInvoice = parsePdfInvoice;
-window.showEnhancedExtractedPreview = showEnhancedExtractedPreview;
+/**
+ * Detect source of CSV file
+ */
+function detectSource(csvText) {
+    const headers = csvText.split('\n')[0].toLowerCase();
+    
+    if (headers.includes('recipient') && headers.includes('order id')) {
+        return 'shopee';
+    } else if (headers.includes('buyer name') && headers.includes('order number')) {
+        return 'tiktok';
+    } else if (headers.includes('tarikh') && headers.includes('code_kain')) {
+        return 'manual';
+    }
+    
+    return 'unknown';
+}
+
 /**
  * Mem-parse teks CSV kepada array of order objects berdasarkan sumber
  * @param {string} csvText Kandungan teks dari fail CSV
@@ -909,3 +928,7 @@ function populateForm(order) {
     // Show success message
     showFeedback('Data PDF berjaya diekstrak dan diisi ke dalam form!', 'success');
 }
+
+// Export functions untuk integration
+window.parsePdfInvoice = parsePdfInvoice;
+window.showEnhancedExtractedPreview = showEnhancedExtractedPreview;

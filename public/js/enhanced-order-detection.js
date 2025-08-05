@@ -1,5 +1,12 @@
-// Fixed Enhanced Order Analytics untuk Structured Product Display
-// Update untuk enhanced-order-detection.js
+// Enhanced Order Analytics untuk Structured Product Display
+// Complete version untuk enhanced-order-detection.js
+
+import { 
+    collection, 
+    getDocs,
+    query,
+    orderBy 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 class EnhancedOrderAnalytics {
     constructor() {
@@ -88,6 +95,14 @@ class EnhancedOrderAnalytics {
                 document.getElementById(tabId).classList.add('active');
             });
         });
+
+        // Refresh data button
+        const refreshBtn = document.getElementById('refresh-data-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.loadOrderData();
+            });
+        }
     }
 
     async loadOrderData() {
@@ -260,6 +275,7 @@ class EnhancedOrderAnalytics {
         const sizeMatch = productName.match(/\(Size:\s*([^)]+)\)|Size:\s*([A-Z0-9]+)|\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i);
         return sizeMatch ? (sizeMatch[1] || sizeMatch[2] || sizeMatch[3]).trim() : 'Unknown';
     }
+
     extractUniqueSizesFromDisplay(displayProducts) {
         const sizes = new Set();
         displayProducts.forEach(product => {
@@ -271,7 +287,7 @@ class EnhancedOrderAnalytics {
                 });
             }
         });
-        return Array.from(sizes).sort(this.sortSizes);
+        return Array.from(sizes).sort(this.sortSizes.bind(this));
     }
 
     extractUniqueSizesFromRaw(rawProducts) {
@@ -280,7 +296,7 @@ class EnhancedOrderAnalytics {
             const size = product.size || this.extractSizeFromProductName(product.product_name);
             if (size && size !== 'Unknown') sizes.add(size);
         });
-        return Array.from(sizes).sort(this.sortSizes);
+        return Array.from(sizes).sort(this.sortSizes.bind(this));
     }
 
     sortSizes(a, b) {
@@ -296,6 +312,24 @@ class EnhancedOrderAnalytics {
     }
 
     showLoadingState() {
+        // Show loading in statistics
+        const statsElements = [
+            'total-orders-today',
+            'total-revenue-today', 
+            'avg-order-today',
+            'total-order-revenue',
+            'total-order-count',
+            'avg-order-value',
+            'active-platforms'
+        ];
+
+        statsElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+        });
+
         // Show loading in breakdowns
         const platformContainer = document.getElementById('platform-breakdown');
         if (platformContainer) {
@@ -878,12 +912,46 @@ class EnhancedOrderAnalytics {
     }
 
     prepareTimelineData(view) {
-        // Simplified version
-        return {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            newOrders: [5, 8, 12, 7, 15, 10, 6],
-            repeatOrders: [2, 3, 5, 4, 8, 6, 3]
-        };
+        const now = new Date();
+        const labels = [];
+        const newOrders = [];
+        const repeatOrders = [];
+
+        // Customer tracking untuk repeat orders
+        const customerHistory = new Map();
+        
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(now.getTime() - (i * 24 * 60 * 60 * 1000));
+            const dateStr = date.toISOString().split('T')[0];
+            
+            const dayOrders = this.orders.filter(order => 
+                order.tarikh === dateStr || 
+                (order.createdAt && order.createdAt.toDateString() === date.toDateString())
+            );
+
+            let newCount = 0;
+            let repeatCount = 0;
+
+            dayOrders.forEach(order => {
+                const customerKey = order.nama_customer?.toLowerCase().trim();
+                if (customerKey) {
+                    if (customerHistory.has(customerKey)) {
+                        repeatCount++;
+                    } else {
+                        newCount++;
+                        customerHistory.set(customerKey, true);
+                    }
+                } else {
+                    newCount++; // Unknown customers count as new
+                }
+            });
+
+            labels.push(date.toLocaleDateString('ms-MY', { weekday: 'short' }));
+            newOrders.push(newCount);
+            repeatOrders.push(repeatCount);
+        }
+
+        return { labels, newOrders, repeatOrders };
     }
 
     updateOrderTrendChart(period) {
@@ -962,6 +1030,74 @@ class EnhancedOrderAnalytics {
             }
         });
     }
+
+    // Export functions untuk integration dengan other modules
+    exportOrderData() {
+        return {
+            orders: this.orders,
+            processedOrders: this.processedOrders,
+            statistics: {
+                totalOrders: this.orders.length,
+                totalRevenue: this.orders.reduce((sum, order) => sum + order.total_rm, 0),
+                avgOrderValue: this.orders.length > 0 ? 
+                    this.orders.reduce((sum, order) => sum + order.total_rm, 0) / this.orders.length : 0
+            }
+        };
+    }
+
+    // Search function untuk finding specific orders
+    searchOrders(query) {
+        const searchTerm = query.toLowerCase().trim();
+        return this.processedOrders.filter(order => 
+            order.nombor_po_invoice?.toLowerCase().includes(searchTerm) ||
+            order.nama_customer?.toLowerCase().includes(searchTerm) ||
+            order.team_sale?.toLowerCase().includes(searchTerm) ||
+            order.platform?.toLowerCase().includes(searchTerm) ||
+            order.jenis_order?.toLowerCase().includes(searchTerm) ||
+            order.code_kain?.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    // Filter function untuk advanced filtering
+    filterOrders(filters) {
+        return this.processedOrders.filter(order => {
+            let match = true;
+
+            if (filters.dateFrom) {
+                const orderDate = new Date(order.createdAt);
+                const fromDate = new Date(filters.dateFrom);
+                if (orderDate < fromDate) match = false;
+            }
+
+            if (filters.dateTo) {
+                const orderDate = new Date(order.createdAt);
+                const toDate = new Date(filters.dateTo);
+                if (orderDate > toDate) match = false;
+            }
+
+            if (filters.platform && filters.platform !== 'all') {
+                if (!order.platform?.toLowerCase().includes(filters.platform.toLowerCase())) {
+                    match = false;
+                }
+            }
+
+            if (filters.team && filters.team !== 'all') {
+                if (!order.team_sale?.toLowerCase().includes(filters.team.toLowerCase())) {
+                    match = false;
+                }
+            }
+
+            if (filters.minAmount) {
+                if (order.total_rm < parseFloat(filters.minAmount)) match = false;
+            }
+
+            if (filters.maxAmount) {
+                if (order.total_rm > parseFloat(filters.maxAmount)) match = false;
+            }
+
+            return match;
+        });
+    }
 }
 
 // Initialize when DOM is loaded and Firebase is ready
@@ -1024,18 +1160,28 @@ window.toggleOrderDetails = function(button) {
     const orderId = button.dataset.orderId;
     
     if (icon.classList.contains('fa-plus')) {
-        // Expand
+        // Expand - show detailed view
         icon.classList.remove('fa-plus');
         icon.classList.add('fa-minus');
         button.classList.add('expanded');
         
+        // Find the order data
+        if (window.enhancedOrderAnalytics) {
+            const order = window.enhancedOrderAnalytics.processedOrders.find(o => o.id === orderId);
+            if (order) {
+                showOrderDetailRow(row, order);
+            }
+        }
+        
         console.log('Expanding details for order:', orderId);
         
     } else {
-        // Collapse
+        // Collapse - hide detailed view
         icon.classList.remove('fa-minus');
         icon.classList.add('fa-plus');
         button.classList.remove('expanded');
+        
+        hideOrderDetailRow(row);
         
         console.log('Collapsing details for order:', orderId);
     }
@@ -1047,285 +1193,157 @@ window.toggleOrderDetails = function(button) {
     }, 150);
 };
 
-// Global function for viewing invoice details
+// Function to show detailed order row
+function showOrderDetailRow(parentRow, order) {
+    // Remove existing detail row if any
+    hideOrderDetailRow(parentRow);
+    
+    const detailRow = document.createElement('tr');
+    detailRow.className = 'order-detail-row';
+    detailRow.innerHTML = `
+        <td colspan="9" style="background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; padding: 1.5rem;">
+            <div class="order-detail-content">
+                <div class="detail-header">
+                    <h4 style="color: #60a5fa; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-info-circle"></i>
+                        Order Details: ${order.nombor_po_invoice}
+                    </h4>
+                </div>
+                
+                <div class="detail-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="detail-item">
+                        <label style="color: #94a3b8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Customer Info</label>
+                        <div style="color: #e2e8f0; font-weight: 500;">${order.nama_customer}</div>
+                        <div style="color: #94a3b8; font-size: 0.8rem;">${order.nombor_phone || 'No phone'}</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <label style="color: #94a3b8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Order Info</label>
+                        <div style="color: #e2e8f0; font-weight: 500;">Team: ${order.team_sale}</div>
+                        <div style="color: #94a3b8; font-size: 0.8rem;">Source: ${order.source}</div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <label style="color: #94a3b8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">Amount</label>
+                        <div style="color: #10b981; font-weight: 700; font-size: 1.2rem;">RM ${order.total_rm.toFixed(2)}</div>
+                        <div style="color: #94a3b8; font-size: 0.8rem;">Total Qty: ${order.displayTotalQuantity}</div>
+                    </div>
+                </div>
+                
+                ${generateDetailedProductsHTML(order)}
+            </div>
+        </td>
+    `;
+    
+    parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
+    
+    // Animate in
+    setTimeout(() => {
+        detailRow.style.opacity = '1';
+        detailRow.style.transform = 'translateY(0)';
+    }, 10);
+}
+
+// Function to hide detailed order row
+function hideOrderDetailRow(parentRow) {
+    const nextRow = parentRow.nextElementSibling;
+    if (nextRow && nextRow.classList.contains('order-detail-row')) {
+        nextRow.remove();
+    }
+}
+
+// Function to generate detailed products HTML
+function generateDetailedProductsHTML(order) {
+    if (!order.displayProducts || order.displayProducts.length === 0) {
+        return `
+            <div style="background: rgba(51, 65, 85, 0.3); padding: 1rem; border-radius: 8px; text-align: center; color: #94a3b8;">
+                <i class="fas fa-box-open"></i>
+                No detailed product information available
+            </div>
+        `;
+    }
+
+    let html = `
+        <div class="detailed-products">
+            <h5 style="color: #60a5fa; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-boxes"></i>
+                Product Breakdown (${order.productCount} jenis)
+            </h5>
+            <div class="products-grid" style="display: grid; gap: 0.75rem;">
+    `;
+
+    order.displayProducts.forEach((product, index) => {
+        html += `
+            <div style="background: rgba(51, 65, 85, 0.3); border-radius: 8px; padding: 1rem; border-left: 3px solid ${getProductColor(index)};">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div>
+                        <div style="color: #e2e8f0; font-weight: 600; margin-bottom: 0.25rem;">${product.name}</div>
+                        <div style="color: #94a3b8; font-size: 0.8rem;">SKU: ${product.sku} | Type: ${product.type}</div>
+                    </div>
+                    <div style="background: ${getProductColor(index)}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-weight: 600; font-size: 0.9rem;">
+                        ${product.totalQty} pcs
+                    </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+        `;
+
+        if (product.sizes && product.sizes.length > 0) {
+            product.sizes.forEach(size => {
+                const sizeColor = getSizeColorForDetail(size.size);
+                html += `
+                    <span style="background: ${sizeColor}; color: white; padding: 0.125rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600;">
+                        ${size.size}: ${size.quantity}
+                    </span>
+                `;
+            });
+        } else {
+            html += `
+                <span style="background: #64748b; color: white; padding: 0.125rem 0.5rem; border-radius: 6px; font-size: 0.7rem;">
+                    Mixed sizes
+                </span>
+            `;
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    return html;
+}
+
+// Helper functions
+function getProductColor(index) {
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316'];
+    return colors[index % colors.length];
+}
+
+function getSizeColorForDetail(size) {
+    const sizeColors = {
+        'XS': '#ef4444', 'S': '#f59e0b', 'M': '#10b981', 'L': '#3b82f6', 'XL': '#8b5cf6',
+        '2XL': '#ec4899', '3XL': '#06b6d4', '4XL': '#84cc16', '5XL': '#f97316'
+    };
+    return sizeColors[size] || '#64748b';
+}
+
+// Global function for viewing invoice details (future enhancement)
 window.viewInvoiceDetails = function(orderId) {
     console.log('Viewing invoice details for order:', orderId);
     
     if (window.enhancedOrderAnalytics) {
-        const order = window.enhancedOrderAnalytics.orders.find(o => o.id === orderId);
+        const order = window.enhancedOrderAnalytics.processedOrders.find(o => o.id === orderId);
         if (order) {
             console.log('Order details:', order);
-            // Show modal or navigate to detail page
+            // Future: Show modal or navigate to detail page
         }
     }
 };
 
 // Export for potential use in other modules
-export default EnhancedOrderAnalytics;// Fixed Enhanced Order Analytics untuk Structured Product Display
-// Update untuk enhanced-order-detection.js
-
-class EnhancedOrderAnalytics {
-    constructor() {
-        this.db = window.db;
-        this.orderTrendChart = null;
-        this.orderTimelineChart = null;
-        this.orders = [];
-        this.processedOrders = [];
-        
-        // Enhanced color schemes
-        this.platformColors = {
-            'Shopee': '#ff5e4d',
-            'TikTok': '#000000', 
-            'Lazada': '#ff9900',
-            'Website': '#3b82f6',
-            'Website Desa Murni': '#3b82f6',
-            'WhatsApp': '#25d366',
-            'Facebook': '#1877f2',
-            'Instagram': '#e1306c',
-            'Manual': '#64748b'
-        };
-        
-        this.sizeColors = {
-            'XS': '#ef4444',    // red
-            'S': '#f59e0b',     // amber
-            'M': '#10b981',     // emerald
-            'L': '#3b82f6',     // blue
-            'XL': '#8b5cf6',    // violet
-            'XXL': '#8b5cf6',   // violet
-            '2XL': '#ec4899',   // pink
-            '3XL': '#06b6d4',   // cyan
-            '4XL': '#84cc16',   // lime
-            '5XL': '#f97316'    // orange
-        };
-        
-        this.teamColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
-        
-        this.init();
-    }
-
-    async init() {
-        try {
-            console.log('Initializing Enhanced Order Analytics...');
-            this.setupEventListeners();
-            await this.loadOrderData();
-            this.initCharts();
-            console.log('Enhanced Order Analytics initialized successfully');
-        } catch (error) {
-            console.error('Error initializing Enhanced Order Analytics:', error);
-            this.showErrorState();
-        }
-    }
-
-    setupEventListeners() {
-        // Chart control buttons
-        document.querySelectorAll('.timeline-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const period = e.target.dataset.period;
-                const view = e.target.dataset.view;
-                
-                // Update active state
-                e.target.parentElement.querySelectorAll('.timeline-btn').forEach(b => 
-                    b.classList.remove('active'));
-                e.target.classList.add('active');
-
-                if (period) {
-                    this.updateOrderTrendChart(period);
-                }
-                if (view) {
-                    this.updateTimelineChart(view);
-                }
-            });
-        });
-
-        // Tab switching functionality
-        document.querySelectorAll('.tab-link').forEach(button => {
-            button.addEventListener('click', () => {
-                const tabId = button.dataset.tab;
-                
-                // Update active state
-                document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-
-                // Update active content
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                document.getElementById(tabId).classList.add('active');
-            });
-        });
-    }
-
-    async loadOrderData() {
-        try {
-            console.log('Loading order data from Firebase...');
-            
-            if (!this.db) {
-                throw new Error('Firestore database not initialized');
-            }
-
-            this.showLoadingState();
-
-            // Query orders from orderData collection
-            const ordersQuery = query(
-                collection(this.db, "orderData"),
-                orderBy("createdAt", "desc")
-            );
-
-            const querySnapshot = await getDocs(ordersQuery);
-            this.orders = [];
-
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                const processedOrder = this.processOrderData(data, doc.id);
-                this.orders.push(processedOrder);
-            });
-
-            console.log(`Loaded ${this.orders.length} orders from Firebase`);
-            
-            // Process orders for enhanced display
-            this.processedOrders = this.orders.map(order => this.enhanceOrderForDisplay(order));
-            
-            // Update all components
-            this.updateStatistics();
-            this.updateBreakdowns();
-            this.updateRecentOrders();
-            this.updateTrendCalculations();
-
-        } catch (error) {
-            console.error('Error loading order data:', error);
-            this.showErrorState();
-        }
-    }
-
-    processOrderData(data, docId) {
-        return {
-            id: docId,
-            ...data,
-            // Convert Firestore timestamp to Date
-            createdAt: data.createdAt?.toDate() || new Date(data.tarikh),
-            tarikh: data.tarikh || '',
-            code_kain: data.code_kain || '',
-            nama_customer: data.nama_customer || '',
-            team_sale: data.team_sale || '',
-            platform: data.platform || '',
-            jenis_order: data.jenis_order || '',
-            total_rm: parseFloat(data.total_rm) || 0,
-            nombor_po_invoice: data.nombor_po_invoice || '',
-            
-            // Enhanced fields untuk structured display
-            structuredProducts: data.structuredProducts || [],
-            products: data.products || [],
-            totalQuantity: data.totalQuantity || data.total_quantity || 1,
-            uniqueSizes: data.uniqueSizes || [],
-            productCount: data.productCount || 0,
-            sizeCount: data.sizeCount || 0,
-            source: data.source || 'unknown'
-        };
-    }
-
-    enhanceOrderForDisplay(order) {
-        // Process enhanced data untuk display
-        let displayProducts = [];
-        let totalQuantity = 1;
-        let uniqueSizes = [];
-
-        if (order.structuredProducts && Array.isArray(order.structuredProducts) && order.structuredProducts.length > 0) {
-            // Data dari enhanced PDF processing
-            displayProducts = order.structuredProducts.map(product => ({
-                name: product.name,
-                sku: product.sku,
-                totalQty: product.totalQty,
-                sizes: product.sizeBreakdown || [],
-                type: product.type || 'Standard'
-            }));
-            
-            totalQuantity = order.totalQuantity || displayProducts.reduce((sum, p) => sum + p.totalQty, 0);
-            uniqueSizes = order.uniqueSizes || this.extractUniqueSizesFromDisplay(displayProducts);
-            
-        } else if (order.products && Array.isArray(order.products) && order.products.length > 0) {
-            // Fallback untuk data lama dengan products array
-            displayProducts = this.createDisplayProductsFromRaw(order.products);
-            totalQuantity = order.products.reduce((sum, p) => sum + (p.quantity || 0), 0);
-            uniqueSizes = this.extractUniqueSizesFromRaw(order.products);
-            
-        } else {
-            // Standard order tanpa detailed breakdown
-            displayProducts = [{
-                name: order.jenis_order || order.code_kain || 'Standard Order',
-                sku: order.code_kain || 'N/A',
-                totalQty: 1,
-                sizes: [{ size: 'Unknown', quantity: 1 }],
-                type: 'Standard'
-            }];
-            totalQuantity = 1;
-            uniqueSizes = ['Unknown'];
-        }
-
-        return {
-            ...order,
-            displayProducts,
-            displayTotalQuantity: totalQuantity,
-            displayUniqueSizes: uniqueSizes,
-            productCount: displayProducts.length,
-            sizeCount: uniqueSizes.length
-        };
-    }
-
-    createDisplayProductsFromRaw(rawProducts) {
-        const productMap = new Map();
-
-        rawProducts.forEach(product => {
-            const baseName = this.extractBaseProductName(product.product_name || product.base_name);
-            const size = product.size || this.extractSizeFromProductName(product.product_name);
-            
-            if (!productMap.has(baseName)) {
-                productMap.set(baseName, {
-                    name: baseName,
-                    sku: product.sku,
-                    totalQty: 0,
-                    sizes: [],
-                    type: product.type || 'Unknown'
-                });
-            }
-
-            const productGroup = productMap.get(baseName);
-            productGroup.totalQty += product.quantity || 0;
-            
-            // Add size information
-            const existingSize = productGroup.sizes.find(s => s.size === size);
-            if (existingSize) {
-                existingSize.quantity += product.quantity || 0;
-            } else {
-                productGroup.sizes.push({
-                    size: size || 'Unknown',
-                    quantity: product.quantity || 0
-                });
-            }
-        });
-
-        return Array.from(productMap.values()).map(product => ({
-            ...product,
-            sizes: product.sizes.sort((a, b) => this.sortSizes(a.size, b.size))
-        }));
-    }
-
-    extractBaseProductName(productName) {
-        if (!productName) return 'Unknown Product';
-        
-        return productName
-            .replace(/\s*-\s*\(Size:\s*[^)]+\)/gi, '')
-            .replace(/\s*\(Size:\s*[^)]+\)/gi, '')
-            .replace(/\s*-\s*(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\s*$/gi, '')
-            .trim() || productName;
-    }
-
-    extractSizeFromProductName(productName) {
-        if (!productName) return 'Unknown';
-        
-        const sizeMatch = productName.match(/\(Size:\s*([^)]+)\)|Size:\s*([A-Z0-9]+)|\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i);
-        return sizeMatch ? (sizeMatch[1] || sizeMatch[2] || sizeMatch[3]).trim() : 'Unknown';
-    }
-
-    extractUniqueSizesFromDisplay(displayProducts) {
-        const sizes = new Set();
-        displayProducts.forEach(product => {
-            if (product.sizes && Array.isArray(product.sizes)) {
-                product.
+export default EnhancedOrderAnalytics;
