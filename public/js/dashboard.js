@@ -142,29 +142,6 @@ window.filterByDate = filterByDate;
 window.filterSalesTeamData = filterSalesTeamData;
 window.applyFilters = applyFilters;
 
-// 7. ADD function to manually refresh marketing cost chart
-window.refreshMarketingCostChart = async function() {
-    console.log('🔄 Manually refreshing marketing cost chart...');
-    
-    try {
-        // Get current filtered data
-        const startDate = document.getElementById('start-date').value;
-        const endDate = document.getElementById('end-date').value;
-        const selectedAgent = document.getElementById('agent-filter').value;
-
-        const filteredData = {
-            orders: filterByDate(allData.orders, startDate, endDate),
-            marketing: filterByDate(allData.marketing, startDate, endDate),
-            salesteam: filterSalesTeamData(allData.salesteam, startDate, endDate, selectedAgent)
-        };
-
-        await updateMarketingCostChart(filteredData);
-        console.log('✅ Marketing cost chart refreshed successfully');
-    } catch (error) {
-        console.error('❌ Failed to refresh marketing cost chart:', error);
-    }
-};
-
 // 8. ADD event listeners for manual refresh
 document.addEventListener('DOMContentLoaded', () => {
     // Add refresh button to marketing cost chart if it exists
@@ -197,45 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2000); // Wait 2 seconds for DOM to be ready
 });
 
-// 9. ADD CSS for the refresh button (add to your style.css or inline)
-const refreshButtonStyles = `
-<style>
-.refresh-btn {
-    transition: all 0.2s ease;
-    font-size: 11px;
-    padding: 4px 8px;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.refresh-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.refresh-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.enhanced-cost-chart .chart-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-}
-
-.enhanced-cost-chart .header-left {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-</style>
-`;
-
 // Add styles to document head
 if (!document.getElementById('refresh-btn-styles')) {
     const styleElement = document.createElement('div');
@@ -243,47 +181,6 @@ if (!document.getElementById('refresh-btn-styles')) {
     styleElement.innerHTML = refreshButtonStyles;
     document.head.appendChild(styleElement);
 }
-
-// 10. ADD console commands for debugging
-window.debugMarketingCost = function() {
-    console.log('🔍 === MARKETING COST DEBUG INFO ===');
-    
-    console.log('Current filters:', {
-        startDate: document.getElementById('start-date')?.value || 'None',
-        endDate: document.getElementById('end-date')?.value || 'None',
-        agent: document.getElementById('agent-filter')?.value || 'None'
-    });
-    
-    if (window.allData) {
-        const marketingLeadSemasa = allData.marketing.filter(item => item.type === 'lead_semasa');
-        const salesTeamLeads = allData.salesteam.filter(item => item.type === 'lead');
-        
-        console.log('Available data:', {
-            marketingLeadSemasa: marketingLeadSemasa.length,
-            salesTeamLeads: salesTeamLeads.length
-        });
-        
-        console.log('Sample marketing lead semasa:', marketingLeadSemasa.slice(0, 2));
-        console.log('Sample sales team leads:', salesTeamLeads.slice(0, 2));
-        
-        // Check for date matches
-        const marketingDates = [...new Set(marketingLeadSemasa.map(item => item.tarikh))];
-        const salesDates = [...new Set(salesTeamLeads.map(item => item.tarikh))];
-        const commonDates = marketingDates.filter(date => salesDates.includes(date));
-        
-        console.log('Date analysis:', {
-            marketingDates: marketingDates.length,
-            salesDates: salesDates.length,
-            commonDates: commonDates.length,
-            commonDatesList: commonDates
-        });
-    }
-    
-    console.log('Chart element exists:', !!document.getElementById('costPerLeadChart'));
-    console.log('createMarketingCostChart function available:', typeof createMarketingCostChart);
-    
-    console.log('🔍 === END DEBUG ===');
-};
 
 console.log('✅ Dashboard integration updates loaded');
 console.log('🔧 Available commands:');
@@ -320,88 +217,23 @@ function verifyDataStructure() {
     return true;
 }
 
-// 8. ADD test functions for manual testing
-window.testEnhancedDashboard = function() {
-    console.log('🧪 === TESTING ENHANCED DASHBOARD ===');
-    
-    // Verify data structure
-    const dataOk = verifyDataStructure();
-    
-    if (dataOk) {
-        console.log('✅ Data structure verified');
-        
-        // Test the enhanced lead chart
-        console.log('🧪 Testing enhanced lead distribution chart...');
-        window.debugEnhancedLeadChart();
-        
-        // Test filters
-        console.log('🧪 Testing filters...');
-        const sourceFilter = document.getElementById('lead-source-filter');
-        const teamFilter = document.getElementById('lead-team-filter');
-        const timeFilter = document.getElementById('lead-time-filter');
-        
-        console.log('🔧 Filter elements found:', {
-            sourceFilter: !!sourceFilter,
-            teamFilter: !!teamFilter,
-            timeFilter: !!timeFilter
-        });
-        
-        // Force refresh charts
-        if (typeof applyFilters === 'function') {
-            console.log('🔄 Applying filters...');
-            applyFilters();
-        }
-        
-        console.log('✅ Enhanced dashboard test completed');
-    } else {
-        console.log('❌ Data structure verification failed');
-    }
-    
-    console.log('🧪 === END TESTING ===');
-};
-
-// 9. ADD error handling for chart initialization
-function safeChartUpdate(chartUpdateFunction, chartName, data) {
-    try {
-        chartUpdateFunction(data);
-        console.log(`✅ ${chartName} updated successfully`);
-    } catch (error) {
-        console.error(`❌ Error updating ${chartName}:`, error);
-    }
-}
-
-// 10. ADD data validation before chart updates
-function validateDataForCharts(data) {
-    const validation = {
-        orders: Array.isArray(data.orders) && data.orders.length >= 0,
-        marketing: Array.isArray(data.marketing) && data.marketing.length >= 0,
-        salesteam: Array.isArray(data.salesteam) && data.salesteam.length >= 0,
-        marketingLeads: Array.isArray(data.marketing) && 
-                      data.marketing.filter(item => item.type === 'lead_semasa').length >= 0,
-        salesteamLeads: Array.isArray(data.salesteam) && 
-                       data.salesteam.filter(item => item.type === 'lead').length >= 0
-    };
-    
-    console.log('📊 Data validation:', validation);
-    
-    return Object.values(validation).every(Boolean);
-}
-
-// Make test functions available globally
-window.verifyDataStructure = verifyDataStructure;
-window.testEnhancedDashboard = testEnhancedDashboard;
-
-console.log('🚀 Enhanced Lead Distribution integration loaded!');
-console.log('🧪 Run testEnhancedDashboard() in console to test the implementation');
-console.log('🔍 Run debugEnhancedLeadChart() to debug lead chart specifically');
-
+// DENGAN INI:
 function setupFilters() {
+    // Only setup if old filter elements exist
+    const startDateEl = document.getElementById('start-date');
+    const endDateEl = document.getElementById('end-date');
+    
+    if (!startDateEl || !endDateEl) {
+        console.log('Enhanced filter detected, skipping old filter setup');
+        return;
+    }
+    
     // Set default dates (last 30 days)
     const today = new Date();
     const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
     
-    document.getElementById('start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
-    document.getElementById('end-date').value = today.toISOString().split('T')[0];
+    startDateEl.value = thirtyDaysAgo.toISOString().split('T')[0];
+    endDateEl.value = today.toISOString().split('T')[0];
 
     // Event listeners
     document.getElementById('apply-filter').addEventListener('click', applyFilters);
@@ -481,46 +313,55 @@ async function fetchAllData() {
     }
 }
 
+// DENGAN INI:
 function populateAgentFilter() {
-    const agentSelect = document.getElementById('agent-filter');
-    
     // Get unique agents from sales team data
     const agents = [...new Set(allData.salesteam
         .map(item => item.agent || item.team)
         .filter(Boolean)
     )].sort();
     
-    // Clear and populate options
-    agentSelect.innerHTML = '<option value="">Semua Agent</option>';
-    agents.forEach(agent => {
-        const option = document.createElement('option');
-        option.value = agent;
-        option.textContent = agent;
-        agentSelect.appendChild(option);
-    });
+    // Populate old agent filter if exists
+    const agentSelect = document.getElementById('agent-filter');
+    if (agentSelect) {
+        agentSelect.innerHTML = '<option value="">Semua Agent</option>';
+        agents.forEach(agent => {
+            const option = document.createElement('option');
+            option.value = agent;
+            option.textContent = agent;
+            agentSelect.appendChild(option);
+        });
+    }
+    
+    // Populate enhanced agent filter if available
     if (window.populateEnhancedAgentFilter) {
-    window.populateEnhancedAgentFilter(agents);
-}
+        window.populateEnhancedAgentFilter(agents);
+    }
 }
 
-// ALSO UPDATE the applyFilters function to ensure it creates proper filteredData:
+// TAMBAH INI DI AWAL applyFilters():
 function applyFilters() {
-    // Get filter values
-    const startDate = document.getElementById('start-date').value;
-    const endDate = document.getElementById('end-date').value;
-    const selectedAgent = document.getElementById('agent-filter').value;
-
-    // Update filter state
-    currentFilters.startDate = startDate;
-    currentFilters.endDate = endDate;
-    currentFilters.agent = selectedAgent;
-
-    // Filter data - CREATE filteredData object
-    const filteredData = {
-        orders: filterByDate(allData.orders, startDate, endDate),
-        marketing: filterByDate(allData.marketing, startDate, endDate),
-        salesteam: filterSalesTeamData(allData.salesteam, startDate, endDate, selectedAgent)
-    };
+    // Get enhanced filter values first (if available)
+    let startDate = '';
+    let endDate = '';
+    let selectedAgent = '';
+    
+    if (window.getEnhancedFilterSelection) {
+        const enhanced = window.getEnhancedFilterSelection();
+        startDate = enhanced.startDate || '';
+        endDate = enhanced.endDate || '';
+        selectedAgent = enhanced.agent || '';
+        console.log('📊 Enhanced filter values:', enhanced);
+    } else {
+        // Fallback to old filter inputs
+        const startDateEl = document.getElementById('start-date');
+        const endDateEl = document.getElementById('end-date');
+        const agentFilterEl = document.getElementById('agent-filter');
+        
+        startDate = startDateEl?.value || '';
+        endDate = endDateEl?.value || '';
+        selectedAgent = agentFilterEl?.value || '';
+    }
 
     // Update displays
     updateActiveFiltersDisplay();
@@ -629,12 +470,15 @@ function clearFilters() {
     updateLeadsOnlyChart(allData);
 }
 
-
-
-
 function updateActiveFiltersDisplay() {
     const activeFiltersDiv = document.getElementById('active-filters');
     const filterTagsDiv = document.getElementById('filter-tags');
+    
+    // Skip if elements don't exist (enhanced filter handles its own display)
+    if (!activeFiltersDiv || !filterTagsDiv) {
+        console.log('Old filter elements not found, enhanced filter active');
+        return;
+    }
     
     const tags = [];
     
@@ -754,10 +598,12 @@ async function updateMarketingCostChart(data) {
     }
 }
 
-// 4. ADD this new function for lead quality trends chart
 function updateLeadQualityChart(data) {
     const ctx = document.getElementById('leadQualityChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.log('leadQualityChart element not found');
+        return;
+    }
     
     // Process lead quality data over time
     const qualityByDate = {};
@@ -839,6 +685,12 @@ function updateLeadQualityChart(data) {
 
 
 function updateSalesTrendChart(data = null) {
+    const ctx = document.getElementById('salesTrendChart');
+    if (!ctx) {
+        console.log('salesTrendChart element not found');
+        return;
+    }
+
     const filteredData = data || {
         orders: filterByDate(allData.orders, currentFilters.startDate, currentFilters.endDate),
         salesteam: filterSalesTeamData(allData.salesteam, currentFilters.startDate, currentFilters.endDate, currentFilters.agent)
@@ -884,8 +736,6 @@ function updateSalesTrendChart(data = null) {
         .sort((a, b) => new Date(a) - new Date(b))
         .slice(-currentFilters.period);
 
-    const ctx = document.getElementById('salesTrendChart').getContext('2d');
-    
     if (charts.salesTrend) {
         charts.salesTrend.destroy();
     }
@@ -952,6 +802,12 @@ function updateSalesTrendChart(data = null) {
 }
 
 function updateChannelChart(data) {
+    const ctx = document.getElementById('channelChart');
+    if (!ctx) {
+        console.log('channelChart element not found');
+        return;
+    }
+
     // Group by platform
     const channelData = {};
     
@@ -960,8 +816,6 @@ function updateChannelChart(data) {
         channelData[platform] = (channelData[platform] || 0) + (parseFloat(item.total_rm) || 0);
     });
 
-    const ctx = document.getElementById('channelChart').getContext('2d');
-    
     if (charts.channel) {
         charts.channel.destroy();
     }
@@ -1006,6 +860,12 @@ function updateChannelChart(data) {
 }
 
 function updateTeamChart(data) {
+    const ctx = document.getElementById('teamChart');
+    if (!ctx) {
+        console.log('teamChart element not found');
+        return;
+    }
+
     // Calculate performance metrics by team
     const teamPerformance = {};
     
@@ -1040,8 +900,6 @@ function updateTeamChart(data) {
         return Math.min(closeRate + (data.sales / 10000), 100);
     });
 
-    const ctx = document.getElementById('teamChart').getContext('2d');
-    
     if (charts.team) {
         charts.team.destroy();
     }
@@ -1086,7 +944,14 @@ function updateTeamChart(data) {
     });
 }
 
+
 function updateSpendChart(data) {
+    const ctx = document.getElementById('spendChart');
+    if (!ctx) {
+        console.log('spendChart element not found');
+        return;
+    }
+
     // Group marketing spend by date
     const spendByDate = {};
     
@@ -1108,8 +973,6 @@ function updateSpendChart(data) {
 
     const sortedDates = Object.keys(spendByDate).sort().slice(-7); // Last 7 days
 
-    const ctx = document.getElementById('spendChart').getContext('2d');
-    
     if (charts.spend) {
         charts.spend.destroy();
     }
@@ -1161,6 +1024,11 @@ function updateSpendChart(data) {
 
 function updateRecentActivity(data) {
     const activityFeed = document.getElementById('activity-feed');
+    if (!activityFeed) {
+        console.log('activity-feed element not found');
+        return;
+    }
+    
     const activities = [];
 
     // Get recent activities from orders
@@ -2225,6 +2093,13 @@ let enhancedLeadChart = null;
 // 4. REPLACE the updateEnhancedLeadsChart function with this simplified version:
 function updateLeadsOnlyChart(data) {
     console.log('🔍 Lead Distribution - Processing LEADS ONLY:', data);
+    
+    // Check if chart element exists
+    const ctx = document.getElementById('leadsChart');
+    if (!ctx) {
+        console.log('leadsChart element not found');
+        return;
+    }
     
     // Get filter values (remove source filter since we only show leads)
     const teamFilter = document.getElementById('lead-team-filter');
