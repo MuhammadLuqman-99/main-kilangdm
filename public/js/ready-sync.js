@@ -399,63 +399,22 @@ class FirebaseToSheetsSync {
             this.isSyncing = false;
         }
     }
-
-    // NEW: Method to load all data from Firestore
-    async loadAllDataFromFirestore() {
-        try {
-            console.log('📥 Loading all data from Firestore...');
-            
-            if (!window.db) {
-                throw new Error('Firestore database not initialized');
-            }
-
-            // Import Firestore functions
-            const { collection, query, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-
-            // Fetch all collections in parallel
-            const [ordersSnapshot, marketingSnapshot, salesteamSnapshot, followupSnapshot] = await Promise.all([
-                getDocs(query(collection(window.db, "orderData"), orderBy("createdAt", "desc"))),
-                getDocs(query(collection(window.db, "marketingData"), orderBy("createdAt", "desc"))),
-                getDocs(query(collection(window.db, "salesTeamData"), orderBy("createdAt", "desc"))),
-                getDocs(query(collection(window.db, "salesFollowUpData"), orderBy("createdAt", "desc")))
-            ]);
-
-            // Convert to arrays
-            const orders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const marketing = marketingSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const salesteam = salesteamSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const followup = followupSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            console.log('✅ All data loaded from Firestore');
-            
-            return { orders, marketing, salesteam, followup };
-
-        } catch (error) {
-            console.error('❌ Error loading data from Firestore:', error);
-            
-            // Fallback to existing window.allData if available
-            if (window.allData) {
-                console.log('📋 Using existing dashboard data as fallback');
-                return {
-                    orders: window.allData.orders || [],
-                    marketing: window.allData.marketing || [],
-                    salesteam: window.allData.salesteam || [],
-                    followup: [] // No follow-up in dashboard data
-                };
-            }
-            
-            throw new Error('No data available for sync');
-        }
-    }
 }
 
 // TAMBAH FUNGSI INI - Check if data is available
 function checkDataAvailability() {
-    if (window.allData) {
-        const { orders = [], marketing = [], salesteam = [] } = window.allData;
-        return orders.length + marketing.length + salesteam.length;
+    try {
+        if (window.allData && typeof window.allData === 'object') {
+            const { orders = [], marketing = [], salesteam = [] } = window.allData;
+            const total = orders.length + marketing.length + salesteam.length;
+            console.log(`📊 Dashboard data: orders=${orders.length}, marketing=${marketing.length}, salesteam=${salesteam.length}`);
+            return total;
+        }
+        return 0; // Will load from Firestore if needed
+    } catch (error) {
+        console.warn('⚠️ Error checking data availability:', error.message);
+        return 0;
     }
-    return 0; // Will load from Firestore if needed
 }
 
 // Global instance
@@ -479,12 +438,13 @@ async function syncNowWithYourSheets() {
             throw new Error('Firebase not initialized. Please wait and try again.');
         }
         
-        const { orders = [], marketing = [], salesteam = [] } = window.allData;
-        const total = orders.length + marketing.length + salesteam.length;
-        
-        if (total === 0) {
-            throw new Error('No data available to sync');
+            // Check if data is available
+        const dataCount = checkDataAvailability();
+        if (dataCount === 0 && !window.db) {
+            throw new Error('No data available and Firebase not ready');
         }
+
+        console.log(`📊 Data available: ${dataCount} records`);
         
         console.log(`📊 Preparing to sync ${total} records...`);
         
@@ -574,8 +534,10 @@ function createSyncButton() {
         const dataCount = checkDataAvailability();
         if (dataCount > 0) {
             updateButton(`SYNC ${dataCount} RECORDS`, 'sync-alt');
+        } else if (window.db) {
+            updateButton('LOAD & SYNC', 'download');
         } else {
-            updateButton('SYNC TO SHEETS', 'sync-alt');
+            updateButton('WAITING...', 'clock');
         }
     }
 
@@ -583,7 +545,7 @@ function createSyncButton() {
 
     // Check data status every 5 seconds
     setInterval(updateButtonWithDataStatus, 5000);
-    
+
     updateButton('SYNC TO SHEETS', 'sync-alt');
     
     button.addEventListener('click', (e) => {
@@ -607,21 +569,28 @@ function createSyncButton() {
            } catch (error) {
             console.error('Click handler error:', error);
             
-            // Show specific error message
-            if (error.message.includes('Firebase')) {
-                alert('⚠️ Firebase not ready. Please wait a moment and try again.');
-            } else if (error.message.includes('Data not loaded')) {
-                alert('⚠️ Loading data from Firestore... Please try again in a few seconds.');
+            // Show specific error message based on error type
+            let errorMsg = 'Unknown error occurred';
+            
+            if (error.message.includes('Firebase not initialized')) {
+                errorMsg = 'Firebase not ready. Please wait and try again.';
+            } else if (error.message.includes('Cannot read properties')) {
+                errorMsg = 'Data not loaded yet. Will load from Firestore automatically.';
+            } else if (error.message.includes('No data available')) {
+                errorMsg = 'No data found. Please add some data first.';
             } else {
-                alert(`❌ Sync Failed: ${error.message}`);
+                errorMsg = error.message;
             }
             
-            updateButton('ERROR', 'exclamation-triangle');
+            console.log(`⚠️ Sync error: ${errorMsg}`);
+            // Don't show alert for minor errors, just update button
+            
+            updateButton('RETRY', 'redo');
             
             setTimeout(() => {
                 updateButtonWithDataStatus();
                 button.disabled = false;
-            }, 3000);
+            }, 2000);
         }
         });
     });
