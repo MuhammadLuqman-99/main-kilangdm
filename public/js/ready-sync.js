@@ -253,6 +253,48 @@ class FirebaseToSheetsSync {
     async yieldToMain() {
         return new Promise(resolve => setTimeout(resolve, 0));
     }
+    // TAMBAH FUNGSI INI - Load all data from Firestore
+    async loadAllDataFromFirestore() {
+        try {
+            console.log('📥 Loading all data from Firestore...');
+            
+            if (!window.db) {
+                throw new Error('Firestore database not initialized');
+            }
+
+            // Import Firestore functions
+            const { collection, query, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+            // Fetch collections with error handling
+            const fetchCollection = async (collectionName) => {
+                try {
+                    const snapshot = await getDocs(query(collection(window.db, collectionName), orderBy("createdAt", "desc")));
+                    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (error) {
+                    console.warn(`⚠️ Failed to fetch ${collectionName}:`, error.message);
+                    return [];
+                }
+            };
+
+            const [orders, marketing, salesteam] = await Promise.all([
+                fetchCollection("orderData"),
+                fetchCollection("marketingData"), 
+                fetchCollection("salesTeamData")
+            ]);
+
+            console.log(`✅ Loaded from Firestore:`, {
+                orders: orders.length,
+                marketing: marketing.length, 
+                salesteam: salesteam.length
+            });
+            
+            return { orders, marketing, salesteam };
+
+        } catch (error) {
+            console.error('❌ Error loading data:', error);
+            throw new Error(`Failed to load data: ${error.message}`);
+        }
+    }
     // Main sync function with improved error handling
     async syncAllData() {
         if (this.isSyncing) {
@@ -264,11 +306,19 @@ class FirebaseToSheetsSync {
         try {
             console.log('🔄 Starting CORS-compatible sync...');
 
-            if (!window.allData) {
-                throw new Error('Data not loaded');
-            }
+            // Try to get data from dashboard first, fallback to direct load
+            let orders = [], marketing = [], salesteam = [];
 
-            const { orders = [], marketing = [], salesteam = [] } = window.allData;
+            if (window.allData) {
+                console.log('📊 Using dashboard data...');
+                ({ orders = [], marketing = [], salesteam = [] } = window.allData);
+            } else {
+                console.log('📥 Dashboard data not available, loading from Firestore...');
+                const freshData = await this.loadAllDataFromFirestore();
+                orders = freshData.orders;
+                marketing = freshData.marketing;
+                salesteam = freshData.salesteam;
+            }
             const totalRecords = orders.length + marketing.length + salesteam.length;
 
             if (totalRecords === 0) {
@@ -399,7 +449,14 @@ class FirebaseToSheetsSync {
     }
 }
 
-
+// TAMBAH FUNGSI INI - Check if data is available
+function checkDataAvailability() {
+    if (window.allData) {
+        const { orders = [], marketing = [], salesteam = [] } = window.allData;
+        return orders.length + marketing.length + salesteam.length;
+    }
+    return 0; // Will load from Firestore if needed
+}
 
 // Global instance
 let syncInstance = null;
@@ -417,8 +474,9 @@ async function syncNowWithYourSheets() {
             return false;
         }
         
-        if (!window.allData) {
-            throw new Error('Data not loaded. Please refresh and try again.');
+        // Wait for Firebase if not ready
+        if (!window.db) {
+            throw new Error('Firebase not initialized. Please wait and try again.');
         }
         
         const { orders = [], marketing = [], salesteam = [] } = window.allData;
@@ -511,6 +569,20 @@ function createSyncButton() {
             </div>
         `;
     }
+    // Update button text based on data availability
+    function updateButtonWithDataStatus() {
+        const dataCount = checkDataAvailability();
+        if (dataCount > 0) {
+            updateButton(`SYNC ${dataCount} RECORDS`, 'sync-alt');
+        } else {
+            updateButton('SYNC TO SHEETS', 'sync-alt');
+        }
+    }
+
+    updateButtonWithDataStatus();
+
+    // Check data status every 5 seconds
+    setInterval(updateButtonWithDataStatus, 5000);
     
     updateButton('SYNC TO SHEETS', 'sync-alt');
     
@@ -532,15 +604,25 @@ function createSyncButton() {
                     button.disabled = false;
                 }, 3000);
                 
-            } catch (error) {
-                console.error('Click handler error:', error);
-                updateButton('ERROR', 'exclamation-triangle');
-                
-                setTimeout(() => {
-                    updateButton('SYNC TO SHEETS', 'sync-alt');
-                    button.disabled = false;
-                }, 3000);
+           } catch (error) {
+            console.error('Click handler error:', error);
+            
+            // Show specific error message
+            if (error.message.includes('Firebase')) {
+                alert('⚠️ Firebase not ready. Please wait a moment and try again.');
+            } else if (error.message.includes('Data not loaded')) {
+                alert('⚠️ Loading data from Firestore... Please try again in a few seconds.');
+            } else {
+                alert(`❌ Sync Failed: ${error.message}`);
             }
+            
+            updateButton('ERROR', 'exclamation-triangle');
+            
+            setTimeout(() => {
+                updateButtonWithDataStatus();
+                button.disabled = false;
+            }, 3000);
+        }
         });
     });
     

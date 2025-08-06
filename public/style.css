@@ -156,11 +156,23 @@ body {
    ========================================== */
 .floating-home-btn {
     position: fixed;
-    top: var(--space-6);
-    left: var(--space-6);
-    z-index: var(--z-fixed);
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
 }
 
+@media (max-width: 768px) {
+    .floating-home-btn {
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+    
+    .home-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1rem;
+    }
+}
 .home-btn {
     width: 56px;
     height: 56px;
@@ -340,17 +352,35 @@ body {
     background: var(--bg-tertiary);
     color: var(--gray-50);
 }
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
 
+@media (min-width: 640px) {
+    .form-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
 /* ==========================================
    MAIN CONTAINER - Enhanced spacing
    ========================================== */
 .main-container {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: var(--space-8);
     display: flex;
     flex-direction: column;
-    gap: var(--space-12); /* Increased gap between sections */
+    gap: 2rem;
+    max-width: 100%;
+    padding: 1rem;
+}
+
+@media (min-width: 1024px) {
+    .main-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        padding: 2rem;
+    }
 }
 
 /* ==========================================
@@ -1166,10 +1196,23 @@ section:hover {
    ========================================== */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: var(--space-8); /* Increased gap between cards */
+    grid-template-columns: 1fr; /* Mobile first */
+    gap: 1rem;
 }
 
+@media (min-width: 640px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+    }
+}
 .kpi-card {
     background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
     border: 1px solid var(--glass-border);
@@ -1480,10 +1523,25 @@ section:hover {
    ========================================== */
 .charts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: var(--space-10); /* Increased gap between charts */
-    margin-bottom: var(--space-8);
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
 }
+@media (min-width: 768px) {
+    .charts-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .charts-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .main-chart {
+        grid-column: 1 / -1;
+    }
+}
+
 
 .main-chart {
     grid-column: 1 / -1;
@@ -1589,12 +1647,22 @@ section:hover {
 /* ==========================================
    CHART CONTAINERS - FIXED HEIGHTS
    ========================================== */
+/* Chart Container Responsive Heights */
 .chart-container {
     position: relative;
-    width: 100%;
-    max-height: 8000px; /* Letakkan had maksimum ketinggian jika perlu */
-    aspect-ratio: 1 / 1; /* Ini adalah kuncinya! Memastikan bekas sentiasa segi empat sama. */
-    margin-bottom: var(--space-6);
+    height: 250px;
+}
+
+@media (min-width: 768px) {
+    .chart-container { height: 300px; }
+}
+
+@media (min-width: 1024px) {
+    .chart-container { height: 350px; }
+}
+
+@media (min-width: 1440px) {
+    .chart-container { height: 400px; }
 }
 
 .leads-chart-container {
@@ -3852,4 +3920,160 @@ canvas {
     image-rendering: -webkit-crisp-edges;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+}
+/* Responsive Navigation Fixes */
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: row !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+    }
+    
+    .nav-brand {
+        order: 2;
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .nav-time {
+        order: 1;
+        position: static;
+        font-size: 0.7rem;
+    }
+    
+    .mobile-menu-btn {
+        order: 3;
+        display: block;
+        z-index: 1001;
+    }
+    
+    .nav-links {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 280px;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.98);
+        backdrop-filter: blur(20px);
+        padding: 5rem 1.5rem 2rem;
+        transition: left 0.3s ease;
+        z-index: 1000;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .nav-links.mobile-active {
+        left: 0;
+    }
+}
+.responsive-main {
+    padding: 1rem;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .responsive-main { padding: 2rem; }
+}
+
+@media (min-width: 1200px) {
+    .responsive-main { 
+        padding: 2rem;
+        max-width: 1400px;
+    }
+}
+.table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+}
+
+.enhanced-orders-table {
+    min-width: 800px; /* Minimum width untuk horizontal scroll */
+}
+
+@media (max-width: 768px) {
+    .enhanced-orders-table {
+        font-size: 0.8rem;
+    }
+    
+    .enhanced-orders-table th,
+    .enhanced-orders-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .product-details {
+        min-width: 280px;
+    }
+}
+@media (max-width: 768px) {
+    .enhanced-date-filter {
+        padding: 1rem;
+    }
+    
+    .date-period-selector {
+        min-width: 100%;
+    }
+    
+    .agent-filter-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+/* Responsive Typography */
+.page-title {
+    font-size: clamp(1.5rem, 4vw, 3rem);
+}
+
+.section-title {
+    font-size: clamp(1.25rem, 3vw, 1.875rem);
+}
+
+.kpi-value,
+.metric-value {
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+@media (max-width: 480px) {
+    .kpi-card,
+    .metric-card {
+        padding: 1rem;
+    }
+    
+    .section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+/* Touch Device Improvements */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .nav-link,
+    .period-btn,
+    .tab-link {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .form-input,
+    .form-select {
+        font-size: 16px; /* Prevent zoom on iOS */
+        min-height: 44px;
+    }
+    
+    .kpi-card:hover,
+    .metric-card:hover,
+    .chart-card:hover {
+        transform: none; /* Remove hover transforms on touch */
+    }
 }

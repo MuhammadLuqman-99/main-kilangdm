@@ -174,13 +174,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2000); // Wait 2 seconds for DOM to be ready
 });
 
-// Add styles to document head
+/* // Add styles to document head
 if (!document.getElementById('refresh-btn-styles')) {
     const styleElement = document.createElement('div');
     styleElement.id = 'refresh-btn-styles';
     styleElement.innerHTML = refreshButtonStyles;
     document.head.appendChild(styleElement);
-}
+} */
 
 console.log('✅ Dashboard integration updates loaded');
 console.log('🔧 Available commands:');
@@ -339,7 +339,6 @@ function populateAgentFilter() {
     }
 }
 
-// TAMBAH INI DI AWAL applyFilters():
 function applyFilters() {
     // Get enhanced filter values first (if available)
     let startDate = '';
@@ -363,10 +362,18 @@ function applyFilters() {
         selectedAgent = agentFilterEl?.value || '';
     }
 
+    // ✅ CREATE filteredData here
+    const filteredData = {
+        orders: filterByDate(allData.orders, startDate, endDate),
+        marketing: filterByDate(allData.marketing, startDate, endDate),
+        salesteam: filterSalesTeamData(allData.salesteam, startDate, endDate, selectedAgent),
+        ecommerce: filterByDate(allData.ecommerce, startDate, endDate)
+    };
+
     // Update displays
     updateActiveFiltersDisplay();
     updateKPIs(filteredData);
-    updateCharts(filteredData); // This will now include marketing cost chart
+    updateCharts(filteredData);
     updateRecentActivity(filteredData);
     updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
     
@@ -376,14 +383,15 @@ function applyFilters() {
     
     // Use the NEW leads-only chart function
     updateLeadsOnlyChart(filteredData);
+    
     if (window.getEnhancedFilterSelection) {
-    const enhanced = window.getEnhancedFilterSelection();
-    if (enhanced.startDate && enhanced.endDate) {
-        currentFilters.startDate = enhanced.startDate;
-        currentFilters.endDate = enhanced.endDate;
-        currentFilters.agent = enhanced.agent;
+        const enhanced = window.getEnhancedFilterSelection();
+        if (enhanced.startDate && enhanced.endDate) {
+            currentFilters.startDate = enhanced.startDate;
+            currentFilters.endDate = enhanced.endDate;
+            currentFilters.agent = enhanced.agent;
+        }
     }
-}
 }
 
 function filterByDate(data, startDate, endDate) {

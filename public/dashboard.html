@@ -2,7 +2,7 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Enhanced Dashboard - KilangDM</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -41,7 +41,7 @@
     </div>
 
     <!-- Navigation Header -->
-    <nav class="main-nav">
+    <nav class="nav-container responsive-nav">
         <div class="nav-container">
             <!-- Brand Section -->
             <div class="nav-brand">
@@ -96,7 +96,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="main-container">
+    <main class="main-container responsive-main">
         <!-- Dashboard Header -->
         <section class="dashboard-header">
             <div class="header-content">
@@ -129,157 +129,215 @@
         ========================================== -->
 
         <section class="filter-section enhanced">
-            <div class="enhanced-date-filter">
-                <div class="filter-header">
-                    <i class="fas fa-calendar-alt"></i>
-                    <h3>Data Period</h3>
+        <div class="enhanced-date-filter">
+            <div class="filter-header">
+                <i class="fas fa-calendar-alt"></i>
+                <h3>Data Period Selection</h3>
+            </div>
+            
+            <div class="filter-content">
+                <!-- Filter Type Selector -->
+                <div class="filter-type-selector">
+                    <div class="filter-tab-nav">
+                        <button class="filter-tab active" data-type="quick">
+                            <i class="fas fa-bolt"></i>
+                            Quick Select
+                        </button>
+                        <button class="filter-tab" data-type="advanced">
+                            <i class="fas fa-cog"></i>
+                            Advanced
+                        </button>
+                        <button class="filter-tab" data-type="custom">
+                            <i class="fas fa-calendar-plus"></i>
+                            Custom Range
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="filter-content">
-                    <div class="date-period-selector">
-                        <div class="period-dropdown" id="periodDropdown">
-                            <div class="dropdown-label">
-                                <span class="period-text" id="selectedPeriodText">Past 30 Days</span>
-                                <span class="period-date" id="selectedPeriodDate">Default period</span>
-                            </div>
-                            <i class="fas fa-chevron-down dropdown-icon"></i>
+
+                <!-- Quick Select Tab -->
+                <div class="filter-tab-content active" id="quick-tab">
+                    <div class="quick-select-grid">
+                        <button class="quick-btn" data-period="today">
+                            <i class="fas fa-sun"></i>
+                            <span>Today</span>
+                            <small id="today-label">-</small>
+                        </button>
+                        <button class="quick-btn" data-period="yesterday">
+                            <i class="fas fa-moon"></i>
+                            <span>Yesterday</span>
+                            <small id="yesterday-label">-</small>
+                        </button>
+                        <button class="quick-btn" data-period="this-week">
+                            <i class="fas fa-calendar-week"></i>
+                            <span>This Week</span>
+                            <small id="thisweek-label">-</small>
+                        </button>
+                        <button class="quick-btn" data-period="last-week">
+                            <i class="fas fa-calendar-minus"></i>
+                            <span>Last Week</span>
+                            <small id="lastweek-label">-</small>
+                        </button>
+                        <button class="quick-btn active" data-period="this-month">
+                            <i class="fas fa-calendar"></i>
+                            <span>This Month</span>
+                            <small id="thismonth-label">-</small>
+                        </button>
+                        <button class="quick-btn" data-period="last-month">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Last Month</span>
+                            <small id="lastmonth-label">-</small>
+                        </button>
+                        <button class="quick-btn" data-period="this-year">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>This Year</span>
+                            <small id="thisyear-label">-</small>
+                        </button>
+                        <button class="quick-btn" data-period="last-year">
+                            <i class="fas fa-history"></i>
+                            <span>Last Year</span>
+                            <small id="lastyear-label">-</small>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Select Tab -->
+                <div class="filter-tab-content" id="advanced-tab">
+                    <div class="advanced-filter-grid">
+                        <!-- Year Selector -->
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-calendar-check"></i>
+                                Pilih Tahun
+                            </label>
+                            <select id="year-selector" class="filter-select">
+                                <option value="">Semua Tahun</option>
+                            </select>
                         </div>
-                        
-                        <div class="dropdown-menu" id="dropdownMenu">
-                            <div class="dropdown-section">
-                                <div class="section-title">Real-Time</div>
-                                <div class="dropdown-item" data-value="real-time">
-                                    <span class="item-main">Real-Time</span>
-                                </div>
+
+                        <!-- Month Selector -->
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-calendar"></i>
+                                Pilih Bulan
+                            </label>
+                            <select id="month-selector" class="filter-select" disabled>
+                                <option value="">Semua Bulan</option>
+                                <option value="1">Januari</option>
+                                <option value="2">Februari</option>
+                                <option value="3">Mac</option>
+                                <option value="4">April</option>
+                                <option value="5">Mei</option>
+                                <option value="6">Jun</option>
+                                <option value="7">Julai</option>
+                                <option value="8">Ogos</option>
+                                <option value="9">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Disember</option>
+                            </select>
+                        </div>
+
+                        <!-- Day Range Selector -->
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-calendar-day"></i>
+                                Julat Hari (Optional)
+                            </label>
+                            <div class="day-range-inputs">
+                                <input type="number" id="start-day" class="filter-input" placeholder="Dari hari" min="1" max="31" disabled>
+                                <span class="range-separator">hingga</span>
+                                <input type="number" id="end-day" class="filter-input" placeholder="Hingga hari" min="1" max="31" disabled>
                             </div>
-                            
-                            <div class="dropdown-section">
-                                <div class="section-title">Quick Select</div>
-                                <div class="dropdown-item" data-value="yesterday">
-                                    <span>
-                                        <span class="item-main">Yesterday</span>
-                                        <span class="item-date" id="yesterday-date"></span>
-                                    </span>
-                                </div>
-                                <div class="dropdown-item selected" data-value="past-7-days">
-                                    <span>
-                                        <span class="item-main">Past 7 Days</span>
-                                    </span>
-                                </div>
-                                <div class="dropdown-item" data-value="past-30-days">
-                                    <span>
-                                        <span class="item-main">Past 30 Days</span>
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div class="dropdown-section">
-                                <div class="section-title">By Day</div>
-                                <div class="dropdown-item" data-value="today">
-                                    <span>
-                                        <span class="item-main">Today</span>
-                                        <span class="item-date" id="today-date"></span>
-                                    </span>
-                                </div>
-                                <div class="dropdown-item" data-value="2-days-ago">
-                                    <span>
-                                        <span class="item-main">2 Days Ago</span>
-                                        <span class="item-date" id="2days-date"></span>
-                                    </span>
-                                </div>
-                                <div class="dropdown-item" data-value="3-days-ago">
-                                    <span>
-                                        <span class="item-main">3 Days Ago</span>
-                                        <span class="item-date" id="3days-date"></span>
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div class="dropdown-section">
-                                <div class="section-title">By Week</div>
-                                <div class="dropdown-item" data-value="this-week">
-                                    <span>
-                                        <span class="item-main">This Week</span>
-                                        <span class="item-date" id="thisweek-date"></span>
-                                    </span>
-                                </div>
-                                <div class="dropdown-item" data-value="last-week">
-                                    <span>
-                                        <span class="item-main">Last Week</span>
-                                        <span class="item-date" id="lastweek-date"></span>
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div class="dropdown-section">
-                                <div class="section-title">By Month</div>
-                                <div class="dropdown-item" data-value="this-month">
-                                    <span>
-                                        <span class="item-main">This Month</span>
-                                        <span class="item-date" id="thismonth-date"></span>
-                                    </span>
-                                </div>
-                                <div class="dropdown-item" data-value="last-month">
-                                    <span>
-                                        <span class="item-main">Last Month</span>
-                                        <span class="item-date" id="lastmonth-date"></span>
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div class="dropdown-section">
-                                <div class="section-title">By Year</div>
-                                <div class="dropdown-item" data-value="this-year">
-                                    <span>
-                                        <span class="item-main">This Year</span>
-                                        <span class="item-date" id="thisyear-date"></span>
-                                    </span>
-                                </div>
-                                <div class="dropdown-item" data-value="last-year">
-                                    <span>
-                                        <span class="item-main">Last Year</span>
-                                        <span class="item-date" id="lastyear-date"></span>
-                                    </span>
-                                </div>
+                        </div>
+
+                        <!-- Quick Month Buttons -->
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-mouse-pointer"></i>
+                                Quick Month Select
+                            </label>
+                            <div class="month-quick-grid" id="month-quick-grid">
+                                <!-- Will be populated dynamically -->
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Agent Filter Integration -->
-                    <div class="agent-filter-section">
-                        <label class="agent-filter-label">Team:</label>
-                        <select id="agent-filter-enhanced" class="agent-filter-select">
+                </div>
+
+                <!-- Custom Range Tab -->
+                <div class="filter-tab-content" id="custom-tab">
+                    <div class="custom-range-grid">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-calendar-plus"></i>
+                                Tarikh Mula
+                            </label>
+                            <input type="date" id="custom-start-date" class="filter-input">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-calendar-minus"></i>
+                                Tarikh Tamat
+                            </label>
+                            <input type="date" id="custom-end-date" class="filter-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Filter (Common for all tabs) -->
+                <div class="agent-filter-section">
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-users"></i>
+                            Filter Team/Agent
+                        </label>
+                        <select id="agent-filter-enhanced" class="filter-select">
                             <option value="">Semua Agent</option>
                         </select>
                     </div>
-                    
-                    <div class="selected-period" id="selectedPeriod">
-                        <div class="period-info">
-                            <div class="period-title" id="periodTitle">Past 30 Days</div>
-                            <div class="period-range" id="periodRange">Default period selected</div>
+                </div>
+                
+                <!-- Selected Period Display -->
+                <div class="selected-period" id="selectedPeriod">
+                    <div class="period-info">
+                        <div class="period-title" id="periodTitle">This Month</div>
+                        <div class="period-range" id="periodRange">Current month data</div>
+                        <div class="period-stats" id="periodStats">
+                            <span class="stat-item">
+                                <i class="fas fa-calendar-day"></i>
+                                <span id="period-days">0 hari</span>
+                            </span>
+                            <span class="stat-item">
+                                <i class="fas fa-business-time"></i>
+                                <span id="period-working-days">0 hari kerja</span>
+                            </span>
                         </div>
                     </div>
                 </div>
-                
-                <div class="filter-actions">
-                    <button class="btn btn-primary" id="applyFilterEnhanced">
-                        <i class="fas fa-filter"></i>
-                        Apply Filter
-                    </button>
-                    <button class="btn btn-secondary" id="resetFilterEnhanced">
-                        <i class="fas fa-refresh"></i>
-                        Reset
-                    </button>
-                </div>
-                
-                <div id="activeFiltersEnhanced" class="active-filters enhanced-active-filters hidden">
-                    <div class="filter-summary">
-                        <span class="summary-label">Filter Aktif:</span>
-                        <div id="filterTagsEnhanced" class="filter-tags"></div>
-                    </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button class="btn btn-primary" id="applyFilterEnhanced">
+                    <i class="fas fa-filter"></i>
+                    Apply Filter
+                </button>
+                <button class="btn btn-secondary" id="resetFilterEnhanced">
+                    <i class="fas fa-refresh"></i>
+                    Reset
+                </button>
+                <button class="btn btn-outline" id="exportDataBtn">
+                    <i class="fas fa-download"></i>
+                    Export Data
+                </button>
+            </div>
+            
+            <div id="activeFiltersEnhanced" class="active-filters enhanced-active-filters hidden">
+                <div class="filter-summary">
+                    <span class="summary-label">Filter Aktif:</span>
+                    <div id="filterTagsEnhanced" class="filter-tags"></div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
         <!-- Key Performance Indicators -->
         <section class="kpi-section">
@@ -626,6 +684,440 @@
             </div>
         </section>
     </main>
+    <style>
+/* Advanced Filter Styles */
+.filter-section.enhanced {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    border: 1px solid #374151;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.filter-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #374151;
+}
+
+.filter-header i {
+    color: #3B82F6;
+    font-size: 20px;
+}
+
+.filter-header h3 {
+    color: #F9FAFB;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Tab Navigation */
+.filter-tab-nav {
+    display: flex;
+    background: #374151;
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 24px;
+    gap: 4px;
+}
+
+.filter-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #9CA3AF;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.filter-tab:hover {
+    color: #D1D5DB;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.filter-tab.active {
+    background: #3B82F6;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.filter-tab i {
+    font-size: 14px;
+}
+
+/* Tab Content */
+.filter-tab-content {
+    display: none;
+}
+
+.filter-tab-content.active {
+    display: block;
+}
+
+/* Quick Select Grid */
+.quick-select-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.quick-btn {
+    background: #374151;
+    border: 2px solid #4B5563;
+    border-radius: 12px;
+    padding: 16px 12px;
+    color: #D1D5DB;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.quick-btn:hover {
+    border-color: #3B82F6;
+    background: rgba(59, 130, 246, 0.1);
+    transform: translateY(-2px);
+}
+
+.quick-btn.active {
+    background: #3B82F6;
+    border-color: #60A5FA;
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.quick-btn i {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.quick-btn span {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.quick-btn small {
+    font-size: 11px;
+    opacity: 0.8;
+    font-weight: 400;
+}
+
+/* Advanced Filter Grid */
+.advanced-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    color: #F3F4F6;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-label i {
+    color: #3B82F6;
+    font-size: 14px;
+}
+
+.filter-select, .filter-input {
+    background: #374151;
+    border: 2px solid #4B5563;
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #F9FAFB;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus, .filter-input:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-select:disabled, .filter-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.filter-select option {
+    background: #374151;
+    color: #F9FAFB;
+}
+
+/* Day Range Inputs */
+.day-range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.range-separator {
+    color: #9CA3AF;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.day-range-inputs .filter-input {
+    flex: 1;
+}
+
+/* Month Quick Grid */
+.month-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.month-quick-btn {
+    background: #4B5563;
+    border: 1px solid #6B7280;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #D1D5DB;
+    font-size: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.month-quick-btn:hover {
+    border-color: #3B82F6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.month-quick-btn.active {
+    background: #3B82F6;
+    border-color: #60A5FA;
+    color: #FFFFFF;
+}
+
+/* Custom Range Grid */
+.custom-range-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+/* Agent Filter Section */
+.agent-filter-section {
+    background: rgba(75, 85, 99, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 24px 0;
+    border: 1px solid #4B5563;
+}
+
+/* Selected Period Display */
+.selected-period {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 24px 0;
+    border: 1px solid #10B981;
+}
+
+.period-info {
+    text-align: center;
+}
+
+.period-title {
+    color: #FFFFFF;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.period-range {
+    color: #D1FAE5;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.period-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ECFDF5;
+    font-size: 13px;
+}
+
+.stat-item i {
+    color: #A7F3D0;
+}
+
+/* Filter Actions */
+.filter-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #3B82F6;
+    color: #FFFFFF;
+}
+
+.btn-primary:hover {
+    background: #2563EB;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #6B7280;
+    color: #FFFFFF;
+}
+
+.btn-secondary:hover {
+    background: #4B5563;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #3B82F6;
+    border: 2px solid #3B82F6;
+}
+
+.btn-outline:hover {
+    background: #3B82F6;
+    color: #FFFFFF;
+}
+
+/* Active Filters */
+.active-filters {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid #3B82F6;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+}
+
+.filter-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.summary-label {
+    color: #3B82F6;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.filter-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-tag {
+    background: #3B82F6;
+    color: #FFFFFF;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.remove-tag {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    color: #FFFFFF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.remove-tag:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .advanced-filter-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .custom-range-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-select-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+}
+</style>
 
     <!-- Load Dashboard JavaScript -->
     <script type="module" src="js/dashboard.js"></script>
@@ -657,6 +1149,698 @@
 
         setInterval(updateCurrentTime, 1000);
         updateCurrentTime();
+    </script>
+    <script>
+        // Advanced Dashboard Filter Controller
+class AdvancedDashboardFilter {
+    constructor() {
+        this.currentTab = 'quick';
+        this.currentSelection = {
+            type: 'quick',
+            value: 'this-month',
+            year: null,
+            month: null,
+            startDay: null,
+            endDay: null,
+            customStart: null,
+            customEnd: null,
+            agent: null
+        };
+        
+        this.init();
+        this.populateYearSelector();
+        this.updateQuickLabels();
+        this.setDefaultSelection();
+    }
+
+    init() {
+        // Tab switching
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                this.switchTab(tab.dataset.type);
+            });
+        });
+
+        // Quick select buttons
+        document.querySelectorAll('.quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.selectQuickPeriod(btn.dataset.period);
+            });
+        });
+
+        // Advanced selectors
+        document.getElementById('year-selector')?.addEventListener('change', () => {
+            this.onYearChange();
+        });
+
+        document.getElementById('month-selector')?.addEventListener('change', () => {
+            this.onMonthChange();
+        });
+
+        // Day range inputs
+        document.getElementById('start-day')?.addEventListener('change', () => {
+            this.onDayRangeChange();
+        });
+
+        document.getElementById('end-day')?.addEventListener('change', () => {
+            this.onDayRangeChange();
+        });
+
+        // Custom date inputs
+        document.getElementById('custom-start-date')?.addEventListener('change', () => {
+            this.onCustomDateChange();
+        });
+
+        document.getElementById('custom-end-date')?.addEventListener('change', () => {
+            this.onCustomDateChange();
+        });
+
+        // Agent filter
+        document.getElementById('agent-filter-enhanced')?.addEventListener('change', () => {
+            this.onAgentChange();
+        });
+
+        // Action buttons
+        document.getElementById('applyFilterEnhanced')?.addEventListener('click', () => {
+            this.applyFilter();
+        });
+
+        document.getElementById('resetFilterEnhanced')?.addEventListener('click', () => {
+            this.resetFilter();
+        });
+
+        document.getElementById('exportDataBtn')?.addEventListener('click', () => {
+            this.exportData();
+        });
+    }
+
+    switchTab(tabType) {
+        // Update tab buttons
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`[data-type="${tabType}"]`).classList.add('active');
+
+        // Update tab content
+        document.querySelectorAll('.filter-tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(`${tabType}-tab`).classList.add('active');
+
+        this.currentTab = tabType;
+        this.currentSelection.type = tabType;
+        this.updateDisplay();
+    }
+
+    populateYearSelector() {
+        const yearSelector = document.getElementById('year-selector');
+        if (!yearSelector) return;
+
+        const currentYear = new Date().getFullYear();
+        
+        // Add years from 2020 to current year + 2
+        for (let year = 2020; year <= currentYear + 2; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            if (year === currentYear) {
+                option.selected = true;
+            }
+            yearSelector.appendChild(option);
+        }
+    }
+
+    updateQuickLabels() {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        // Format functions
+        const formatDate = (date) => date.toLocaleDateString('ms-MY', {
+            day: '2-digit',
+            month: '2-digit'
+        });
+
+        const formatMonth = (date) => date.toLocaleDateString('ms-MY', {
+            month: 'long',
+            year: 'numeric'
+        });
+
+        // Update labels
+        const updates = {
+            'today-label': formatDate(today),
+            'yesterday-label': formatDate(yesterday),
+            'thisweek-label': this.getWeekLabel(today),
+            'lastweek-label': this.getWeekLabel(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)),
+            'thismonth-label': formatMonth(today),
+            'lastmonth-label': formatMonth(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
+            'thisyear-label': today.getFullYear().toString(),
+            'lastyear-label': (today.getFullYear() - 1).toString()
+        };
+
+        Object.entries(updates).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        });
+    }
+
+    getWeekLabel(date) {
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay());
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        
+        return `${startOfWeek.getDate()}/${startOfWeek.getMonth() + 1} - ${endOfWeek.getDate()}/${endOfWeek.getMonth() + 1}`;
+    }
+
+    setDefaultSelection() {
+        // Set default to current month
+        this.selectQuickPeriod('this-month');
+    }
+
+    selectQuickPeriod(period) {
+        // Update button states
+        document.querySelectorAll('.quick-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-period="${period}"]`)?.classList.add('active');
+
+        this.currentSelection.type = 'quick';
+        this.currentSelection.value = period;
+        this.updateDisplay();
+    }
+
+    onYearChange() {
+        const yearSelector = document.getElementById('year-selector');
+        const monthSelector = document.getElementById('month-selector');
+        
+        if (yearSelector.value) {
+            monthSelector.disabled = false;
+            this.currentSelection.year = parseInt(yearSelector.value);
+            this.generateMonthQuickButtons();
+        } else {
+            monthSelector.disabled = true;
+            monthSelector.value = '';
+            this.disableDayInputs();
+        }
+        
+        this.currentSelection.type = 'advanced';
+        this.updateDisplay();
+    }
+
+    onMonthChange() {
+        const monthSelector = document.getElementById('month-selector');
+        const startDayInput = document.getElementById('start-day');
+        const endDayInput = document.getElementById('end-day');
+        
+        if (monthSelector.value) {
+            startDayInput.disabled = false;
+            endDayInput.disabled = false;
+            this.currentSelection.month = parseInt(monthSelector.value);
+            
+            // Set max days based on month
+            const maxDays = new Date(this.currentSelection.year, this.currentSelection.month, 0).getDate();
+            startDayInput.max = maxDays;
+            endDayInput.max = maxDays;
+        } else {
+            this.disableDayInputs();
+            this.currentSelection.month = null;
+        }
+        
+        this.updateDisplay();
+    }
+
+    onDayRangeChange() {
+        const startDay = document.getElementById('start-day').value;
+        const endDay = document.getElementById('end-day').value;
+        
+        this.currentSelection.startDay = startDay ? parseInt(startDay) : null;
+        this.currentSelection.endDay = endDay ? parseInt(endDay) : null;
+        
+        this.updateDisplay();
+    }
+
+    onCustomDateChange() {
+        const startDate = document.getElementById('custom-start-date').value;
+        const endDate = document.getElementById('custom-end-date').value;
+        
+        this.currentSelection.customStart = startDate;
+        this.currentSelection.customEnd = endDate;
+        this.currentSelection.type = 'custom';
+        
+        this.updateDisplay();
+    }
+
+    onAgentChange() {
+        const agentSelect = document.getElementById('agent-filter-enhanced');
+        this.currentSelection.agent = agentSelect.value;
+        this.updateActiveFilters();
+    }
+
+    disableDayInputs() {
+        document.getElementById('start-day').disabled = true;
+        document.getElementById('end-day').disabled = true;
+        document.getElementById('start-day').value = '';
+        document.getElementById('end-day').value = '';
+        this.currentSelection.startDay = null;
+        this.currentSelection.endDay = null;
+    }
+
+    generateMonthQuickButtons() {
+        const container = document.getElementById('month-quick-grid');
+        if (!container) return;
+
+        const months = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+            'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'
+        ];
+
+        container.innerHTML = months.map((month, index) => 
+            `<button class="month-quick-btn" data-month="${index + 1}">${month}</button>`
+        ).join('');
+
+        // Add event listeners
+        container.querySelectorAll('.month-quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('month-selector').value = btn.dataset.month;
+                this.onMonthChange();
+                
+                // Update button states
+                container.querySelectorAll('.month-quick-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    }
+
+    updateDisplay() {
+        const { startDate, endDate, displayText, workingDays, totalDays } = this.getDateRange();
+        
+        // Update period display
+        document.getElementById('periodTitle').textContent = displayText;
+        document.getElementById('periodRange').textContent = `${startDate} to ${endDate}`;
+        document.getElementById('period-days').textContent = `${totalDays} hari`;
+        document.getElementById('period-working-days').textContent = `${workingDays} hari kerja`;
+        
+        this.updateActiveFilters();
+    }
+
+    getDateRange() {
+        const today = new Date();
+        let startDate, endDate, displayText;
+
+        switch (this.currentSelection.type) {
+            case 'quick':
+                return this.getQuickDateRange(this.currentSelection.value);
+                
+            case 'advanced':
+                return this.getAdvancedDateRange();
+                
+            case 'custom':
+                return this.getCustomDateRange();
+                
+            default:
+                return this.getQuickDateRange('this-month');
+        }
+    }
+
+    getQuickDateRange(period) {
+        const today = new Date();
+        let startDate, endDate, displayText;
+
+        switch (period) {
+            case 'today':
+                startDate = endDate = this.formatDate(today);
+                displayText = 'Hari Ini';
+                break;
+                
+            case 'yesterday':
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                startDate = endDate = this.formatDate(yesterday);
+                displayText = 'Semalam';
+                break;
+                
+            case 'this-week':
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay());
+                startDate = this.formatDate(startOfWeek);
+                endDate = this.formatDate(today);
+                displayText = 'Minggu Ini';
+                break;
+                
+            case 'last-week':
+                const lastWeekEnd = new Date(today);
+                lastWeekEnd.setDate(today.getDate() - today.getDay() - 1);
+                const lastWeekStart = new Date(lastWeekEnd);
+                lastWeekStart.setDate(lastWeekEnd.getDate() - 6);
+                startDate = this.formatDate(lastWeekStart);
+                endDate = this.formatDate(lastWeekEnd);
+                displayText = 'Minggu Lepas';
+                break;
+                
+            case 'this-month':
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                startDate = this.formatDate(startOfMonth);
+                endDate = this.formatDate(today);
+                displayText = `${this.getMonthName(today.getMonth())} ${today.getFullYear()}`;
+                break;
+                
+            case 'last-month':
+                const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+                startDate = this.formatDate(lastMonth);
+                endDate = this.formatDate(lastMonthEnd);
+                displayText = `${this.getMonthName(lastMonth.getMonth())} ${lastMonth.getFullYear()}`;
+                break;
+                
+            case 'this-year':
+                const startOfYear = new Date(today.getFullYear(), 0, 1);
+                startDate = this.formatDate(startOfYear);
+                endDate = this.formatDate(today);
+                displayText = `Tahun ${today.getFullYear()}`;
+                break;
+                
+            case 'last-year':
+                const lastYear = today.getFullYear() - 1;
+                const startOfLastYear = new Date(lastYear, 0, 1);
+                const endOfLastYear = new Date(lastYear, 11, 31);
+                startDate = this.formatDate(startOfLastYear);
+                endDate = this.formatDate(endOfLastYear);
+                displayText = `Tahun ${lastYear}`;
+                break;
+                
+            default:
+                startDate = endDate = this.formatDate(today);
+                displayText = 'Hari Ini';
+        }
+
+        const totalDays = this.calculateDaysDifference(startDate, endDate) + 1;
+        const workingDays = this.calculateWorkingDays(startDate, endDate);
+
+        return { startDate, endDate, displayText, totalDays, workingDays };
+    }
+
+    getAdvancedDateRange() {
+        const { year, month, startDay, endDay } = this.currentSelection;
+        
+        if (!year) {
+            return this.getQuickDateRange('this-month');
+        }
+
+        let startDate, endDate, displayText;
+
+        if (month) {
+            const monthStart = new Date(year, month - 1, startDay || 1);
+            const monthEnd = new Date(year, month - 1, endDay || new Date(year, month, 0).getDate());
+            
+            startDate = this.formatDate(monthStart);
+            endDate = this.formatDate(monthEnd);
+            
+            if (startDay && endDay) {
+                displayText = `${startDay}-${endDay} ${this.getMonthName(month - 1)} ${year}`;
+            } else if (startDay) {
+                displayText = `Dari ${startDay} ${this.getMonthName(month - 1)} ${year}`;
+            } else if (endDay) {
+                displayText = `Hingga ${endDay} ${this.getMonthName(month - 1)} ${year}`;
+            } else {
+                displayText = `${this.getMonthName(month - 1)} ${year}`;
+            }
+        } else {
+            // Whole year
+            startDate = this.formatDate(new Date(year, 0, 1));
+            endDate = this.formatDate(new Date(year, 11, 31));
+            displayText = `Tahun ${year}`;
+        }
+
+        const totalDays = this.calculateDaysDifference(startDate, endDate) + 1;
+        const workingDays = this.calculateWorkingDays(startDate, endDate);
+
+        return { startDate, endDate, displayText, totalDays, workingDays };
+    }
+
+    getCustomDateRange() {
+        const { customStart, customEnd } = this.currentSelection;
+        
+        if (!customStart || !customEnd) {
+            return this.getQuickDateRange('this-month');
+        }
+
+        const startDate = customStart;
+        const endDate = customEnd;
+        const displayText = `Custom Range`;
+
+        const totalDays = this.calculateDaysDifference(startDate, endDate) + 1;
+        const workingDays = this.calculateWorkingDays(startDate, endDate);
+
+        return { startDate, endDate, displayText, totalDays, workingDays };
+    }
+
+    formatDate(date) {
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    }
+
+    getMonthName(monthIndex) {
+        const months = [
+            'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
+            'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'
+        ];
+        return months[monthIndex];
+    }
+
+    calculateDaysDifference(startDate, endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end - start);
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    calculateWorkingDays(startDate, endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        let workingDays = 0;
+        
+        for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+            const dayOfWeek = date.getDay();
+            // Exclude Friday (5) and Saturday (6) for Malaysian working pattern
+            if (dayOfWeek !== 5 && dayOfWeek !== 6) {
+                workingDays++;
+            }
+        }
+        
+        return workingDays;
+    }
+
+    updateActiveFilters() {
+        const { displayText } = this.getDateRange();
+        const tags = [];
+
+        // Add period tag
+        tags.push({
+            type: 'period',
+            text: `Tempoh: ${displayText}`,
+            value: 'period'
+        });
+
+        // Add agent tag if selected
+        if (this.currentSelection.agent) {
+            tags.push({
+                type: 'agent',
+                text: `Agent: ${this.currentSelection.agent}`,
+                value: this.currentSelection.agent
+            });
+        }
+
+        // Update display
+        const activeFilters = document.getElementById('activeFiltersEnhanced');
+        const filterTags = document.getElementById('filterTagsEnhanced');
+
+        if (tags.length > 0) {
+            activeFilters?.classList.remove('hidden');
+            if (filterTags) {
+                filterTags.innerHTML = tags.map(tag => 
+                    `<span class="filter-tag">
+                        ${tag.text}
+                        <button class="remove-tag" data-type="${tag.type}" data-value="${tag.value}">×</button>
+                    </span>`
+                ).join('');
+
+                // Add remove tag listeners
+                filterTags.querySelectorAll('.remove-tag').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.removeFilter(btn.dataset.type);
+                    });
+                });
+            }
+        } else {
+            activeFilters?.classList.add('hidden');
+        }
+    }
+
+    removeFilter(type) {
+        if (type === 'period') {
+            this.setDefaultSelection();
+        } else if (type === 'agent') {
+            this.currentSelection.agent = '';
+            const agentSelect = document.getElementById('agent-filter-enhanced');
+            if (agentSelect) agentSelect.value = '';
+        }
+        this.updateActiveFilters();
+    }
+
+    applyFilter() {
+        const applyBtn = document.getElementById('applyFilterEnhanced');
+        const originalText = applyBtn.innerHTML;
+        
+        // Show loading state
+        applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+        applyBtn.disabled = true;
+
+        const { startDate, endDate } = this.getDateRange();
+
+        // Update global filters for dashboard integration
+        if (window.currentFilters) {
+            window.currentFilters.startDate = startDate;
+            window.currentFilters.endDate = endDate;
+            window.currentFilters.agent = this.currentSelection.agent;
+        }
+
+        // Apply filters using existing dashboard function
+        setTimeout(() => {
+            try {
+                if (typeof window.applyFilters === 'function') {
+                    // Update old filter inputs for backward compatibility
+                    const startDateInput = document.getElementById('start-date');
+                    const endDateInput = document.getElementById('end-date');
+                    const agentFilterOld = document.getElementById('agent-filter');
+                    
+                    if (startDateInput) startDateInput.value = startDate;
+                    if (endDateInput) endDateInput.value = endDate;
+                    if (agentFilterOld) agentFilterOld.value = this.currentSelection.agent || '';
+
+                    window.applyFilters();
+                    
+                    // Success feedback
+                    applyBtn.innerHTML = '<i class="fas fa-check"></i> Berjaya!';
+                    setTimeout(() => {
+                        applyBtn.innerHTML = originalText;
+                        applyBtn.disabled = false;
+                    }, 1500);
+                } else {
+                    throw new Error('Dashboard applyFilters function not found');
+                }
+            } catch (error) {
+                console.error('Error applying filters:', error);
+                applyBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ralat!';
+                setTimeout(() => {
+                    applyBtn.innerHTML = originalText;
+                    applyBtn.disabled = false;
+                }, 2000);
+            }
+        }, 500);
+    }
+
+    resetFilter() {
+        // Reset all selections
+        this.currentSelection = {
+            type: 'quick',
+            value: 'this-month',
+            year: null,
+            month: null,
+            startDay: null,
+            endDay: null,
+            customStart: null,
+            customEnd: null,
+            agent: null
+        };
+
+        // Reset UI elements
+        document.getElementById('year-selector').value = '';
+        document.getElementById('month-selector').value = '';
+        document.getElementById('month-selector').disabled = true;
+        this.disableDayInputs();
+        document.getElementById('custom-start-date').value = '';
+        document.getElementById('custom-end-date').value = '';
+        document.getElementById('agent-filter-enhanced').value = '';
+
+        // Switch back to quick tab and select default
+        this.switchTab('quick');
+        this.setDefaultSelection();
+
+        // Reset global filters
+        if (typeof window.clearFilters === 'function') {
+            window.clearFilters();
+        }
+
+        // Visual feedback
+        const resetBtn = document.getElementById('resetFilterEnhanced');
+        const originalText = resetBtn.innerHTML;
+        resetBtn.innerHTML = '<i class="fas fa-check"></i> Reset!';
+        setTimeout(() => {
+            resetBtn.innerHTML = originalText;
+        }, 1000);
+    }
+
+    exportData() {
+        const { startDate, endDate, displayText } = this.getDateRange();
+        
+        // This would integrate with your export functionality
+        console.log('Exporting data for:', {
+            period: displayText,
+            startDate,
+            endDate,
+            agent: this.currentSelection.agent
+        });
+        
+        // You can implement actual export logic here
+        alert(`Export data untuk tempoh: ${displayText}\nDari: ${startDate}\nHingga: ${endDate}`);
+    }
+
+    // Public methods for external integration
+    getSelection() {
+        const { startDate, endDate, displayText } = this.getDateRange();
+        return {
+            startDate,
+            endDate,
+            agent: this.currentSelection.agent || '',
+            displayText,
+            type: this.currentSelection.type,
+            details: this.currentSelection
+        };
+    }
+
+    populateAgentOptions(agents) {
+        const agentSelect = document.getElementById('agent-filter-enhanced');
+        if (!agentSelect) return;
+
+        // Clear existing options except the first one
+        agentSelect.innerHTML = '<option value="">Semua Agent</option>';
+
+        // Add agent options
+        agents.forEach(agent => {
+            const option = document.createElement('option');
+            option.value = agent;
+            option.textContent = agent;
+            agentSelect.appendChild(option);
+        });
+    }
+}
+
+// Initialize when DOM is ready
+let advancedDashboardFilter;
+
+document.addEventListener('DOMContentLoaded', () => {
+    advancedDashboardFilter = new AdvancedDashboardFilter();
+    
+    // Make globally available
+    window.advancedDashboardFilter = advancedDashboardFilter;
+    window.getEnhancedFilterSelection = () => advancedDashboardFilter.getSelection();
+    window.populateEnhancedAgentFilter = (agents) => advancedDashboardFilter.populateAgentOptions(agents);
+});
+
+console.log('🎯 Advanced Dashboard Filter loaded!');
+console.log('📊 Features: Year/Month/Day selection, Quick periods, Custom range, Agent filter');
     </script>
 </body>
 </html>

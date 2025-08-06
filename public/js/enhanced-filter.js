@@ -1,529 +1,374 @@
-// Enhanced Date Filter Integration with Dashboard
-class DashboardEnhancedFilter {
-    constructor() {
-        this.dropdown = document.getElementById('periodDropdown');
-        this.menu = document.getElementById('dropdownMenu');
-        this.selectedText = document.getElementById('selectedPeriodText');
-        this.selectedDate = document.getElementById('selectedPeriodDate');
-        this.periodTitle = document.getElementById('periodTitle');
-        this.periodRange = document.getElementById('periodRange');
-        this.applyBtn = document.getElementById('applyFilterEnhanced');
-        this.resetBtn = document.getElementById('resetFilterEnhanced');
-        this.agentSelect = document.getElementById('agent-filter-enhanced');
-        this.activeFilters = document.getElementById('activeFiltersEnhanced');
-        this.filterTags = document.getElementById('filterTagsEnhanced');
-        
-        this.currentSelection = 'past-30-days';
-        this.currentAgent = '';
-        this.dateRanges = {};
-        
-        this.init();
-        this.updateDateLabels();
-    }
+// advanced-filter-integration.js
+// Integration file untuk Advanced Dashboard Filter dengan existing dashboard
 
-    init() {
-        // Toggle dropdown
-        this.dropdown?.addEventListener('click', () => {
-            this.toggleDropdown();
-        });
-
-        // Handle item selection
-        this.menu?.addEventListener('click', (e) => {
-            const item = e.target.closest('.dropdown-item');
-            if (item) {
-                this.selectItem(item);
-            }
-        });
-
-        // Apply filter
-        this.applyBtn?.addEventListener('click', () => {
-            this.applyFilter();
-        });
-
-        // Reset filter
-        this.resetBtn?.addEventListener('click', () => {
-            this.resetFilter();
-        });
-
-        // Agent selection
-        this.agentSelect?.addEventListener('change', () => {
-            this.currentAgent = this.agentSelect.value;
-            this.updateActiveFilters();
-        });
-
-        // Close on outside click
-        document.addEventListener('click', (e) => {
-            if (this.dropdown && this.menu && 
-                !this.dropdown.contains(e.target) && 
-                !this.menu.contains(e.target)) {
-                this.closeDropdown();
-            }
-        });
-
-        // Set default selection
-        setTimeout(() => {
-            const defaultItem = this.menu?.querySelector('[data-value="past-30-days"]');
-            if (defaultItem) {
-                this.selectItem(defaultItem);
-            }
-        }, 100);
-    }
-
-    updateDateLabels() {
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        
-        const formatDate = (date) => {
-            return date.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            }).replace(/\//g, '-');
-        };
-
-        const formatMonth = (date) => {
-            return date.toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' });
-        };
-
-        // Update date labels in dropdown
-        const updates = {
-            'yesterday-date': formatDate(yesterday),
-            'today-date': formatDate(today),
-            '2days-date': formatDate(new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)),
-            '3days-date': formatDate(new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000)),
-            'thisweek-date': this.getWeekRange(today),
-            'lastweek-date': this.getWeekRange(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)),
-            'thismonth-date': formatMonth(today),
-            'lastmonth-date': formatMonth(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
-            'thisyear-date': today.getFullYear().toString(),
-            'lastyear-date': (today.getFullYear() - 1).toString()
-        };
-
-        Object.entries(updates).forEach(([id, value]) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value;
-            }
-        });
-
-        // Store date ranges for later use
-        this.dateRanges = {
-            'real-time': { start: null, end: null, label: 'Live data updates' },
-            'yesterday': { 
-                start: formatDate(yesterday), 
-                end: formatDate(yesterday), 
-                label: `${formatDate(yesterday)} (GMT+08)` 
-            },
-            'today': { 
-                start: formatDate(today), 
-                end: formatDate(today), 
-                label: `${formatDate(today)} (GMT+08)` 
-            },
-            'past-7-days': { 
-                start: formatDate(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)), 
-                end: formatDate(today), 
-                label: `${formatDate(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000))} to ${formatDate(today)}` 
-            },
-            'past-30-days': { 
-                start: formatDate(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)), 
-                end: formatDate(today), 
-                label: `${formatDate(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000))} to ${formatDate(today)}` 
-            },
-            'this-week': { 
-                start: this.getWeekStart(today), 
-                end: formatDate(today), 
-                label: this.getWeekRange(today) 
-            },
-            'last-week': {
-                start: this.getWeekStart(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)),
-                end: this.getWeekEnd(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)),
-                label: this.getWeekRange(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000))
-            },
-            'this-month': { 
-                start: formatDate(new Date(today.getFullYear(), today.getMonth(), 1)), 
-                end: formatDate(today), 
-                label: formatMonth(today) 
-            },
-            'last-month': {
-                start: formatDate(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
-                end: formatDate(new Date(today.getFullYear(), today.getMonth(), 0)),
-                label: formatMonth(new Date(today.getFullYear(), today.getMonth() - 1, 1))
-            },
-            'this-year': { 
-                start: formatDate(new Date(today.getFullYear(), 0, 1)), 
-                end: formatDate(today), 
-                label: today.getFullYear().toString() 
-            },
-            'last-year': {
-                start: formatDate(new Date(today.getFullYear() - 1, 0, 1)),
-                end: formatDate(new Date(today.getFullYear() - 1, 11, 31)),
-                label: (today.getFullYear() - 1).toString()
-            }
-        };
-    }
-
-    getWeekStart(date) {
-        const start = new Date(date);
-        const day = start.getDay();
-        const diff = start.getDate() - day;
-        start.setDate(diff);
-        return start.toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).replace(/\//g, '-');
-    }
-
-    getWeekEnd(date) {
-        const end = new Date(date);
-        const day = end.getDay();
-        const diff = end.getDate() - day + 6;
-        end.setDate(diff);
-        return end.toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).replace(/\//g, '-');
-    }
-
-    getWeekRange(date) {
-        const start = this.getWeekStart(date);
-        const end = this.getWeekEnd(date);
-        return `${start} to ${end}`;
-    }
-
-    toggleDropdown() {
-        this.dropdown?.classList.toggle('active');
-        this.menu?.classList.toggle('show');
-    }
-
-    closeDropdown() {
-        this.dropdown?.classList.remove('active');
-        this.menu?.classList.remove('show');
-    }
-
-    selectItem(item) {
-        // Remove previous selection
-        const previousSelected = this.menu?.querySelector('.dropdown-item.selected');
-        if (previousSelected) {
-            previousSelected.classList.remove('selected');
-        }
-
-        // Add selection to new item
-        item.classList.add('selected');
-        
-        // Get selection data
-        const value = item.dataset.value;
-        const text = item.querySelector('.item-main')?.textContent || '';
-        
-        // Update display
-        this.updateDisplay(text, value);
-        
-        // Store current selection
-        this.currentSelection = value;
-        
-        // Update active filters
-        this.updateActiveFilters();
-        
-        // Close dropdown
-        this.closeDropdown();
-    }
-
-    updateDisplay(text, value) {
-        if (this.selectedText) {
-            this.selectedText.textContent = text;
-        }
-        
-        if (this.selectedDate && this.dateRanges[value]) {
-            this.selectedDate.textContent = this.dateRanges[value].label.split(' ')[0] || '';
-        }
-        
-        if (this.periodTitle) {
-            this.periodTitle.textContent = text;
-        }
-        
-        if (this.periodRange && this.dateRanges[value]) {
-            this.periodRange.textContent = this.dateRanges[value].label;
-        }
-    }
-
-    updateActiveFilters() {
-        const tags = [];
-        
-        // Add period tag
-        if (this.currentSelection && this.dateRanges[this.currentSelection]) {
-            const periodText = this.menu?.querySelector(`[data-value="${this.currentSelection}"] .item-main`)?.textContent || this.currentSelection;
-            tags.push({
-                type: 'period',
-                text: `Period: ${periodText}`,
-                value: this.currentSelection
-            });
-        }
-        
-        // Add agent tag
-        if (this.currentAgent) {
-            tags.push({
-                type: 'agent',
-                text: `Agent: ${this.currentAgent}`,
-                value: this.currentAgent
-            });
-        }
-        
-                        // Update display
-        if (tags.length > 0) {
-            this.activeFilters?.classList.remove('hidden');
-            if (this.filterTags) {
-                this.filterTags.innerHTML = tags.map(tag => 
-                    `<span class="filter-tag">
-                        ${tag.text}
-                        <button class="remove-tag" data-type="${tag.type}" data-value="${tag.value}">×</button>
-                    </span>`
-                ).join('');
-                
-                // Add remove tag listeners
-                this.filterTags.querySelectorAll('.remove-tag').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        this.removeFilter(btn.dataset.type, btn.dataset.value);
-                    });
-                });
-            }
-        } else {
-            this.activeFilters?.classList.add('hidden');
-        }
-    }
-
-    removeFilter(type, value) {
-        if (type === 'period') {
-            // Reset to default period
-            const defaultItem = this.menu?.querySelector('[data-value="past-30-days"]');
-            if (defaultItem) {
-                this.selectItem(defaultItem);
-            }
-        } else if (type === 'agent') {
-            this.currentAgent = '';
-            if (this.agentSelect) {
-                this.agentSelect.value = '';
-            }
-        }
-        this.updateActiveFilters();
-    }
-
-    applyFilter() {
-        // Show loading state
-        const filterContainer = document.querySelector('.enhanced-date-filter');
-        filterContainer?.classList.add('applying');
-        
-        this.applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
-        this.applyBtn.disabled = true;
-        
-        // Get date range
-        const dateRange = this.dateRanges[this.currentSelection];
-        let startDate = '';
-        let endDate = '';
-        
-        if (dateRange && dateRange.start && dateRange.end) {
-            // Convert DD-MM-YYYY to YYYY-MM-DD for input fields
-            startDate = this.convertDateFormat(dateRange.start);
-            endDate = this.convertDateFormat(dateRange.end);
-        }
-        
-        // Update hidden date inputs if they exist (for backward compatibility)
-        const startDateInput = document.getElementById('start-date');
-        const endDateInput = document.getElementById('end-date');
-        const agentFilterOld = document.getElementById('agent-filter');
-        
-        if (startDateInput) startDateInput.value = startDate;
-        if (endDateInput) endDateInput.value = endDate;
-        if (agentFilterOld) agentFilterOld.value = this.currentAgent;
-        
-        // Apply filters using existing dashboard function
-        setTimeout(() => {
-            try {
-                // Check if dashboard applyFilters function exists
-                if (typeof window.applyFilters === 'function') {
-                    // Update global filter state
-                    if (window.currentFilters) {
-                        window.currentFilters.startDate = startDate;
-                        window.currentFilters.endDate = endDate;
-                        window.currentFilters.agent = this.currentAgent;
-                    }
-                    
-                    // Call existing apply filters function
-                    window.applyFilters();
-                } else {
-                    console.warn('Dashboard applyFilters function not found');
-                }
-                
-                // Success feedback
-                this.applyBtn.innerHTML = '<i class="fas fa-check"></i> Applied!';
-                filterContainer?.classList.remove('applying');
-                
-                setTimeout(() => {
-                    this.applyBtn.innerHTML = '<i class="fas fa-filter"></i> Apply Filter';
-                    this.applyBtn.disabled = false;
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Error applying filters:', error);
-                this.applyBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
-                filterContainer?.classList.remove('applying');
-                
-                setTimeout(() => {
-                    this.applyBtn.innerHTML = '<i class="fas fa-filter"></i> Apply Filter';
-                    this.applyBtn.disabled = false;
-                }, 2000);
-            }
-        }, 500);
-    }
-
-    resetFilter() {
-        // Reset to default values
-        this.currentAgent = '';
-        if (this.agentSelect) {
-            this.agentSelect.value = '';
-        }
-        
-        // Reset to past 30 days
-        const defaultItem = this.menu?.querySelector('[data-value="past-30-days"]');
-        if (defaultItem) {
-            this.selectItem(defaultItem);
-        }
-        
-        // Clear old inputs
-        const startDateInput = document.getElementById('start-date');
-        const endDateInput = document.getElementById('end-date');
-        const agentFilterOld = document.getElementById('agent-filter');
-        
-        if (startDateInput) startDateInput.value = '';
-        if (endDateInput) endDateInput.value = '';
-        if (agentFilterOld) agentFilterOld.value = '';
-        
-        // Apply reset
-        if (typeof window.clearFilters === 'function') {
-            window.clearFilters();
-        }
-        
-        // Visual feedback
-        this.resetBtn.innerHTML = '<i class="fas fa-check"></i> Reset!';
-        setTimeout(() => {
-            this.resetBtn.innerHTML = '<i class="fas fa-refresh"></i> Reset';
-        }, 1000);
-        
-        this.updateActiveFilters();
-    }
-
-    convertDateFormat(dateStr) {
-        // Convert DD-MM-YYYY to YYYY-MM-DD
-        if (!dateStr || dateStr.includes('to') || dateStr.includes('Live')) return '';
-        
-        const parts = dateStr.split('-');
-        if (parts.length === 3) {
-            return `${parts[2]}-${parts[1]}-${parts[0]}`;
-        }
-        return dateStr;
-    }
-
-    // Public methods for external integration
-    setPeriod(value) {
-        const item = this.menu?.querySelector(`[data-value="${value}"]`);
-        if (item) {
-            this.selectItem(item);
-        }
-    }
-
-    setAgent(agent) {
-        this.currentAgent = agent;
-        if (this.agentSelect) {
-            this.agentSelect.value = agent;
-        }
-        this.updateActiveFilters();
-    }
-
-    getSelection() {
-        const dateRange = this.dateRanges[this.currentSelection];
-        return {
-            period: this.currentSelection,
-            agent: this.currentAgent,
-            startDate: dateRange ? this.convertDateFormat(dateRange.start) : '',
-            endDate: dateRange ? this.convertDateFormat(dateRange.end) : '',
-            dateRange: dateRange ? dateRange.label : '',
-            periodText: this.selectedText?.textContent || ''
-        };
-    }
-
-    // Method to populate agent options (call this after data is loaded)
-    populateAgentOptions(agents) {
-        if (!this.agentSelect) return;
-        
-        // Clear existing options except the first one
-        this.agentSelect.innerHTML = '<option value="">Semua Agent</option>';
-        
-        // Add agent options
-        agents.forEach(agent => {
-            const option = document.createElement('option');
-            option.value = agent;
-            option.textContent = agent;
-            this.agentSelect.appendChild(option);
-        });
-    }
-}
-
-// Initialize Enhanced Filter when DOM is ready
-let dashboardEnhancedFilter;
-
+// Override enhanced-filter.js functions untuk compatibility
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize enhanced filter
-    dashboardEnhancedFilter = new DashboardEnhancedFilter();
-    
-    // Make available globally
-    window.dashboardEnhancedFilter = dashboardEnhancedFilter;
-    
-    // Integration functions for backward compatibility
-    window.getEnhancedFilterSelection = () => dashboardEnhancedFilter.getSelection();
-    window.setEnhancedFilterPeriod = (value) => dashboardEnhancedFilter.setPeriod(value);
-    window.setEnhancedFilterAgent = (agent) => dashboardEnhancedFilter.setAgent(agent);
-    window.populateEnhancedAgentFilter = (agents) => dashboardEnhancedFilter.populateAgentOptions(agents);
+    // Wait for advanced filter to be ready
+    setTimeout(() => {
+        if (window.advancedDashboardFilter) {
+            console.log('🎯 Advanced Filter Integration active');
+            
+            // Override existing filter functions
+            setupAdvancedFilterIntegration();
+        }
+    }, 1000);
 });
 
-// Integration with existing dashboard functions
-// Override or extend existing functions if needed
-if (typeof window.populateAgentFilter === 'function') {
-    const originalPopulateAgentFilter = window.populateAgentFilter;
-    window.populateAgentFilter = function(...args) {
-        // Call original function
-        originalPopulateAgentFilter.apply(this, args);
-        
-        // Also populate enhanced filter if available
-        if (dashboardEnhancedFilter && window.allData && window.allData.salesteam) {
-            const agents = [...new Set(window.allData.salesteam
-                .map(item => item.agent || item.team)
-                .filter(Boolean)
-            )].sort();
-            dashboardEnhancedFilter.populateAgentOptions(agents);
+function setupAdvancedFilterIntegration() {
+    // 1. OVERRIDE getEnhancedFilterSelection function
+    window.getEnhancedFilterSelection = () => {
+        if (window.advancedDashboardFilter) {
+            const selection = window.advancedDashboardFilter.getSelection();
+            console.log('📊 Advanced Filter Selection:', selection);
+            return {
+                startDate: selection.startDate,
+                endDate: selection.endDate,
+                agent: selection.agent,
+                period: selection.type,
+                dateRange: `${selection.startDate} to ${selection.endDate}`,
+                periodText: selection.displayText
+            };
+        }
+        return { startDate: '', endDate: '', agent: '' };
+    };
+
+    // 2. OVERRIDE populateEnhancedAgentFilter function
+    window.populateEnhancedAgentFilter = (agents) => {
+        if (window.advancedDashboardFilter) {
+            window.advancedDashboardFilter.populateAgentOptions(agents);
+            console.log('👥 Advanced Filter - Agents populated:', agents.length);
         }
     };
+
+    // 3. ENHANCE existing dashboard functions
+    enhanceDashboardFunctions();
+    
+    // 4. Add keyboard shortcuts
+    setupKeyboardShortcuts();
+    
+    // 5. Add auto-refresh functionality
+    setupAutoRefresh();
 }
 
-// Auto-populate agents when data is loaded
-if (typeof window.fetchAllData === 'function') {
-    const originalFetchAllData = window.fetchAllData;
-    window.fetchAllData = async function(...args) {
-        const result = await originalFetchAllData.apply(this, args);
-        
-        // Populate enhanced filter agents
-        setTimeout(() => {
-            if (dashboardEnhancedFilter && window.allData && window.allData.salesteam) {
+function enhanceDashboardFunctions() {
+    // Enhance the populateAgentFilter function
+    if (window.populateAgentFilter) {
+        const originalPopulateAgentFilter = window.populateAgentFilter;
+        window.populateAgentFilter = function(...args) {
+            // Call original function
+            const result = originalPopulateAgentFilter.apply(this, args);
+            
+            // Also populate advanced filter
+            if (window.allData && window.allData.salesteam && window.advancedDashboardFilter) {
                 const agents = [...new Set(window.allData.salesteam
                     .map(item => item.agent || item.team)
                     .filter(Boolean)
                 )].sort();
-                dashboardEnhancedFilter.populateAgentOptions(agents);
+                window.advancedDashboardFilter.populateAgentOptions(agents);
             }
-        }, 1000);
+            
+            return result;
+        };
+    }
+
+    // Enhance the fetchAllData function
+    if (window.fetchAllData) {
+        const originalFetchAllData = window.fetchAllData;
+        window.fetchAllData = async function(...args) {
+            const result = await originalFetchAllData.apply(this, args);
+            
+            // Auto-populate agents after data fetch
+            setTimeout(() => {
+                if (window.allData && window.allData.salesteam && window.advancedDashboardFilter) {
+                    const agents = [...new Set(window.allData.salesteam
+                        .map(item => item.agent || item.team)
+                        .filter(Boolean)
+                    )].sort();
+                    window.advancedDashboardFilter.populateAgentOptions(agents);
+                    console.log('🔄 Auto-populated agents in advanced filter');
+                }
+            }, 500);
+            
+            return result;
+        };
+    }
+}
+
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + F = Apply Filter
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            const applyBtn = document.getElementById('applyFilterEnhanced');
+            if (applyBtn) applyBtn.click();
+        }
+
+        // Ctrl/Cmd + R = Reset Filter
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            const resetBtn = document.getElementById('resetFilterEnhanced');
+            if (resetBtn) resetBtn.click();
+        }
+
+        // Ctrl/Cmd + E = Export Data
+        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+            e.preventDefault();
+            const exportBtn = document.getElementById('exportDataBtn');
+            if (exportBtn) exportBtn.click();
+        }
+
+        // Ctrl/Cmd + 1,2,3 = Switch tabs
+        if ((e.ctrlKey || e.metaKey) && ['1', '2', '3'].includes(e.key)) {
+            e.preventDefault();
+            const tabTypes = ['quick', 'advanced', 'custom'];
+            const tabIndex = parseInt(e.key) - 1;
+            if (window.advancedDashboardFilter && tabTypes[tabIndex]) {
+                window.advancedDashboardFilter.switchTab(tabTypes[tabIndex]);
+            }
+        }
+    });
+
+    // Show keyboard shortcuts help
+    console.log('⌨️ Keyboard Shortcuts:');
+    console.log('  Ctrl+F: Apply Filter');
+    console.log('  Ctrl+R: Reset Filter');
+    console.log('  Ctrl+E: Export Data');
+    console.log('  Ctrl+1: Quick Select Tab');
+    console.log('  Ctrl+2: Advanced Tab');
+    console.log('  Ctrl+3: Custom Range Tab');
+}
+
+function setupAutoRefresh() {
+    let autoRefreshInterval;
+    let isAutoRefreshEnabled = false;
+
+    // Add auto-refresh toggle button
+    const filterActions = document.querySelector('.filter-actions');
+    if (filterActions) {
+        const autoRefreshBtn = document.createElement('button');
+        autoRefreshBtn.className = 'btn btn-outline';
+        autoRefreshBtn.id = 'autoRefreshBtn';
+        autoRefreshBtn.innerHTML = '<i class="fas fa-sync"></i> Auto Refresh: OFF';
         
-        return result;
-    };
+        autoRefreshBtn.addEventListener('click', () => {
+            toggleAutoRefresh();
+        });
+        
+        filterActions.appendChild(autoRefreshBtn);
+    }
+
+    function toggleAutoRefresh() {
+        const btn = document.getElementById('autoRefreshBtn');
+        
+        if (isAutoRefreshEnabled) {
+            // Turn OFF auto-refresh
+            clearInterval(autoRefreshInterval);
+            isAutoRefreshEnabled = false;
+            btn.innerHTML = '<i class="fas fa-sync"></i> Auto Refresh: OFF';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline');
+            console.log('🔄 Auto-refresh disabled');
+        } else {
+            // Turn ON auto-refresh (every 5 minutes)
+            autoRefreshInterval = setInterval(() => {
+                console.log('🔄 Auto-refreshing data...');
+                const applyBtn = document.getElementById('applyFilterEnhanced');
+                if (applyBtn) {
+                    applyBtn.click();
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+
+            isAutoRefreshEnabled = true;
+            btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Auto Refresh: ON';
+            btn.classList.remove('btn-outline');
+            btn.classList.add('btn-success');
+            console.log('🔄 Auto-refresh enabled (5 minutes interval)');
+        }
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+    });
+}
+
+// Advanced Filter Helper Functions
+window.advancedFilterHelpers = {
+    // Quick filter presets
+    setFilterPreset: (preset) => {
+        if (!window.advancedDashboardFilter) return;
+
+        const presets = {
+            'today': () => {
+                window.advancedDashboardFilter.switchTab('quick');
+                window.advancedDashboardFilter.selectQuickPeriod('today');
+            },
+            'this-week': () => {
+                window.advancedDashboardFilter.switchTab('quick');
+                window.advancedDashboardFilter.selectQuickPeriod('this-week');
+            },
+            'this-month': () => {
+                window.advancedDashboardFilter.switchTab('quick');
+                window.advancedDashboardFilter.selectQuickPeriod('this-month');
+            },
+            'this-year': () => {
+                window.advancedDashboardFilter.switchTab('quick');
+                window.advancedDashboardFilter.selectQuickPeriod('this-year');
+            },
+            'current-quarter': () => {
+                const now = new Date();
+                const quarter = Math.floor(now.getMonth() / 3);
+                const startMonth = quarter * 3;
+                
+                window.advancedDashboardFilter.switchTab('advanced');
+                document.getElementById('year-selector').value = now.getFullYear();
+                window.advancedDashboardFilter.onYearChange();
+                
+                // Set start month of quarter
+                setTimeout(() => {
+                    document.getElementById('month-selector').value = startMonth + 1;
+                    window.advancedDashboardFilter.onMonthChange();
+                }, 100);
+            }
+        };
+
+        if (presets[preset]) {
+            presets[preset]();
+            console.log(`🎯 Applied preset: ${preset}`);
+        }
+    },
+
+    // Get filter statistics
+    getFilterStats: () => {
+        const selection = window.getEnhancedFilterSelection();
+        const startDate = new Date(selection.startDate);
+        const endDate = new Date(selection.endDate);
+        
+        const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        
+        let workingDays = 0;
+        for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek !== 5 && dayOfWeek !== 6) { // Exclude Fri & Sat
+                workingDays++;
+            }
+        }
+
+        return {
+            startDate: selection.startDate,
+            endDate: selection.endDate,
+            totalDays,
+            workingDays,
+            weekends: totalDays - workingDays,
+            agent: selection.agent,
+            displayText: selection.displayText
+        };
+    },
+
+    // Export filter configuration
+    exportFilterConfig: () => {
+        const selection = window.getEnhancedFilterSelection();
+        const config = {
+            type: 'advanced_filter_config',
+            version: '1.0',
+            timestamp: new Date().toISOString(),
+            filter: selection,
+            stats: window.advancedFilterHelpers.getFilterStats()
+        };
+
+        const dataStr = JSON.stringify(config, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `filter-config-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        
+        console.log('📁 Filter configuration exported');
+    },
+
+    // Get available date ranges based on data
+    getAvailableDataRanges: () => {
+        if (!window.allData) return null;
+
+        const allDates = [];
+        
+        // Collect all dates from data
+        ['orders', 'marketing', 'salesteam'].forEach(collection => {
+            window.allData[collection].forEach(item => {
+                if (item.tarikh) {
+                    allDates.push(new Date(item.tarikh));
+                } else if (item.createdAt) {
+                    const date = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                    allDates.push(date);
+                }
+            });
+        });
+
+        if (allDates.length === 0) return null;
+
+        allDates.sort((a, b) => a - b);
+
+        return {
+            earliest: allDates[0].toISOString().split('T')[0],
+            latest: allDates[allDates.length - 1].toISOString().split('T')[0],
+            totalRecords: allDates.length,
+            uniqueDates: [...new Set(allDates.map(d => d.toISOString().split('T')[0]))].length
+        };
+    }
+};
+
+// Add CSS for auto-refresh button
+const advancedFilterStyles = `
+    .btn-success {
+        background: #10B981 !important;
+        color: #FFFFFF !important;
+        border: 2px solid #059669 !important;
+    }
+    
+    .btn-success:hover {
+        background: #059669 !important;
+        transform: translateY(-1px);
+    }
+    
+    .auto-refresh-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10B981;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        z-index: 1000;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+`;
+
+// Add styles to document
+if (!document.getElementById('advanced-filter-integration-styles')) {
+    const styleElement = document.createElement('style');
+    styleElement.id = 'advanced-filter-integration-styles';
+    styleElement.textContent = advancedFilterStyles;
+    document.head.appendChild(styleElement);
+}
+
+console.log('🎯 Advanced Filter Integration loaded!');
+console.log('📊 Available helper functions:');
+console.log('  - advancedFilterHelpers.setFilterPreset(preset)');
+console.log('  - advancedFilterHelpers.getFilterStats()');
+console.log('  - advancedFilterHelpers.exportFilterConfig()');
+console.log('  - advancedFilterHelpers.getAvailableDataRanges()');
+
+// Export for module use
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { setupAdvancedFilterIntegration, advancedFilterHelpers };
 }
