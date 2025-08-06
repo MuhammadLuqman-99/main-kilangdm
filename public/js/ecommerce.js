@@ -107,7 +107,19 @@ async function handleFile(file) {
         // Check file type and process accordingly
         if (file.type === 'application/pdf') {
             fileSource = 'PDF Invoice';
+            
+            // Enhanced logging
+            console.log('Processing PDF with enhanced parser...');
             orders = await parsePdfInvoice(file);
+            
+            // Log extraction success
+            if (orders && orders.length > 0) {
+                console.log('Enhanced extraction successful:', {
+                    invoice: orders[0].nombor_po_invoice,
+                    products: orders[0].productCount,
+                    methods: orders[0].extractionMethods
+                });
+            }
         
         } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
             const fileText = await file.text();
@@ -139,8 +151,11 @@ async function handleFile(file) {
         successIndicator.classList.add('show');
 
     } catch (error) {
-        console.error('Ralat semasa memproses fail:', error);
-        showFeedback(`Ralat: ${error.message}`, 'error');
+        console.error('Enhanced parsing error:', error);
+        
+        // Enhanced error feedback
+        const errorDetails = error.message;
+        showFeedback(`Ralat PDF: ${errorDetails}. Sila cuba PDF lain atau hubungi support.`, 'error');
         processingIndicator.classList.remove('show');
     } finally {
         setTimeout(() => {
@@ -153,28 +168,16 @@ async function handleFile(file) {
 }
 
 /**
- * ENHANCED PDF PARSER dengan Robust Detection System
- * Versi yang diperbaiki untuk menangani pelbagai format PDF Desa Murni Batik
- */
-
-/**
- * Function untuk replace existing parsePdfInvoice
- * Kekalkan interface yang sama tetapi gunakan robust method
+ * ENHANCED PDF PARSER dengan Robust Detection System - COMPLETE VERSION
+ * Main function yang akan menggantikan parsePdfInvoice yang asal
  */
 async function parsePdfInvoice(file) {
-    try {
-        return await parsePdfInvoiceRobust(file);
-    } catch (error) {
-        console.error('Robust PDF parsing failed, trying legacy method...');
-        // Fallback to original method if robust fails
-        return await parsePdfInvoiceLegacy(file);
+    // Check if pdf.js is loaded
+    if (typeof window.pdfjsLib === 'undefined' && typeof pdfjsLib === 'undefined') {
+        console.error('PDF.js library not found');
+        throw new Error('PDF.js library tidak dimuatkan. Sila refresh halaman dan cuba lagi.');
     }
-}
 
-/**
- * Legacy method sebagai fallback terakhir
- */
-async function parsePdfInvoiceLegacy(file) {
     const pdfLib = window.pdfjsLib || pdfjsLib;
     pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -183,107 +186,150 @@ async function parsePdfInvoiceLegacy(file) {
     return new Promise((resolve, reject) => {
         fileReader.onload = async function() {
             try {
+                console.log('Starting robust PDF processing...');
+                
                 const typedarray = new Uint8Array(this.result);
                 const pdf = await pdfLib.getDocument(typedarray).promise;
                 let fullText = '';
+                let structuredText = []; // Array to store page-wise text
 
+                console.log(`PDF loaded successfully. Pages: ${pdf.numPages}`);
+
+                // Extract text from all pages with structure
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(' ');
-                    fullText += pageText + ' ';
+                    
+                    // Extract with positioning information
+                    const pageItems = textContent.items.map(item => ({
+                        text: item.str.trim(),
+                        x: item.transform[4],
+                        y: item.transform[5],
+                        width: item.width,
+                        height: item.height
+                    }));
+                    
+                    structuredText.push({
+                        pageNumber: i,
+                        items: pageItems,
+                        rawText: pageItems.map(item => item.text).join(' ')
+                    });
+                    
+                    fullText += pageItems.map(item => item.text).join(' ') + ' ';
                 }
 
-                // Basic extraction dengan simple patterns
-                const invoiceMatch = fullText.match(/Invoice:\s*#?([\w\d-]+)/i);
-                const totalMatch = fullText.match(/Total.*?RM\s*([\d,]+\.?\d*)/i);
-                const customerMatch = fullText.match(/(?:BILLING|Customer).*?:\s*([^\n\r]+)/i);
+                console.log('Full PDF text extracted (first 500 chars):', fullText.substring(0, 500));
+                console.log('Structured text pages:', structuredText.length);
 
-                if (!invoiceMatch || !totalMatch) {
-                    throw new Error('Unable to extract basic invoice information');
+                if (fullText.trim().length < 10) {
+                    throw new Error('PDF ini mungkin adalah scan/gambar. Sila gunakan PDF yang mengandungi teks yang boleh dipilih.');
                 }
 
-                // Create basic order object
+                // ===== MULTIPLE DETECTION METHODS =====
+                
+                // Method 1: Standard regex patterns
+                const standardData = extractUsingStandardRegex(fullText);
+                console.log('Standard regex extraction:', standardData);
+                
+                // Method 2: Structured positioning-based extraction
+                const structuredData = extractUsingStructuredApproach(structuredText, fullText);
+                console.log('Structured extraction:', structuredData);
+                
+                // Method 3: Fallback pattern matching
+                const fallbackData = extractUsingFallbackPatterns(fullText);
+                console.log('Fallback extraction:', fallbackData);
+                
+                // ===== MERGE AND VALIDATE DATA =====
+                const mergedData = mergeExtractionResults(standardData, structuredData, fallbackData);
+                console.log('Merged extraction data:', mergedData);
+                
+                // Validate required fields
+                if (!mergedData.invoice || mergedData.invoice.trim() === '') {
+                    throw new Error('Nombor invoice tidak ditemui. Pastikan PDF adalah invoice dari Desa Murni Batik.');
+                }
+                
+                if (!mergedData.totalAmount || mergedData.totalAmount <= 0) {
+                    throw new Error('Total amount tidak ditemui atau tidak sah dalam PDF.');
+                }
+                
+                // ===== ENHANCED PRODUCT PARSING dengan Multiple Methods =====
+                const enhancedProducts = extractProductsWithMultipleMethods(fullText, structuredText);
+                console.log('Enhanced products extracted:', enhancedProducts.length);
+
+                if (enhancedProducts.length === 0) {
+                    console.warn('No products found with enhanced parsing, trying basic extraction...');
+                    // Try basic product extraction as fallback
+                    const basicProducts = extractBasicProducts(fullText);
+                    enhancedProducts.push(...basicProducts);
+                }
+
+                // ===== CREATE FIRESTORE-COMPATIBLE ORDER OBJECT =====
+                const structuredProducts = createFirestoreCompatibleProducts(enhancedProducts);
+                const totalQuantity = enhancedProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
+                const uniqueSizes = extractUniqueSizes(enhancedProducts);
+
                 const order = {
-                    nombor_po_invoice: invoiceMatch[1],
-                    tarikh: new Date().toISOString().split('T')[0],
-                    nama_customer: customerMatch ? customerMatch[1].trim() : 'Customer dari PDF',
-                    team_sale: 'Manual',
-                    nombor_phone: '',
-                    total_rm: parseFloat(totalMatch[1].replace(/,/g, '')),
+                    // Basic order info dengan merged data
+                    nombor_po_invoice: mergedData.invoice,
+                    tarikh: mergedData.date,
+                    nama_customer: mergedData.customer,
+                    team_sale: mergedData.teamSale,
+                    nombor_phone: mergedData.phone,
+                    total_rm: mergedData.totalAmount,
                     platform: 'Website Desa Murni',
-                    jenis_order: 'Mixed Products',
-                    code_kain: 'MIXED',
+                    jenis_order: getDominantProductName(structuredProducts),
+                    code_kain: getDominantSKU(structuredProducts),
                     
-                    // Basic structure
-                    products: [{
-                        sku: 'LEGACY',
-                        product_name: 'Legacy PDF Import',
-                        base_name: 'Legacy Products',
-                        size: 'Mixed',
-                        quantity: 1,
-                        price: parseFloat(totalMatch[1].replace(/,/g, '')),
-                        type: 'Legacy'
-                    }],
-                    structuredProducts: [{
-                        name: 'Legacy Products',
-                        sku: 'LEGACY',
-                        totalQty: 1,
-                        type: 'Legacy',
-                        products: [],
-                        sizeBreakdown: [{ size: 'Mixed', quantity: 1 }],
-                        sizesObject: { 'Mixed': 1 }
-                    }],
-                    totalQuantity: 1,
-                    uniqueSizes: ['Mixed'],
-                    productCount: 1,
-                    sizeCount: 1,
+                    // ===== FIRESTORE-COMPATIBLE STRUCTURED DATA =====
+                    products: enhancedProducts,
+                    structuredProducts: structuredProducts,
+                    totalQuantity: totalQuantity || 1,
+                    uniqueSizes: uniqueSizes,
+                    productCount: structuredProducts.length,
+                    sizeCount: uniqueSizes.length,
                     
-                    createdAt: new Date(),
-                    source: 'pdf_legacy_fallback',
-                    pdf_processed_at: new Date().toISOString()
+                    // Enhanced metadata
+                    extractionMethods: mergedData.usedMethods,
+                    createdAt: Timestamp.now(),
+                    source: 'pdf_desa_murni_enhanced',
+                    pdf_processed_at: new Date().toISOString(),
+                    
+                    // Debug info
+                    debugInfo: {
+                        pdfPages: pdf.numPages,
+                        textLength: fullText.length,
+                        extractionSuccess: true,
+                        fallbackUsed: mergedData.usedMethods.includes('fallback')
+                    }
                 };
 
+                console.log('Final enhanced order object:', {
+                    invoice: order.nombor_po_invoice,
+                    customer: order.nama_customer,
+                    products: order.productCount,
+                    totalQty: order.totalQuantity,
+                    extractionMethods: order.extractionMethods
+                });
+                
+                // Show enhanced preview
+                showEnhancedExtractedPreview(order);
+                
                 resolve([order]);
 
             } catch (err) {
-                reject(new Error(`Legacy parsing failed: ${err.message}`));
+                console.error('Error in enhanced PDF parsing:', err);
+                reject(new Error(`Gagal memproses PDF: ${err.message}`));
             }
         };
 
         fileReader.onerror = (error) => {
-            reject(new Error('Failed to read PDF file'));
+            console.error('File reader error:', error);
+            reject(new Error('Gagal membaca fail PDF. Pastikan fail tidak rosak.'));
         };
         
         fileReader.readAsArrayBuffer(file);
     });
 }
-
-/**
- * Testing function untuk debug purposes
- */
-function testPdfPatterns(sampleText) {
-    console.log('Testing PDF patterns with sample text...');
-    
-    const standardResult = extractUsingStandardRegex(sampleText);
-    const fallbackResult = extractUsingFallbackPatterns(sampleText);
-    
-    console.log('Standard extraction:', standardResult);
-    console.log('Fallback extraction:', fallbackResult);
-    
-    const merged = mergeExtractionResults(standardResult, {}, fallbackResult);
-    console.log('Merged result:', merged);
-    
-    return merged;
-}
-
-// Export functions untuk integration
-if (typeof window !== 'undefined') {
-    window.parsePdfInvoiceRobust = parsePdfInvoiceRobust;
-    window.parsePdfInvoice = parsePdfInvoice;
-    window.testPdfPatterns = testPdfPatterns;
-    window.debugPdfExtraction = debugPdfExtraction;
-} 
 
 /**
  * Method 1: Standard regex-based extraction
@@ -623,10 +669,10 @@ function extractProductsFromSection(fullText, sectionType) {
     // Multiple product line patterns
     const productPatterns = [
         // Pattern 1: Standard format
-        /(BZ[LP]\d{2}[A-Z]{2})\s+(.+?)\s*-\s*\(Size:\s*([^)]+)\)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g,
+        /(BZ[LP]\d{2}[A-Z]{2}|MZ[LP]\d{2}[A-Z]{2})\s+(.+?)\s*-\s*\(Size:\s*([^)]+)\)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g,
         
         // Pattern 2: Simplified format
-        /(BZ[LP]\d{2}[A-Z]{2})\s+([^0-9]+?)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g,
+        /(BZ[LP]\d{2}[A-Z]{2}|MZ[LP]\d{2}[A-Z]{2})\s+([^0-9]+?)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g,
         
         // Pattern 3: More flexible format
         /([A-Z]{2,}[LP]?\d{2}[A-Z]{2})\s+(.+?)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g
@@ -691,7 +737,7 @@ function extractProductsFromTables(structuredText) {
         
         // Find potential product rows by looking for SKU patterns
         items.forEach((item, index) => {
-            if (item.text.match(/^BZ[LP]\d{2}[A-Z]{2}$/)) {
+            if (item.text.match(/^(BZ|MZ)[LP]\d{2}[A-Z]{2}$/)) {
                 // Found potential SKU, look for related data in nearby positions
                 const sku = item.text;
                 
@@ -755,8 +801,8 @@ function extractProductsFromLines(fullText) {
     
     lines.forEach(line => {
         // Look for lines that contain both SKU and price
-        if (line.match(/BZ[LP]\d{2}[A-Z]{2}/) && line.match(/RM\s*[\d,]+/)) {
-            const skuMatch = line.match(/(BZ[LP]\d{2}[A-Z]{2})/);
+        if (line.match(/(BZ|MZ)[LP]\d{2}[A-Z]{2}/) && line.match(/RM\s*[\d,]+/)) {
+            const skuMatch = line.match(/((BZ|MZ)[LP]\d{2}[A-Z]{2})/);
             const priceMatch = line.match(/RM\s*([\d,]+\.?\d*)/);
             
             if (skuMatch && priceMatch) {
@@ -825,8 +871,6 @@ function extractBasicProducts(fullText) {
 
 /**
  * Create Firestore-compatible structured products (NO MAP OBJECTS)
- * @param {Array} products Raw products array
- * @returns {Array} Structured products for display (plain objects only)
  */
 function createFirestoreCompatibleProducts(products) {
     const productGroups = {}; // Use plain object instead of Map
@@ -875,64 +919,6 @@ function createFirestoreCompatibleProducts(products) {
     return structuredProducts;
 }
 
-/**
- * Parse product section dengan enhanced detection
- * @param {string} sectionText Text dari section Ready Stock atau Pre-Order
- * @param {string} type Type produk (Ready Stock / Pre-Order)
- * @returns {Array} Array of parsed products (plain objects only)
- */
-function parseProductSection(sectionText, type) {
-    const products = [];
-    console.log(`Parsing ${type} section:`, sectionText.substring(0, 200));
-    
-    // Enhanced regex untuk match product lines
-    // Pattern: SKU ProductName - (Size: X) Qty RM Price
-    const productLineRegex = /(BZ[LP]\d{2}[A-Z]{2})\s+(.+?)\s*-\s*\(Size:\s*([^)]+)\)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g;
-    
-    let match;
-    while ((match = productLineRegex.exec(sectionText)) !== null) {
-        const [, sku, productName, size, quantity, price] = match;
-        
-        // Create plain object (no Map, no complex objects)
-        products.push({
-            sku: sku.trim(),
-            product_name: `${productName.trim()} - (Size: ${size.trim()})`,
-            base_name: productName.trim(),
-            size: size.trim(),
-            quantity: parseInt(quantity),
-            price: parseFloat(price.replace(/,/g, '')),
-            type: type
-        });
-    }
-    
-    // Fallback regex jika format berbeza
-    if (products.length === 0) {
-        const fallbackRegex = /(BZ[LP]\d{2}[A-Z]{2})\s+([^0-9]+?)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g;
-        
-        while ((match = fallbackRegex.exec(sectionText)) !== null) {
-            const [, sku, productName, quantity, price] = match;
-            
-            // Extract size dari product name jika ada
-            const sizeMatch = productName.match(/\(Size:\s*([^)]+)\)|\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i);
-            const extractedSize = sizeMatch ? (sizeMatch[1] || sizeMatch[2]) : 'Unknown';
-            
-            // Create plain object (no Map, no complex objects)
-            products.push({
-                sku: sku.trim(),
-                product_name: productName.trim(),
-                base_name: productName.replace(/\s*-\s*\(Size:[^)]+\)/i, '').trim(),
-                size: extractedSize,
-                quantity: parseInt(quantity),
-                price: parseFloat(price.replace(/,/g, '')),
-                type: type
-            });
-        }
-    }
-    
-    console.log(`Extracted ${products.length} products from ${type} section`);
-    return products;
-}
-
 function extractUniqueSizes(products) {
     const sizes = new Set();
     products.forEach(product => {
@@ -946,9 +932,6 @@ function extractUniqueSizes(products) {
 
 /**
  * Sort sizes dalam logical order
- * @param {string} a First size
- * @param {string} b Second size
- * @returns {number} Sort comparison
  */
 function sortSizes(a, b) {
     const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
@@ -964,13 +947,10 @@ function sortSizes(a, b) {
 
 /**
  * Get dominant product name untuk display
- * @param {Array} structuredProducts Structured products
- * @returns {string} Dominant product name
  */
 function getDominantProductName(structuredProducts) {
     if (structuredProducts.length === 0) return 'Mixed Products';
     
-    // Find product dengan highest total quantity
     const dominant = structuredProducts.reduce((max, current) => 
         current.totalQty > max.totalQty ? current : max
     );
@@ -980,8 +960,6 @@ function getDominantProductName(structuredProducts) {
 
 /**
  * Get dominant SKU untuk display
- * @param {Array} structuredProducts Structured products
- * @returns {string} Dominant SKU
  */
 function getDominantSKU(structuredProducts) {
     if (structuredProducts.length === 0) return 'MIXED';
@@ -994,37 +972,7 @@ function getDominantSKU(structuredProducts) {
 }
 
 /**
- * Enhanced debugging function untuk troubleshooting
- */
-function debugPdfExtraction(fullText, extractionResults) {
-    console.log('=== PDF EXTRACTION DEBUG ===');
-    console.log('Full text length:', fullText.length);
-    console.log('First 1000 characters:', fullText.substring(0, 1000));
-    console.log('Extraction results:', extractionResults);
-    
-    // Check for common patterns
-    const patterns = {
-        'Invoice patterns': /invoice/gi,
-        'Amount patterns': /rm\s*[\d,]+/gi,
-        'Product patterns': /bz[lp]\d{2}[a-z]{2}/gi,
-        'Size patterns': /size:\s*[a-z0-9]+/gi,
-        'Date patterns': /\d{1,2}\/\d{1,2}\/\d{4}/gi
-    };
-    
-    Object.entries(patterns).forEach(([name, pattern]) => {
-        const matches = fullText.match(pattern);
-        console.log(`${name}:`, matches ? matches.length : 0, 'matches');
-        if (matches && matches.length > 0) {
-            console.log('Sample matches:', matches.slice(0, 3));
-        }
-    });
-    
-    console.log('=== END DEBUG ===');
-}
-
-/**
  * Enhanced preview display dengan structured data
- * @param {Object} order Enhanced order object
  */
 function showEnhancedExtractedPreview(order) {
     const previewDiv = document.getElementById('extractedPreview');
@@ -1061,6 +1009,19 @@ function showEnhancedExtractedPreview(order) {
             <span class="preview-value">${order.team_sale}</span>
         </div>
     `;
+    
+    // Add extraction methods info
+    if (order.extractionMethods) {
+        previewHTML += `
+            <div class="extraction-info" style="margin-top: 1rem; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 4px;">
+                <small style="color: #94a3b8;">
+                    <i class="fas fa-cog"></i> 
+                    Extraction methods: ${order.extractionMethods.join(', ')}
+                    ${order.debugInfo?.fallbackUsed ? ' (fallback used)' : ''}
+                </small>
+            </div>
+        `;
+    }
     
     // Add structured products breakdown
     if (order.structuredProducts && order.structuredProducts.length > 0) {
@@ -1115,8 +1076,6 @@ function showEnhancedExtractedPreview(order) {
 
 /**
  * Get color untuk size badge
- * @param {string} size Size string
- * @returns {string} Color hex code
  */
 function getSizeColor(size) {
     const sizeColors = {
@@ -1153,9 +1112,6 @@ function detectSource(csvText) {
 
 /**
  * Mem-parse teks CSV kepada array of order objects berdasarkan sumber
- * @param {string} csvText Kandungan teks dari fail CSV
- * @param {string} source Sumber fail (shopee, tiktok, manual)
- * @returns {Array<Object>} Array yang mengandungi objek order
  */
 function parseCSV(csvText, source) {
     const lines = csvText.split('\n').filter(line => line.trim() !== '');
@@ -1243,8 +1199,6 @@ function parseCSV(csvText, source) {
 
 /**
  * Menyimpan array of orders ke dalam Firestore
- * @param {Array<Object>} orders Array objek order
- * @returns {Promise<{successCount: number, errorCount: number}>} Bilangan kejayaan dan kegagalan
  */
 async function saveOrdersToFirebase(orders) {
     const ordersCollection = collection(window.db, 'orderData');
@@ -1266,7 +1220,6 @@ async function saveOrdersToFirebase(orders) {
 
 /**
  * Mengendalikan penghantaran borang secara manual
- * @param {Event} e Objek event dari submit
  */
 async function handleFormSubmit(e) {
     e.preventDefault();
@@ -1292,8 +1245,6 @@ async function handleFormSubmit(e) {
 
 /**
  * Memaparkan mesej maklum balas kepada pengguna
- * @param {string} message Mesej untuk dipaparkan
- * @param {'success' | 'error' | 'info'} type Jenis mesej
  */
 function showFeedback(message, type) {
     const feedbackDiv = document.getElementById('feedback-message');
@@ -1314,129 +1265,7 @@ function hideIndicators() {
 }
 
 /**
- * Memaparkan preview data yang diekstrak dari PDF
- * @param {Object} order Data order yang diekstrak
- */
-function showExtractedPreview(order) {
-    const previewDiv = document.getElementById('extractedPreview');
-    const previewContent = document.getElementById('previewContent');
-    
-    if (!previewDiv || !previewContent) return;
-    
-    // Create preview HTML
-    let previewHTML = `
-        <div class="pdf-summary">
-            <div class="summary-badge">
-                <i class="fas fa-file-pdf"></i>
-                <span>Data dari PDF Desa Murni Batik</span>
-            </div>
-            <div class="summary-stats">
-                <div class="stat-item">Total Produk: <strong>${order.products?.length || 0}</strong></div>
-                <div class="stat-item">Kuantiti: <strong>${order.total_quantity || 0}</strong></div>
-                <div class="stat-item">Jumlah: <strong>RM ${order.total_rm?.toFixed(2) || '0.00'}</strong></div>
-            </div>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Invoice:</span>
-            <span class="preview-value">${order.nombor_po_invoice}</span>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Tarikh:</span>
-            <span class="preview-value">${order.tarikh}</span>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Customer:</span>
-            <span class="preview-value">${order.nama_customer}</span>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Phone:</span>
-            <span class="preview-value">${order.nombor_phone || 'Tidak ditemui'}</span>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Team Sale:</span>
-            <span class="preview-value">${order.team_sale}</span>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Platform:</span>
-            <span class="preview-value">${order.platform}</span>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Jenis Order:</span>
-            <span class="preview-value">${order.jenis_order}</span>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Code Kain (Dominan):</span>
-            <span class="preview-value">${order.code_kain}</span>
-        </div>
-        
-        <div class="preview-item">
-            <span class="preview-label">Total Amount:</span>
-            <span class="preview-value">RM ${order.total_rm?.toFixed(2)}</span>
-        </div>
-    `;
-    
-    // Add products table if available
-    if (order.products && order.products.length > 0) {
-        previewHTML += `
-            <div style="margin-top: 1rem;">
-                <h4 style="color: #60a5fa; margin-bottom: 0.5rem;">
-                    <i class="fas fa-list"></i> Senarai Produk (${order.products.length})
-                </h4>
-                <div class="csv-preview-table" style="max-height: 200px; overflow-y: auto;">
-                    <table class="preview-table">
-                        <thead>
-                            <tr>
-                                <th>SKU</th>
-                                <th>Produk</th>
-                                <th>Qty</th>
-                                <th>Harga</th>
-                                <th>Jenis</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-        
-        order.products.forEach(product => {
-            previewHTML += `
-                <tr>
-                    <td>${product.sku}</td>
-                    <td style="font-size: 0.7rem;">${product.product_name.substring(0, 30)}...</td>
-                    <td>${product.quantity}</td>
-                    <td>RM ${product.price.toFixed(2)}</td>
-                    <td><span style="font-size: 0.7rem; color: ${product.type === 'Ready Stock' ? '#22c55e' : '#f59e0b'}">${product.type}</span></td>
-                </tr>
-            `;
-        });
-        
-        previewHTML += `
-                        </tbody>
-                    </table>
-                </div>
-                <div class="preview-footer">
-                    Ready Stock: ${order.ready_stock_count} | Pre-Order: ${order.pre_order_count}
-                </div>
-            </div>
-        `;
-    }
-    
-    previewContent.innerHTML = previewHTML;
-    previewDiv.classList.add('show');
-    
-    // Auto-fill form with extracted data
-    populateForm(order);
-}
-
-/**
  * Auto-populate form dengan data yang diekstrak
- * @param {Object} order Data order
  */
 function populateForm(order) {
     const fields = [
@@ -1466,6 +1295,25 @@ function populateForm(order) {
     showFeedback('Data PDF berjaya diekstrak dan diisi ke dalam form!', 'success');
 }
 
+/**
+ * Testing function untuk debug purposes
+ */
+function testPdfPatterns(sampleText) {
+    console.log('Testing PDF patterns with sample text...');
+    
+    const standardResult = extractUsingStandardRegex(sampleText);
+    const fallbackResult = extractUsingFallbackPatterns(sampleText);
+    
+    console.log('Standard extraction:', standardResult);
+    console.log('Fallback extraction:', fallbackResult);
+    
+    const merged = mergeExtractionResults(standardResult, {}, fallbackResult);
+    console.log('Merged result:', merged);
+    
+    return merged;
+}
+
 // Export functions untuk integration
 window.parsePdfInvoice = parsePdfInvoice;
 window.showEnhancedExtractedPreview = showEnhancedExtractedPreview;
+window.testPdfPatterns = testPdfPatterns;
