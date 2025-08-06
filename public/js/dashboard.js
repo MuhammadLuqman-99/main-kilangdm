@@ -2497,58 +2497,6 @@ function renderLeadsOnlyChart(processedData, metrics) {
     });
 }
 
-// FIXED: Empty chart with full circle
-function renderEnhancedEmptyChart(ctx) {
-    enhancedLeadChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Tiada Data'],
-            datasets: [{
-                data: [1],
-                backgroundColor: ['#374151'],
-                borderColor: '#1F2937',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            rotation: -90,
-            circumference: 360,
-            cutout: '50%',
-            
-            layout: {
-                padding: 20
-            },
-            
-            plugins: {
-                legend: { 
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        color: '#9CA3AF',
-                        font: { 
-                            size: 12,
-                            weight: '500'
-                        },
-                        padding: 15
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: () => 'Tiada data lead tersedia'
-                    }
-                }
-            },
-            
-            animation: {
-                animateRotate: true,
-                duration: 600
-            }
-        }
-    });
-}
-
 // 10. Debug functions for troubleshooting
 window.debugEnhancedLeadChart = function() {
     console.log('🔍 === ENHANCED LEAD CHART DEBUG ===');
@@ -2870,6 +2818,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+function renderLeadsOnlyEmptyChart(ctx) {
+    enhancedLeadChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Tiada Data'],
+            datasets: [{
+                data: [1],
+                backgroundColor: ['#374151'],
+                borderColor: '#1F2937',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            rotation: -90,
+            circumference: 360,
+            cutout: '50%',
+            
+            layout: {
+                padding: 20
+            },
+            
+            plugins: {
+                legend: { 
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: '#FFFFFF', // WHITE TEXT for consistency
+                        font: { 
+                            size: 12,
+                            weight: '500'
+                        },
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#FFFFFF',
+                    bodyColor: '#FFFFFF',
+                    callbacks: {
+                        label: () => 'Tiada data lead tersedia'
+                    }
+                }
+            },
+            
+            animation: {
+                animateRotate: true,
+                duration: 600
+            }
+        }
+    });
+}
 
 console.log('✅ Lead Distribution Chart modified:');
 console.log('📊 ✓ Shows ONLY sales team leads (no marketing data)');
