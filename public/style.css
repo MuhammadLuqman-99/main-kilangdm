@@ -366,20 +366,24 @@ body {
 /* ==========================================
    MAIN CONTAINER - Enhanced spacing
    ========================================== */
+/* REPLACE WITH THIS: */
 .main-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    max-width: 100%;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
     padding: 1rem;
+    display: block;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
     .main-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
         padding: 2rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .main-container {
+        padding: 2rem 3rem;
     }
 }
 
@@ -394,7 +398,8 @@ section {
     padding: var(--space-8);
     box-shadow: var(--glass-shadow);
     transition: var(--transition-normal);
-    margin-bottom: var(--space-6); /* Added margin between sections */
+    margin-bottom: 2rem;
+    width: 100%;
 }
 
 section:hover {
@@ -1204,13 +1209,6 @@ section:hover {
     .kpi-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
-    }
-}
-
-@media (min-width: 1024px) {
-    .kpi-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 2rem;
     }
 }
 .kpi-card {
@@ -3032,40 +3030,31 @@ section:hover {
    MOBILE SPECIFIC IMPROVEMENTS
    ========================================== */
 @media (max-width: 768px) {
-    .notification {
-        top: var(--space-4);
-        right: var(--space-4);
-        left: var(--space-4);
-        max-width: none;
+    .nav-container {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 1rem !important;
     }
     
-    /* Improve touch targets */
-    .btn,
-    .nav-link,
-    .period-btn {
-        min-height: 44px;
-        min-width: 44px;
+    .nav-brand {
+        order: 2;
+        flex: 1;
+        justify-content: center;
     }
     
-    /* Better spacing for mobile */
-    .kpi-header,
-    .metric-header {
-        margin-bottom: var(--space-5);
+    .nav-time {
+        order: 1;
+        position: static !important;
+        font-size: 0.7rem;
     }
     
-    .kpi-content,
-    .stat-content {
-        margin-top: var(--space-3);
-    }
-    
-    /* Mobile-friendly filters */
-    .filter-item select,
-    .filter-input {
-        font-size: 16px; /* Prevent zoom on iOS */
-        min-height: 44px;
+    .mobile-menu-btn {
+        order: 3;
+        display: block !important;
+        z-index: 1001;
     }
 }
-
 /* ==========================================
    LANDSCAPE PHONE ADJUSTMENTS
    ========================================== */
@@ -3820,19 +3809,23 @@ section:not(:last-child) {
 
 /* Fix for enhanced lead distribution chart */
 .enhanced-leads-chart {
-    min-height: 650px !important;
+    min-height: auto;
     display: flex;
     flex-direction: column;
 }
 
 .enhanced-chart-container {
     position: relative;
-    height: 400px !important;
+    height: 400px;
     width: 100%;
-    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+@media (max-width: 768px) {
+    .enhanced-chart-container {
+        height: 300px;
+    }
 }
 
 /* Ensure canvas fills container properly */
@@ -4075,5 +4068,24 @@ canvas {
     .metric-card:hover,
     .chart-card:hover {
         transform: none; /* Remove hover transforms on touch */
+    }
+}
+/* Main Container Layout Fix */
+.responsive-main {
+    padding: 1rem;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .responsive-main { 
+        padding: 2rem; 
+    }
+}
+
+@media (min-width: 1200px) {
+    .responsive-main { 
+        padding: 2rem;
+        max-width: 1400px;
     }
 }
