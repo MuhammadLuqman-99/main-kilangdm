@@ -513,66 +513,361 @@ section:hover {
 /* ==========================================
    FILTER SECTION - Enhanced spacing
    ========================================== */
-.filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--space-6);
-    align-items: end;
-    margin-bottom: var(--space-6); /* Added margin */
+/* ==========================================
+   ENHANCED DATE FILTER COMPONENT - Add to style.css
+   Replace existing filter section styles
+   ========================================== */
+
+/* Enhanced Date Filter Component */
+.enhanced-date-filter {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(71, 85, 105, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
 }
 
-.filter-group {
+.enhanced-date-filter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.filter-header {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-3); /* Increased gap */
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
 }
 
-.filter-label {
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--gray-300);
-    margin-bottom: var(--space-2); /* Added margin */
+.filter-header i {
+    color: var(--primary-500);
+    font-size: 1.2rem;
 }
 
-.filter-input,
-.filter-select {
-    background: var(--bg-secondary);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-4);
+.filter-header h3 {
     color: var(--gray-50);
-    font-size: var(--text-sm);
-    transition: var(--transition-normal);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.filter-content {
+    position: relative;
+}
+
+/* Date Period Selector */
+.date-period-selector {
+    position: relative;
+    display: inline-block;
+    min-width: 280px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.period-dropdown {
+    background: rgba(51, 65, 85, 0.8);
+    border: 1px solid rgba(71, 85, 105, 0.5);
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    color: var(--gray-50);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.period-dropdown:hover {
+    background: rgba(71, 85, 105, 0.9);
+    border-color: var(--primary-500);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.period-dropdown.active {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.dropdown-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0; /* Allow text to truncate */
+}
+
+.period-text {
+    font-weight: 500;
+    color: var(--gray-50);
+}
+
+.period-date {
+    font-size: 0.8rem;
+    color: var(--gray-400);
+    margin-left: 0.5rem;
+}
+
+.dropdown-icon {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.period-dropdown.active .dropdown-icon {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(71, 85, 105, 0.5);
+    border-radius: 12px;
+    margin-top: 0.5rem;
+    max-height: 350px;
+    overflow-y: auto;
+    z-index: var(--z-dropdown);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-section {
+    padding: 0.75rem 0;
+}
+
+.dropdown-section:not(:last-child) {
+    border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.section-title {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    color: var(--gray-300);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dropdown-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary-400);
+}
+
+.dropdown-item.selected {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--primary-400);
+    font-weight: 600;
+}
+
+.dropdown-item.selected::after {
+    content: '✓';
+    font-size: 0.8rem;
+    color: var(--primary-400);
+}
+
+.item-main {
+    font-weight: 500;
+}
+
+.item-date {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-left: 0.5rem;
+}
+
+/* Selected Period Display */
+.selected-period {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.selected-period:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+.period-info {
+    flex: 1;
+}
+
+.period-title {
+    font-weight: 600;
+    color: var(--primary-400);
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.period-range {
+    font-size: 0.85rem;
+    color: var(--gray-400);
+}
+
+/* Action Buttons */
+.filter-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
     outline: none;
 }
 
-.filter-input:focus,
-.filter-select:focus {
-    border-color: var(--primary-500);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+    background: rgba(71, 85, 105, 0.5);
+    color: var(--gray-300);
+    border: 1px solid rgba(71, 85, 105, 0.5);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: rgba(71, 85, 105, 0.8);
+    color: var(--gray-50);
+    border-color: rgba(71, 85, 105, 0.8);
     transform: translateY(-1px);
 }
 
-.filter-actions {
-    display: flex;
-    gap: var(--space-3);
+/* Custom Scrollbar for Dropdown */
+.dropdown-menu::-webkit-scrollbar {
+    width: 6px;
 }
 
+.dropdown-menu::-webkit-scrollbar-track {
+    background: rgba(71, 85, 105, 0.3);
+    border-radius: 3px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.5);
+    border-radius: 3px;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.7);
+}
+
+/* Agent Filter Integration */
+.agent-filter-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.agent-filter-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-300);
+    min-width: 80px;
+}
+
+.agent-filter-select {
+    background: rgba(51, 65, 85, 0.8);
+    border: 1px solid rgba(71, 85, 105, 0.5);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    color: var(--gray-50);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    flex: 1;
+    max-width: 200px;
+}
+
+.agent-filter-select:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Active Filters Display */
 .active-filters {
-    margin-top: var(--space-8);
-    padding-top: var(--space-6);
-    border-top: 1px solid var(--glass-border);
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(71, 85, 105, 0.3);
 }
 
 .filter-summary {
     display: flex;
     align-items: center;
-    gap: var(--space-6);
+    gap: 1rem;
     flex-wrap: wrap;
 }
 
 .summary-label {
-    font-size: var(--text-sm);
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--gray-300);
 }
@@ -580,21 +875,225 @@ section:hover {
 .filter-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: 0.5rem;
 }
 
 .filter-tag {
     background: var(--primary-500);
     color: white;
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-full);
-    font-size: var(--text-xs);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 0.25rem;
 }
 
+.filter-tag .remove-tag {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.filter-tag .remove-tag:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .enhanced-date-filter {
+        padding: 1.25rem;
+    }
+    
+    .date-period-selector {
+        min-width: 100%;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .agent-filter-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .agent-filter-label {
+        min-width: auto;
+    }
+    
+    .agent-filter-select {
+        max-width: none;
+    }
+    
+    .filter-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .enhanced-date-filter {
+        padding: 1rem;
+    }
+    
+    .dropdown-menu {
+        max-height: 250px;
+    }
+    
+    .selected-period {
+        padding: 0.75rem;
+    }
+    
+    .filter-actions {
+        gap: 0.5rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* ==========================================
+   INTEGRATION WITH EXISTING DASHBOARD STYLES
+   ========================================== */
+
+/* Override existing filter-section styles */
+.filter-section.enhanced {
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+}
+
+.filter-section.enhanced .section-header {
+    display: none;
+}
+
+/* Hide old filter elements when enhanced is active */
+.filter-section.enhanced .filter-grid,
+.filter-section.enhanced .active-filters:not(.enhanced-active-filters) {
+    display: none;
+}
+
+/* Animation for filter application */
+@keyframes filterApplied {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.enhanced-date-filter.applying {
+    animation: filterApplied 0.3s ease;
+}
+
+/* Loading state */
+.enhanced-date-filter.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-date-filter.loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Focus states for accessibility */
+.period-dropdown:focus-visible,
+.btn:focus-visible,
+.agent-filter-select:focus-visible {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .enhanced-date-filter {
+        border-width: 2px;
+    }
+    
+    .period-dropdown,
+    .agent-filter-select {
+        border-width: 2px;
+    }
+    
+    .dropdown-item.selected {
+        background: var(--primary-600);
+        color: white;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .enhanced-date-filter,
+    .period-dropdown,
+    .dropdown-menu,
+    .btn {
+        transition: none;
+    }
+    
+    .enhanced-date-filter.loading::before {
+        animation: none;
+    }
+}
+
+/* ==========================================
+   UTILITY CLASSES FOR FILTER COMPONENT
+   ========================================== */
+
+.filter-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.filter-error {
+    border-color: var(--error-500) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.filter-success {
+    border-color: var(--success-500) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+}
 /* ==========================================
    BUTTON STYLES
    ========================================== */

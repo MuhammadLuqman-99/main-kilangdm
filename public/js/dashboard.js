@@ -498,6 +498,9 @@ function populateAgentFilter() {
         option.textContent = agent;
         agentSelect.appendChild(option);
     });
+    if (window.populateEnhancedAgentFilter) {
+    window.populateEnhancedAgentFilter(agents);
+}
 }
 
 // ALSO UPDATE the applyFilters function to ensure it creates proper filteredData:
@@ -532,6 +535,14 @@ function applyFilters() {
     
     // Use the NEW leads-only chart function
     updateLeadsOnlyChart(filteredData);
+    if (window.getEnhancedFilterSelection) {
+    const enhanced = window.getEnhancedFilterSelection();
+    if (enhanced.startDate && enhanced.endDate) {
+        currentFilters.startDate = enhanced.startDate;
+        currentFilters.endDate = enhanced.endDate;
+        currentFilters.agent = enhanced.agent;
+    }
+}
 }
 
 function filterByDate(data, startDate, endDate) {

@@ -123,48 +123,160 @@
             </div>
         </section>
 
-        <!-- Filter Section -->
-        <section class="filter-section">
-            <div class="section-header">
-                <div class="header-left">
-                    <h3 class="section-title">Data Filters</h3>
-                    <p class="section-subtitle">Customize your analytics view</p>
+        <!-- ==========================================
+        REPLACE EXISTING FILTER SECTION IN dashboard.html
+        Replace the entire <section class="filter-section"> with this:
+        ========================================== -->
+
+        <section class="filter-section enhanced">
+            <div class="enhanced-date-filter">
+                <div class="filter-header">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3>Data Period</h3>
                 </div>
-                <div class="section-actions">
-                    <button id="clear-filter" class="btn btn-outline btn-sm">
+                
+                <div class="filter-content">
+                    <div class="date-period-selector">
+                        <div class="period-dropdown" id="periodDropdown">
+                            <div class="dropdown-label">
+                                <span class="period-text" id="selectedPeriodText">Past 30 Days</span>
+                                <span class="period-date" id="selectedPeriodDate">Default period</span>
+                            </div>
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </div>
+                        
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <div class="dropdown-section">
+                                <div class="section-title">Real-Time</div>
+                                <div class="dropdown-item" data-value="real-time">
+                                    <span class="item-main">Real-Time</span>
+                                </div>
+                            </div>
+                            
+                            <div class="dropdown-section">
+                                <div class="section-title">Quick Select</div>
+                                <div class="dropdown-item" data-value="yesterday">
+                                    <span>
+                                        <span class="item-main">Yesterday</span>
+                                        <span class="item-date" id="yesterday-date"></span>
+                                    </span>
+                                </div>
+                                <div class="dropdown-item selected" data-value="past-7-days">
+                                    <span>
+                                        <span class="item-main">Past 7 Days</span>
+                                    </span>
+                                </div>
+                                <div class="dropdown-item" data-value="past-30-days">
+                                    <span>
+                                        <span class="item-main">Past 30 Days</span>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="dropdown-section">
+                                <div class="section-title">By Day</div>
+                                <div class="dropdown-item" data-value="today">
+                                    <span>
+                                        <span class="item-main">Today</span>
+                                        <span class="item-date" id="today-date"></span>
+                                    </span>
+                                </div>
+                                <div class="dropdown-item" data-value="2-days-ago">
+                                    <span>
+                                        <span class="item-main">2 Days Ago</span>
+                                        <span class="item-date" id="2days-date"></span>
+                                    </span>
+                                </div>
+                                <div class="dropdown-item" data-value="3-days-ago">
+                                    <span>
+                                        <span class="item-main">3 Days Ago</span>
+                                        <span class="item-date" id="3days-date"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="dropdown-section">
+                                <div class="section-title">By Week</div>
+                                <div class="dropdown-item" data-value="this-week">
+                                    <span>
+                                        <span class="item-main">This Week</span>
+                                        <span class="item-date" id="thisweek-date"></span>
+                                    </span>
+                                </div>
+                                <div class="dropdown-item" data-value="last-week">
+                                    <span>
+                                        <span class="item-main">Last Week</span>
+                                        <span class="item-date" id="lastweek-date"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="dropdown-section">
+                                <div class="section-title">By Month</div>
+                                <div class="dropdown-item" data-value="this-month">
+                                    <span>
+                                        <span class="item-main">This Month</span>
+                                        <span class="item-date" id="thismonth-date"></span>
+                                    </span>
+                                </div>
+                                <div class="dropdown-item" data-value="last-month">
+                                    <span>
+                                        <span class="item-main">Last Month</span>
+                                        <span class="item-date" id="lastmonth-date"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="dropdown-section">
+                                <div class="section-title">By Year</div>
+                                <div class="dropdown-item" data-value="this-year">
+                                    <span>
+                                        <span class="item-main">This Year</span>
+                                        <span class="item-date" id="thisyear-date"></span>
+                                    </span>
+                                </div>
+                                <div class="dropdown-item" data-value="last-year">
+                                    <span>
+                                        <span class="item-main">Last Year</span>
+                                        <span class="item-date" id="lastyear-date"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Agent Filter Integration -->
+                    <div class="agent-filter-section">
+                        <label class="agent-filter-label">Team:</label>
+                        <select id="agent-filter-enhanced" class="agent-filter-select">
+                            <option value="">Semua Agent</option>
+                        </select>
+                    </div>
+                    
+                    <div class="selected-period" id="selectedPeriod">
+                        <div class="period-info">
+                            <div class="period-title" id="periodTitle">Past 30 Days</div>
+                            <div class="period-range" id="periodRange">Default period selected</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button class="btn btn-primary" id="applyFilterEnhanced">
+                        <i class="fas fa-filter"></i>
+                        Apply Filter
+                    </button>
+                    <button class="btn btn-secondary" id="resetFilterEnhanced">
                         <i class="fas fa-refresh"></i>
                         Reset
                     </button>
                 </div>
-            </div>
-            
-            <div class="filter-grid">
-                <div class="filter-group">
-                    <label class="filter-label">Tarikh Mula</label>
-                    <input type="date" id="start-date" class="filter-input">
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Tarikh Akhir</label>
-                    <input type="date" id="end-date" class="filter-input">
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Team</label>
-                    <select id="agent-filter" class="filter-select">
-                        <option value="">Semua Agent</option>
-                    </select>
-                </div>
-                <div class="filter-actions">
-                    <button id="apply-filter" class="btn btn-primary">
-                        <i class="fas fa-filter"></i>
-                        Terapkan Filter
-                    </button>
-                </div>
-            </div>
-            
-            <div id="active-filters" class="active-filters hidden">
-                <div class="filter-summary">
-                    <span class="summary-label">Filter Aktif:</span>
-                    <div id="filter-tags" class="filter-tags"></div>
+                
+                <div id="activeFiltersEnhanced" class="active-filters enhanced-active-filters hidden">
+                    <div class="filter-summary">
+                        <span class="summary-label">Filter Aktif:</span>
+                        <div id="filterTagsEnhanced" class="filter-tags"></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -518,7 +630,8 @@
     <!-- Load Dashboard JavaScript -->
     <script type="module" src="js/dashboard.js"></script>
     <script src="js/ready-sync.js"></script>
-    <script>
+    <script src="js/enhanced-filter.js"></script>
+    <script> 
         // Home button functionality
         document.getElementById('homeBtn').addEventListener('click', function() {
             // Replace with your actual homepage URL
