@@ -153,16 +153,28 @@ async function handleFile(file) {
 }
 
 /**
- * ENHANCED PDF PARSER - Fixed untuk Firestore compatibility
- * Mem-parse fail PDF invoice dengan structured product breakdown
+ * ENHANCED PDF PARSER dengan Robust Detection System
+ * Versi yang diperbaiki untuk menangani pelbagai format PDF Desa Murni Batik
+ */
+
+/**
+ * Function untuk replace existing parsePdfInvoice
+ * Kekalkan interface yang sama tetapi gunakan robust method
  */
 async function parsePdfInvoice(file) {
-    // Check if pdf.js is loaded
-    if (typeof window.pdfjsLib === 'undefined' && typeof pdfjsLib === 'undefined') {
-        console.error('PDF.js library not found');
-        throw new Error('PDF.js library tidak dimuatkan. Sila refresh halaman dan cuba lagi.');
+    try {
+        return await parsePdfInvoiceRobust(file);
+    } catch (error) {
+        console.error('Robust PDF parsing failed, trying legacy method...');
+        // Fallback to original method if robust fails
+        return await parsePdfInvoiceLegacy(file);
     }
+}
 
+/**
+ * Legacy method sebagai fallback terakhir
+ */
+async function parsePdfInvoiceLegacy(file) {
     const pdfLib = window.pdfjsLib || pdfjsLib;
     pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -175,9 +187,6 @@ async function parsePdfInvoice(file) {
                 const pdf = await pdfLib.getDocument(typedarray).promise;
                 let fullText = '';
 
-                console.log(`PDF loaded successfully. Pages: ${pdf.numPages}`);
-
-                // Extract text from all pages
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
@@ -185,134 +194,633 @@ async function parsePdfInvoice(file) {
                     fullText += pageText + ' ';
                 }
 
-                console.log('Full PDF text extracted:', fullText.substring(0, 500));
+                // Basic extraction dengan simple patterns
+                const invoiceMatch = fullText.match(/Invoice:\s*#?([\w\d-]+)/i);
+                const totalMatch = fullText.match(/Total.*?RM\s*([\d,]+\.?\d*)/i);
+                const customerMatch = fullText.match(/(?:BILLING|Customer).*?:\s*([^\n\r]+)/i);
 
-                if (fullText.trim().length < 10) {
-                    throw new Error('PDF ini mungkin adalah scan/gambar. Sila gunakan PDF yang mengandungi teks yang boleh dipilih.');
+                if (!invoiceMatch || !totalMatch) {
+                    throw new Error('Unable to extract basic invoice information');
                 }
 
-                // ===== ENHANCED DATA EXTRACTION =====
-                
-                // 1. Extract Invoice Number
-                const invoiceRegex = /Invoice:\s*#(Inv-[\d-]+)/i;
-                const invoiceMatch = fullText.match(invoiceRegex);
-                
-                // 2. Extract Date
-                const dateRegex = /(\d{2}\/\d{2}\/\d{4})\s+\d{2}:\d{2}/;
-                const dateMatch = fullText.match(dateRegex);
-                
-                // 3. Extract Customer Name
-                const customerRegex = /BILLING ADDRESS:\s*([^\n\r]+?)(?:\s+Jabatan|\s+[A-Z]{2,}|\s*$)/i;
-                const customerMatch = fullText.match(customerRegex);
-                
-                // 4. Extract Contact Number
-                const contactRegex = /Contact no:\s*([\d-]+)/i;
-                const contactMatch = fullText.match(contactRegex);
-                
-                // 5. Extract Total Paid Amount
-                const totalPaidRegex = /Total Paid:\s*RM\s*([\d,]+\.?\d*)/i;
-                const totalPaidMatch = fullText.match(totalPaidRegex);
-                
-                // 6. Extract Team Sale
-                const customerNoteRegex = /Customer Note:\s*\*(\w+)/i;
-                const customerNoteMatch = fullText.match(customerNoteRegex);
-
-                // ===== ENHANCED PRODUCT PARSING =====
-                const enhancedProducts = [];
-                
-                // Extract Ready Stock Products dengan detailed parsing
-                const readyStockRegex = /Ready Stock([\s\S]*?)(?:Pre-Order|Sub Total:|Total:|$)/i;
-                const readyStockMatch = fullText.match(readyStockRegex);
-                
-                if (readyStockMatch) {
-                    const readyStockProducts = parseProductSection(readyStockMatch[1], 'Ready Stock');
-                    enhancedProducts.push(...readyStockProducts);
-                }
-                
-                // Extract Pre-Order Products
-                const preOrderRegex = /Pre-Order([\s\S]*?)(?:Sub Total:|Total:|$)/i;
-                const preOrderMatch = fullText.match(preOrderRegex);
-                
-                if (preOrderMatch) {
-                    const preOrderProducts = parseProductSection(preOrderMatch[1], 'Pre-Order');
-                    enhancedProducts.push(...preOrderProducts);
-                }
-
-                console.log('Enhanced products extracted:', enhancedProducts.length);
-
-                // Validate required data
-                if (!invoiceMatch) {
-                    throw new Error('Nombor invoice tidak ditemui. Pastikan PDF adalah invoice dari Desa Murni Batik.');
-                }
-                
-                if (!totalPaidMatch) {
-                    throw new Error('Total amount tidak ditemui dalam PDF.');
-                }
-                
-                // Format date to YYYY-MM-DD
-                let formattedDate = new Date().toISOString().split('T')[0];
-                if (dateMatch) {
-                    const [day, month, year] = dateMatch[1].split('/');
-                    formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                }
-
-                // ===== CREATE FIRESTORE-COMPATIBLE ORDER OBJECT =====
-                const structuredProducts = createFirestoreCompatibleProducts(enhancedProducts);
-                const totalQuantity = enhancedProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
-                const uniqueSizes = extractUniqueSizes(enhancedProducts);
-
+                // Create basic order object
                 const order = {
-                    // Basic order info
-                    nombor_po_invoice: invoiceMatch[1].trim(),
-                    tarikh: formattedDate,
+                    nombor_po_invoice: invoiceMatch[1],
+                    tarikh: new Date().toISOString().split('T')[0],
                     nama_customer: customerMatch ? customerMatch[1].trim() : 'Customer dari PDF',
-                    team_sale: customerNoteMatch ? customerNoteMatch[1].trim() : 'Manual',
-                    nombor_phone: contactMatch ? contactMatch[1].trim() : '',
-                    total_rm: parseFloat(totalPaidMatch[1].replace(/,/g, '')),
+                    team_sale: 'Manual',
+                    nombor_phone: '',
+                    total_rm: parseFloat(totalMatch[1].replace(/,/g, '')),
                     platform: 'Website Desa Murni',
-                    jenis_order: getDominantProductName(structuredProducts),
-                    code_kain: getDominantSKU(structuredProducts),
+                    jenis_order: 'Mixed Products',
+                    code_kain: 'MIXED',
                     
-                    // ===== FIRESTORE-COMPATIBLE STRUCTURED DATA =====
-                    products: enhancedProducts, // Raw product data (plain objects)
-                    structuredProducts: structuredProducts, // For display (plain objects)
-                    totalQuantity: totalQuantity,
-                    uniqueSizes: uniqueSizes, // Plain array
-                    productCount: structuredProducts.length,
-                    sizeCount: uniqueSizes.length,
+                    // Basic structure
+                    products: [{
+                        sku: 'LEGACY',
+                        product_name: 'Legacy PDF Import',
+                        base_name: 'Legacy Products',
+                        size: 'Mixed',
+                        quantity: 1,
+                        price: parseFloat(totalMatch[1].replace(/,/g, '')),
+                        type: 'Legacy'
+                    }],
+                    structuredProducts: [{
+                        name: 'Legacy Products',
+                        sku: 'LEGACY',
+                        totalQty: 1,
+                        type: 'Legacy',
+                        products: [],
+                        sizeBreakdown: [{ size: 'Mixed', quantity: 1 }],
+                        sizesObject: { 'Mixed': 1 }
+                    }],
+                    totalQuantity: 1,
+                    uniqueSizes: ['Mixed'],
+                    productCount: 1,
+                    sizeCount: 1,
                     
-                    // Metadata
-                    createdAt: Timestamp.now(),
-                    source: 'pdf_desa_murni_enhanced',
+                    createdAt: new Date(),
+                    source: 'pdf_legacy_fallback',
                     pdf_processed_at: new Date().toISOString()
                 };
 
-                console.log('Final Firestore-compatible order:', {
-                    invoice: order.nombor_po_invoice,
-                    customer: order.nama_customer,
-                    products: order.productCount,
-                    totalQty: order.totalQuantity,
-                    structuredProducts: order.structuredProducts
-                });
-                
-                // Show enhanced preview
-                showEnhancedExtractedPreview(order);
-                
                 resolve([order]);
 
             } catch (err) {
-                console.error('Error parsing PDF:', err);
-                reject(new Error(`Gagal memproses PDF: ${err.message}`));
+                reject(new Error(`Legacy parsing failed: ${err.message}`));
             }
         };
 
         fileReader.onerror = (error) => {
-            console.error('File reader error:', error);
-            reject(new Error('Gagal membaca fail PDF. Pastikan fail tidak rosak.'));
+            reject(new Error('Failed to read PDF file'));
         };
         
         fileReader.readAsArrayBuffer(file);
     });
+}
+
+/**
+ * Testing function untuk debug purposes
+ */
+function testPdfPatterns(sampleText) {
+    console.log('Testing PDF patterns with sample text...');
+    
+    const standardResult = extractUsingStandardRegex(sampleText);
+    const fallbackResult = extractUsingFallbackPatterns(sampleText);
+    
+    console.log('Standard extraction:', standardResult);
+    console.log('Fallback extraction:', fallbackResult);
+    
+    const merged = mergeExtractionResults(standardResult, {}, fallbackResult);
+    console.log('Merged result:', merged);
+    
+    return merged;
+}
+
+// Export functions untuk integration
+if (typeof window !== 'undefined') {
+    window.parsePdfInvoiceRobust = parsePdfInvoiceRobust;
+    window.parsePdfInvoice = parsePdfInvoice;
+    window.testPdfPatterns = testPdfPatterns;
+    window.debugPdfExtraction = debugPdfExtraction;
+} 
+
+/**
+ * Method 1: Standard regex-based extraction
+ */
+function extractUsingStandardRegex(fullText) {
+    const data = {
+        invoice: '',
+        date: '',
+        customer: '',
+        teamSale: '',
+        phone: '',
+        totalAmount: 0,
+        method: 'standard'
+    };
+
+    // Invoice patterns - multiple variations
+    const invoicePatterns = [
+        /Invoice:\s*#(Inv-[\d-]+)/i,
+        /Invoice:\s*#([A-Z]*inv-[\d-]+)/i,
+        /Invoice:\s*([#]?[A-Z]*inv[\d-]+)/i,
+        /INVOICE[:\s]*#?([A-Z0-9-]+)/i
+    ];
+    
+    for (const pattern of invoicePatterns) {
+        const match = fullText.match(pattern);
+        if (match) {
+            data.invoice = match[1].trim();
+            break;
+        }
+    }
+
+    // Date patterns
+    const datePatterns = [
+        /(\d{2}\/\d{2}\/\d{4})\s+\d{2}:\d{2}/,
+        /(\d{1,2}\/\d{1,2}\/\d{4})/g,
+        /(\d{4}-\d{2}-\d{2})/
+    ];
+    
+    for (const pattern of datePatterns) {
+        const match = fullText.match(pattern);
+        if (match) {
+            const dateStr = match[1];
+            // Convert to YYYY-MM-DD format
+            if (dateStr.includes('/')) {
+                const [day, month, year] = dateStr.split('/');
+                data.date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            } else {
+                data.date = dateStr;
+            }
+            break;
+        }
+    }
+
+    // Customer patterns - more flexible
+    const customerPatterns = [
+        /BILLING ADDRESS:\s*([^\n\r]+?)(?:\s+(?:Jabatan|JABATAN|Pejabat|PEJABAT))/i,
+        /BILLING ADDRESS:\s*([^\n\r]+?)(?:\s+[A-Z]{3,})/i,
+        /BILLING ADDRESS:\s*([^\n\r\t]+)/i,
+        /Customer[:\s]*([^\n\r]+)/i
+    ];
+    
+    for (const pattern of customerPatterns) {
+        const match = fullText.match(pattern);
+        if (match && match[1].trim().length > 2) {
+            data.customer = match[1].trim();
+            break;
+        }
+    }
+
+    // Phone patterns
+    const phonePatterns = [
+        /Contact no:\s*([\d\s\-\+\(\)]+)/i,
+        /Phone[:\s]*([\d\s\-\+\(\)]+)/i,
+        /Tel[:\s]*([\d\s\-\+\(\)]+)/i
+    ];
+    
+    for (const pattern of phonePatterns) {
+        const match = fullText.match(pattern);
+        if (match) {
+            data.phone = match[1].trim();
+            break;
+        }
+    }
+
+    // Total amount patterns
+    const totalPatterns = [
+        /Total Paid:\s*RM\s*([\d,]+\.?\d*)/i,
+        /Total:\s*RM\s*([\d,]+\.?\d*)/i,
+        /Amount:\s*RM\s*([\d,]+\.?\d*)/i,
+        /TOTAL\s*RM\s*([\d,]+\.?\d*)/i
+    ];
+    
+    for (const pattern of totalPatterns) {
+        const match = fullText.match(pattern);
+        if (match) {
+            data.totalAmount = parseFloat(match[1].replace(/,/g, ''));
+            break;
+        }
+    }
+
+    // Team sale from customer note
+    const teamPatterns = [
+        /Customer Note:\s*[*#]?(\w+)/i,
+        /Note:\s*[*#]?(\w+)/i,
+        /Team[:\s]*(\w+)/i,
+        /Agent[:\s]*(\w+)/i
+    ];
+    
+    for (const pattern of teamPatterns) {
+        const match = fullText.match(pattern);
+        if (match) {
+            data.teamSale = match[1].trim();
+            break;
+        }
+    }
+
+    return data;
+}
+
+/**
+ * Method 2: Structured positioning-based extraction
+ */
+function extractUsingStructuredApproach(structuredText, fullText) {
+    const data = {
+        invoice: '',
+        date: '',
+        customer: '',
+        teamSale: '',
+        phone: '',
+        totalAmount: 0,
+        method: 'structured'
+    };
+
+    // Find text blocks that typically contain invoice info
+    structuredText.forEach(page => {
+        page.items.forEach((item, index) => {
+            const text = item.text.toLowerCase();
+            
+            // Look for invoice number near "invoice" text
+            if (text.includes('invoice') && !data.invoice) {
+                // Check next few items for invoice number
+                for (let i = index; i < Math.min(index + 5, page.items.length); i++) {
+                    const nextItem = page.items[i];
+                    if (nextItem && nextItem.text.match(/[#]?inv[\d-]+/i)) {
+                        data.invoice = nextItem.text.replace('#', '').trim();
+                        break;
+                    }
+                }
+            }
+            
+            // Look for customer name after "BILLING ADDRESS"
+            if (text.includes('billing address') && !data.customer) {
+                // Check next few items
+                for (let i = index + 1; i < Math.min(index + 3, page.items.length); i++) {
+                    const nextItem = page.items[i];
+                    if (nextItem && nextItem.text.length > 5 && 
+                        !nextItem.text.match(/^\d+$/) && 
+                        !nextItem.text.toLowerCase().includes('address')) {
+                        data.customer = nextItem.text.trim();
+                        break;
+                    }
+                }
+            }
+            
+            // Look for total amount
+            if ((text.includes('total paid') || text.includes('total:')) && !data.totalAmount) {
+                // Check nearby items for RM amount
+                for (let i = Math.max(0, index - 2); i < Math.min(index + 5, page.items.length); i++) {
+                    const nearItem = page.items[i];
+                    if (nearItem && nearItem.text.match(/RM\s*([\d,]+\.?\d*)/i)) {
+                        const match = nearItem.text.match(/RM\s*([\d,]+\.?\d*)/i);
+                        if (match) {
+                            data.totalAmount = parseFloat(match[1].replace(/,/g, ''));
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    return data;
+}
+
+/**
+ * Method 3: Fallback pattern matching untuk format yang berbeza
+ */
+function extractUsingFallbackPatterns(fullText) {
+    const data = {
+        invoice: '',
+        date: '',
+        customer: '',
+        teamSale: '',
+        phone: '',
+        totalAmount: 0,
+        method: 'fallback'
+    };
+
+    // Split text into lines untuk line-by-line analysis
+    const lines = fullText.split(/[\n\r]+/).map(line => line.trim()).filter(line => line.length > 0);
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
+        
+        // Invoice detection dengan broader patterns
+        if (!data.invoice && (line.toLowerCase().includes('invoice') || line.match(/inv[\d-]/i))) {
+            const invoiceMatch = line.match(/([A-Z]*inv[\w\d-]+)/i);
+            if (invoiceMatch) {
+                data.invoice = invoiceMatch[1];
+            }
+        }
+        
+        // Customer name detection - look for names after address indicators
+        if (!data.customer && (line.toLowerCase().includes('billing') || line.toLowerCase().includes('customer'))) {
+            if (nextLine && nextLine.length > 5 && !nextLine.match(/^\d/) && !nextLine.toLowerCase().includes('address')) {
+                data.customer = nextLine;
+            }
+        }
+        
+        // Total amount - broader search
+        if (!data.totalAmount) {
+            const amountMatch = line.match(/(?:total|amount|paid|rm)\s*:?\s*rm?\s*([\d,]+\.?\d*)/i);
+            if (amountMatch) {
+                const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
+                if (amount > 10) { // Reasonable minimum amount
+                    data.totalAmount = amount;
+                }
+            }
+        }
+        
+        // Date detection
+        if (!data.date) {
+            const dateMatch = line.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
+            if (dateMatch) {
+                const [day, month, year] = dateMatch[1].split('/');
+                data.date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+        }
+    }
+
+    return data;
+}
+
+/**
+ * Merge hasil dari multiple extraction methods
+ */
+function mergeExtractionResults(standard, structured, fallback) {
+    const merged = {
+        invoice: '',
+        date: '',
+        customer: '',
+        teamSale: '',
+        phone: '',
+        totalAmount: 0,
+        usedMethods: []
+    };
+
+    // Priority: standard > structured > fallback
+    const methods = [
+        { data: standard, name: 'standard' },
+        { data: structured, name: 'structured' },
+        { data: fallback, name: 'fallback' }
+    ];
+
+    // Merge each field, taking first valid value
+    ['invoice', 'date', 'customer', 'teamSale', 'phone'].forEach(field => {
+        for (const method of methods) {
+            if (!merged[field] && method.data[field] && method.data[field].trim() !== '') {
+                merged[field] = method.data[field];
+                if (!merged.usedMethods.includes(method.name)) {
+                    merged.usedMethods.push(method.name);
+                }
+                break;
+            }
+        }
+    });
+
+    // For totalAmount, take highest reasonable value
+    const amounts = methods.map(m => m.data.totalAmount).filter(amount => amount > 0);
+    if (amounts.length > 0) {
+        merged.totalAmount = Math.max(...amounts);
+        const sourceMethod = methods.find(m => m.data.totalAmount === merged.totalAmount);
+        if (sourceMethod && !merged.usedMethods.includes(sourceMethod.name)) {
+            merged.usedMethods.push(sourceMethod.name);
+        }
+    }
+
+    // Set defaults for missing required fields
+    merged.date = merged.date || new Date().toISOString().split('T')[0];
+    merged.customer = merged.customer || 'Customer dari PDF';
+    merged.teamSale = merged.teamSale || 'Manual';
+
+    return merged;
+}
+
+/**
+ * Enhanced product extraction dengan multiple methods
+ */
+function extractProductsWithMultipleMethods(fullText, structuredText) {
+    const products = [];
+    
+    // Method 1: Enhanced regex untuk Ready Stock dan Pre-Order
+    const readyStockProducts = extractProductsFromSection(fullText, 'Ready Stock');
+    const preOrderProducts = extractProductsFromSection(fullText, 'Pre-Order');
+    
+    products.push(...readyStockProducts, ...preOrderProducts);
+    
+    // Method 2: Fallback table detection jika method 1 gagal
+    if (products.length === 0) {
+        const tableProducts = extractProductsFromTables(structuredText);
+        products.push(...tableProducts);
+    }
+    
+    // Method 3: Line-by-line product detection
+    if (products.length === 0) {
+        const lineProducts = extractProductsFromLines(fullText);
+        products.push(...lineProducts);
+    }
+    
+    return products;
+}
+
+/**
+ * Extract products from specific sections (Ready Stock/Pre-Order)
+ */
+function extractProductsFromSection(fullText, sectionType) {
+    const products = [];
+    
+    const sectionRegex = new RegExp(`${sectionType}([\\s\\S]*?)(?:Pre-Order|Sub Total:|Total:|$)`, 'i');
+    const sectionMatch = fullText.match(sectionRegex);
+    
+    if (!sectionMatch) return products;
+    
+    const sectionText = sectionMatch[1];
+    
+    // Multiple product line patterns
+    const productPatterns = [
+        // Pattern 1: Standard format
+        /(BZ[LP]\d{2}[A-Z]{2})\s+(.+?)\s*-\s*\(Size:\s*([^)]+)\)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g,
+        
+        // Pattern 2: Simplified format
+        /(BZ[LP]\d{2}[A-Z]{2})\s+([^0-9]+?)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g,
+        
+        // Pattern 3: More flexible format
+        /([A-Z]{2,}[LP]?\d{2}[A-Z]{2})\s+(.+?)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g
+    ];
+    
+    for (const pattern of productPatterns) {
+        let match;
+        pattern.lastIndex = 0; // Reset regex
+        
+        while ((match = pattern.exec(sectionText)) !== null) {
+            const sku = match[1];
+            const productName = match[2].trim();
+            
+            let size = 'Unknown';
+            let quantity, price;
+            
+            if (match.length === 6) {
+                // Pattern 1 dengan size
+                size = match[3];
+                quantity = parseInt(match[4]);
+                price = parseFloat(match[5].replace(/,/g, ''));
+            } else {
+                // Pattern 2/3 tanpa explicit size
+                quantity = parseInt(match[3]);
+                price = parseFloat(match[4].replace(/,/g, ''));
+                
+                // Try to extract size from product name
+                const sizeMatch = productName.match(/\(Size:\s*([^)]+)\)|\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i);
+                if (sizeMatch) {
+                    size = sizeMatch[1] || sizeMatch[2];
+                }
+            }
+            
+            if (sku && quantity > 0 && price > 0) {
+                products.push({
+                    sku: sku,
+                    product_name: productName,
+                    base_name: productName.replace(/\s*-\s*\(Size:[^)]+\)/i, '').trim(),
+                    size: size,
+                    quantity: quantity,
+                    price: price,
+                    type: sectionType
+                });
+            }
+        }
+        
+        if (products.length > 0) break; // Stop if we found products
+    }
+    
+    return products;
+}
+
+/**
+ * Extract products from table structures menggunakan positioning
+ */
+function extractProductsFromTables(structuredText) {
+    const products = [];
+    
+    // Look for table-like structures
+    structuredText.forEach(page => {
+        const items = page.items;
+        
+        // Find potential product rows by looking for SKU patterns
+        items.forEach((item, index) => {
+            if (item.text.match(/^BZ[LP]\d{2}[A-Z]{2}$/)) {
+                // Found potential SKU, look for related data in nearby positions
+                const sku = item.text;
+                
+                // Look for product name (usually next item or nearby)
+                let productName = '';
+                let quantity = 0;
+                let price = 0;
+                
+                // Check next few items on similar Y position
+                for (let i = index + 1; i < Math.min(index + 10, items.length); i++) {
+                    const nextItem = items[i];
+                    
+                    // Product name (text without numbers)
+                    if (!productName && nextItem.text.length > 5 && 
+                        !nextItem.text.match(/^\d+$/) && 
+                        !nextItem.text.match(/^RM/)) {
+                        productName = nextItem.text;
+                    }
+                    
+                    // Quantity (standalone number)
+                    if (!quantity && nextItem.text.match(/^\d+$/) && 
+                        parseInt(nextItem.text) > 0 && parseInt(nextItem.text) < 1000) {
+                        quantity = parseInt(nextItem.text);
+                    }
+                    
+                    // Price (RM amount)
+                    if (!price && nextItem.text.match(/^RM\s*([\d,]+\.?\d*)$/)) {
+                        const priceMatch = nextItem.text.match(/^RM\s*([\d,]+\.?\d*)$/);
+                        price = parseFloat(priceMatch[1].replace(/,/g, ''));
+                    }
+                }
+                
+                if (productName && quantity > 0 && price > 0) {
+                    // Extract size from product name
+                    const sizeMatch = productName.match(/\(Size:\s*([^)]+)\)|\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i);
+                    const size = sizeMatch ? (sizeMatch[1] || sizeMatch[2]) : 'Unknown';
+                    
+                    products.push({
+                        sku: sku,
+                        product_name: productName,
+                        base_name: productName.replace(/\s*-\s*\(Size:[^)]+\)/i, '').trim(),
+                        size: size,
+                        quantity: quantity,
+                        price: price,
+                        type: 'Standard'
+                    });
+                }
+            }
+        });
+    });
+    
+    return products;
+}
+
+/**
+ * Extract products from lines sebagai fallback terakhir
+ */
+function extractProductsFromLines(fullText) {
+    const products = [];
+    const lines = fullText.split(/[\n\r]+/).map(line => line.trim()).filter(line => line.length > 0);
+    
+    lines.forEach(line => {
+        // Look for lines that contain both SKU and price
+        if (line.match(/BZ[LP]\d{2}[A-Z]{2}/) && line.match(/RM\s*[\d,]+/)) {
+            const skuMatch = line.match(/(BZ[LP]\d{2}[A-Z]{2})/);
+            const priceMatch = line.match(/RM\s*([\d,]+\.?\d*)/);
+            
+            if (skuMatch && priceMatch) {
+                const sku = skuMatch[1];
+                const price = parseFloat(priceMatch[1].replace(/,/g, ''));
+                
+                // Extract quantity (number before RM)
+                const quantityMatch = line.match(/(\d+)\s+RM/);
+                const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+                
+                // Extract product name (text between SKU and quantity)
+                let productName = line
+                    .replace(sku, '')
+                    .replace(/RM\s*[\d,]+\.?\d*/, '')
+                    .replace(/\d+\s*$/, '')
+                    .trim();
+                
+                if (productName.length < 5) {
+                    productName = `Product ${sku}`;
+                }
+                
+                // Extract size
+                const sizeMatch = productName.match(/\(Size:\s*([^)]+)\)|\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i);
+                const size = sizeMatch ? (sizeMatch[1] || sizeMatch[2]) : 'Unknown';
+                
+                products.push({
+                    sku: sku,
+                    product_name: productName,
+                    base_name: productName.replace(/\s*-\s*\(Size:[^)]+\)/i, '').trim(),
+                    size: size,
+                    quantity: quantity,
+                    price: price,
+                    type: 'Standard'
+                });
+            }
+        }
+    });
+    
+    return products;
+}
+
+/**
+ * Basic product extraction untuk cases yang sangat simple
+ */
+function extractBasicProducts(fullText) {
+    // Create basic product entry jika tiada detailed products ditemui
+    const totalMatch = fullText.match(/Total Paid:\s*RM\s*([\d,]+\.?\d*)/i) ||
+                      fullText.match(/Total:\s*RM\s*([\d,]+\.?\d*)/i);
+    
+    if (totalMatch) {
+        const amount = parseFloat(totalMatch[1].replace(/,/g, ''));
+        
+        return [{
+            sku: 'MIXED',
+            product_name: 'Mixed Products dari PDF',
+            base_name: 'Mixed Products',
+            size: 'Mixed',
+            quantity: 1,
+            price: amount,
+            type: 'Standard'
+        }];
+    }
+    
+    return [];
 }
 
 /**
@@ -483,6 +991,35 @@ function getDominantSKU(structuredProducts) {
     );
     
     return dominant.sku;
+}
+
+/**
+ * Enhanced debugging function untuk troubleshooting
+ */
+function debugPdfExtraction(fullText, extractionResults) {
+    console.log('=== PDF EXTRACTION DEBUG ===');
+    console.log('Full text length:', fullText.length);
+    console.log('First 1000 characters:', fullText.substring(0, 1000));
+    console.log('Extraction results:', extractionResults);
+    
+    // Check for common patterns
+    const patterns = {
+        'Invoice patterns': /invoice/gi,
+        'Amount patterns': /rm\s*[\d,]+/gi,
+        'Product patterns': /bz[lp]\d{2}[a-z]{2}/gi,
+        'Size patterns': /size:\s*[a-z0-9]+/gi,
+        'Date patterns': /\d{1,2}\/\d{1,2}\/\d{4}/gi
+    };
+    
+    Object.entries(patterns).forEach(([name, pattern]) => {
+        const matches = fullText.match(pattern);
+        console.log(`${name}:`, matches ? matches.length : 0, 'matches');
+        if (matches && matches.length > 0) {
+            console.log('Sample matches:', matches.slice(0, 3));
+        }
+    });
+    
+    console.log('=== END DEBUG ===');
 }
 
 /**

@@ -2877,14 +2877,14 @@ console.log('🎨 ✓ All text changed to WHITE color');
 console.log('📋 ✓ Updated chart title and subtitle');
 console.log('🔧 ✓ Simplified data processing (leads only)');
 
-// Make functions available globally
+/* // Make functions available globally
 if (typeof window !== 'undefined') {
     window.updateLeadsOnlyChart = updateLeadsOnlyChart;
     window.processLeadsOnlyData = processLeadsOnlyData;
     window.calculateLeadsOnlyMetrics = calculateLeadsOnlyMetrics;
     window.renderLeadsOnlyChart = renderLeadsOnlyChart;
     window.renderLeadsOnlyEmptyChart = renderLeadsOnlyEmptyChart;
-}
+} */
 // Export for external use
 window.loadMarketingCostData = loadMarketingCostData;
 window.updateCostPerLeadKPI = updateCostPerLeadKPI;

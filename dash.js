@@ -1,1284 +1,934 @@
-// dashboard.js - COMPLETE FIXED VERSION
-import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// Import fungsi Firestore yang diperlukan
+import { 
+    collection, 
+    addDoc,
+    Timestamp 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Global variables
-let charts = {};
-let allData = {
-    ecommerce: [],
-    marketing: [],
-    salesteam: [],
-    orders: []
-};
-
-let currentFilters = {
-    startDate: null,
-    endDate: null,
-    agent: null,
-    period: 30 // default 30 days
-};
-
-// Initialize dashboard
+// Pastikan kod ini berjalan selepas DOM dimuatkan sepenuhnya
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing dashboard...');
+    console.log('DOM loaded, checking dependencies...');
     
-    // Setup mobile menu
-    setupMobileMenu();
-    
-    // Wait for Firebase to be ready with better error handling
-    let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
-    
-    const checkFirebase = setInterval(() => {
-        attempts++;
-        console.log(`Checking Firebase... Attempt ${attempts}`);
+    // Function to check if all dependencies are loaded
+    function checkDependencies() {
+        const hasFirebase = window.db !== undefined;
+        const hasPdfJs = typeof pdfjsLib !== 'undefined';
         
-        if (window.db) {
-            console.log('Firebase ready, initializing dashboard...');
-            clearInterval(checkFirebase);
-            initializeDashboard();
-        } else if (attempts >= maxAttempts) {
-            console.error('Firebase initialization timeout');
-            clearInterval(checkFirebase);
-            showErrorState();
-        }
-    }, 100);
-});
-
-function setupMobileMenu() {
-    const menuToggle = document.getElementById('menu-toggle');
-    const sidebar = document.getElementById('sidebar');
-
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('-translate-x-full');
-        });
-
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-                sidebar.classList.add('-translate-x-full');
-            }
-        });
-    }
-}
-
-async function initializeDashboard() {
-    try {
-        console.log('Starting dashboard initialization...');
+        console.log('Firebase loaded:', hasFirebase);
+        console.log('PDF.js loaded:', hasPdfJs);
         
-        // Show loading state
-        showLoadingState();
-        
-        // Setup filters
-        setupFilters();
-        
-        // Setup period buttons
-        setupPeriodButtons();
-        
-        // Fetch all data
-        await fetchAllData();
-        
-        // Populate agent filter
-        populateAgentFilter();
-        
-        // Apply default filters and display data
-        applyFilters();
-        
-        // Initialize Power Metrics
-        updatePowerMetricsDisplay(allData.salesteam);
-        
-        // Setup real-time updates
-        updateCurrentTime();
-        setInterval(updateCurrentTime, 60000); // Update every minute
-        
-        console.log('Dashboard initialized successfully');
-        
-    } catch (error) {
-        console.error('Error initializing dashboard:', error);
-        showErrorState();
-    }
-}
-
-function setupFilters() {
-    // Set default dates (last 30 days)
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
-    
-    document.getElementById('start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
-    document.getElementById('end-date').value = today.toISOString().split('T')[0];
-
-    // Event listeners
-    document.getElementById('apply-filter').addEventListener('click', applyFilters);
-    document.getElementById('clear-filter').addEventListener('click', clearFilters);
-    
-    // Auto-apply on change
-    document.getElementById('start-date').addEventListener('change', applyFilters);
-    document.getElementById('end-date').addEventListener('change', applyFilters);
-    document.getElementById('agent-filter').addEventListener('change', applyFilters);
-}
-
-function setupPeriodButtons() {
-    const periodBtns = document.querySelectorAll('.period-btn');
-    
-    periodBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Update button states
-            periodBtns.forEach(b => {
-                b.className = 'text-xs bg-gray-700 text-gray-300 px-3 py-1 rounded period-btn';
-            });
-            btn.className = 'text-xs bg-blue-600 text-white px-3 py-1 rounded period-btn';
-            
-            // Update period and refresh chart
-            currentFilters.period = parseInt(btn.dataset.period);
-            updateSalesTrendChart();
-        });
-    });
-}
-
-async function fetchAllData() {
-    const db = window.db;
-    
-    try {
-        console.log('Fetching data from Firestore...');
-        
-        // Fetch collections with error handling
-        const collections = ['orderData', 'marketingData', 'salesTeamData'];
-        const results = {};
-        
-        for (const collectionName of collections) {
-            try {
-                console.log(`Fetching ${collectionName}...`);
-                const snapshot = await getDocs(collection(db, collectionName));
-                results[collectionName] = snapshot.docs.map(doc => ({ 
-                    id: doc.id, 
-                    ...doc.data() 
-                }));
-                console.log(`${collectionName}: ${results[collectionName].length} documents`);
-            } catch (error) {
-                console.warn(`Error fetching ${collectionName}:`, error);
-                results[collectionName] = [];
-            }
-        }
-
-        // Assign to global data with correct mapping
-        allData.orders = results.orderData || [];
-        allData.marketing = results.marketingData || [];
-        allData.salesteam = results.salesTeamData || [];
-        allData.ecommerce = []; // Currently not using separate ecommerce collection
-
-        console.log('Final data counts:', {
-            orders: allData.orders.length,
-            marketing: allData.marketing.length,
-            salesteam: allData.salesteam.length
-        });
-
-        // Show message if no data
-        const totalRecords = allData.orders.length + allData.marketing.length + allData.salesteam.length;
-        
-        if (totalRecords === 0) {
-            showNoDataState();
-        }
-
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        throw error;
-    }
-}
-
-function populateAgentFilter() {
-    const agentSelect = document.getElementById('agent-filter');
-    
-    // Get unique agents from sales team data
-    const agents = [...new Set(allData.salesteam
-        .map(item => item.agent || item.team)
-        .filter(Boolean)
-    )].sort();
-    
-    // Clear and populate options
-    agentSelect.innerHTML = '<option value="">Semua Agent</option>';
-    agents.forEach(agent => {
-        const option = document.createElement('option');
-        option.value = agent;
-        option.textContent = agent;
-        agentSelect.appendChild(option);
-    });
-}
-
-function applyFilters() {
-    // Get filter values
-    const startDate = document.getElementById('start-date').value;
-    const endDate = document.getElementById('end-date').value;
-    const selectedAgent = document.getElementById('agent-filter').value;
-
-    // Update filter state
-    currentFilters.startDate = startDate;
-    currentFilters.endDate = endDate;
-    currentFilters.agent = selectedAgent;
-
-    // Filter data
-    const filteredData = {
-        orders: filterByDate(allData.orders, startDate, endDate),
-        marketing: filterByDate(allData.marketing, startDate, endDate),
-        salesteam: filterSalesTeamData(allData.salesteam, startDate, endDate, selectedAgent)
-    };
-
-    // Update displays
-    updateActiveFiltersDisplay();
-    updateKPIs(filteredData);
-    updateCharts(filteredData);
-    updateRecentActivity(filteredData);
-    updatePowerMetricsDisplay(filteredData.salesteam);
-}
-
-function filterByDate(data, startDate, endDate) {
-    return data.filter(item => {
-        let itemDate;
-        
-        // Handle different date formats
-        if (item.tarikh) {
-            itemDate = new Date(item.tarikh);
-        } else if (item.createdAt) {
-            // Handle Firestore timestamp
-            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-        } else {
-            return true; // Include items without dates
-        }
-        
-        const start = startDate ? new Date(startDate) : null;
-        const end = endDate ? new Date(endDate) : null;
-
-        if (start && itemDate < start) return false;
-        if (end && itemDate > end) return false;
-        
-        return true;
-    });
-}
-
-function filterSalesTeamData(data, startDate, endDate, agent) {
-    return data.filter(item => {
-        let itemDate;
-        
-        // Handle different date formats
-        if (item.tarikh) {
-            itemDate = new Date(item.tarikh);
-        } else if (item.createdAt) {
-            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-        } else {
+        if (hasFirebase) {
+            setupEventListeners();
             return true;
         }
+        return false;
+    }
+    
+    // Try immediately
+    if (!checkDependencies()) {
+        // Wait a bit for Firebase to load
+        let attempts = 0;
+        const maxAttempts = 10;
         
-        const start = startDate ? new Date(startDate) : null;
-        const end = endDate ? new Date(endDate) : null;
+        const waitForDependencies = setInterval(() => {
+            attempts++;
+            console.log(`Attempt ${attempts}: Waiting for dependencies...`);
+            
+            if (checkDependencies() || attempts >= maxAttempts) {
+                clearInterval(waitForDependencies);
+                
+                if (attempts >= maxAttempts && !window.db) {
+                    console.error('Firebase failed to load after maximum attempts');
+                    showFeedback('Ralat: Gagal berhubung dengan pangkalan data.', 'error');
+                }
+            }
+        }, 500);
+    }
+});
 
-        // Date filter
-        if (start && itemDate < start) return false;
-        if (end && itemDate > end) return false;
-        
-        // Agent filter
-        if (agent && (item.agent !== agent && item.team !== agent)) return false;
-        
-        return true;
+// Fungsi utama untuk menyediakan semua event listener
+function setupEventListeners() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const orderForm = document.getElementById('order-form');
+
+    // 1. Mengaktifkan klik pada kawasan upload
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // 2. Mengendalikan fail yang dipilih melalui dialog
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
     });
-}
 
-function clearFilters() {
-    document.getElementById('start-date').value = '';
-    document.getElementById('end-date').value = '';
-    document.getElementById('agent-filter').value = '';
-    
-    currentFilters = {
-        startDate: null,
-        endDate: null,
-        agent: null,
-        period: 30
-    };
-    
-    updateKPIs(allData);
-    updateCharts(allData);
-    updateRecentActivity(allData);
-    updateActiveFiltersDisplay();
-    updatePowerMetricsDisplay(allData.salesteam);
-}
+    // 3. Mengaktifkan fungsi drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    });
 
-function updateActiveFiltersDisplay() {
-    const activeFiltersDiv = document.getElementById('active-filters');
-    const filterTagsDiv = document.getElementById('filter-tags');
-    
-    const tags = [];
-    
-    if (currentFilters.startDate) {
-        tags.push(`Dari: ${formatDate(currentFilters.startDate)}`);
-    }
-    
-    if (currentFilters.endDate) {
-        tags.push(`Hingga: ${formatDate(currentFilters.endDate)}`);
-    }
-    
-    if (currentFilters.agent) {
-        tags.push(`Agent: ${currentFilters.agent}`);
-    }
-    
-    if (tags.length > 0) {
-        activeFiltersDiv.classList.remove('hidden');
-        filterTagsDiv.innerHTML = tags.map(tag => 
-            `<span class="bg-blue-600 text-white px-2 py-1 rounded-full text-xs">${tag}</span>`
-        ).join('');
-    } else {
-        activeFiltersDiv.classList.add('hidden');
+    // 4. Mengendalikan penghantaran borang manual
+    if (orderForm) {
+        orderForm.addEventListener('submit', handleFormSubmit);
     }
 }
 
-function updateKPIs(data) {
-    // Calculate Total Sales from orders
-    const orderSales = data.orders.reduce((sum, item) => sum + (parseFloat(item.total_rm) || 0), 0);
-    
-    // Calculate sales from sales team power metrics
-    const teamSales = data.salesteam
-        .filter(item => item.type === 'power_metrics')
-        .reduce((sum, item) => sum + (parseFloat(item.total_sale_bulan) || 0), 0);
-    
-    const totalSales = orderSales + teamSales;
-    
-    document.getElementById('total-sales').textContent = `RM ${totalSales.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    document.getElementById('total-sales-count').textContent = `${data.orders.length + data.salesteam.filter(item => item.type === 'power_metrics').length} entri`;
+/**
+ * Mengendalikan fail yang diupload (sama ada dari klik atau drag-drop)
+ * @param {File} file Objek fail yang akan diproses
+ */
+async function handleFile(file) {
+    const processingIndicator = document.getElementById('processingIndicator');
+    const successIndicator = document.getElementById('successIndicator');
+    const uploadSection = document.querySelector('.upload-section');
 
-    // Calculate Average ROAS from marketing data
-    const marketingWithRoas = data.marketing.filter(item => item.type === 'detail_ads' && item.amount_spent > 0);
-    if (marketingWithRoas.length > 0) {
-        const avgRoas = marketingWithRoas.reduce((sum, item) => {
-            const spend = parseFloat(item.amount_spent) || 0;
-            const leadValue = parseFloat(item.lead_dari_team_sale) || 0;
-            return sum + (spend > 0 ? leadValue / spend : 0);
-        }, 0) / marketingWithRoas.length;
+    hideIndicators();
+    
+    uploadSection.style.display = 'none';
+    processingIndicator.classList.add('show');
+
+    try {
+        let orders;
+        let fileSource = 'unknown';
+
+        // Check file type and process accordingly
+        if (file.type === 'application/pdf') {
+            fileSource = 'PDF Invoice';
+            orders = await parsePdfInvoice(file);
         
-        document.getElementById('avg-roas').textContent = `${avgRoas.toFixed(2)}x`;
-        document.getElementById('avg-roas-count').textContent = `${marketingWithRoas.length} entri`;
-    } else {
-        document.getElementById('avg-roas').textContent = 'N/A';
-        document.getElementById('avg-roas-count').textContent = '0 entri';
-    }
+        } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+            const fileText = await file.text();
+            fileSource = detectSource(fileText);
+            if (fileSource === 'unknown') {
+                throw new Error('Format CSV tidak dikenali. Pastikan ia adalah fail dari Shopee, TikTok, atau templat manual.');
+            }
+            orders = parseCSV(fileText, fileSource);
 
-    // Calculate Leads per Agent
-    const leadData = data.salesteam.filter(item => item.type === 'lead');
-    if (leadData.length > 0) {
-        const totalLeads = leadData.reduce((sum, item) => sum + (parseInt(item.total_lead) || 0), 0);
-        const uniqueAgents = new Set(leadData.map(item => item.team).filter(Boolean)).size;
-        const leadsPerAgent = uniqueAgents > 0 ? totalLeads / uniqueAgents : 0;
-        
-        document.getElementById('leads-per-agent').textContent = `${leadsPerAgent.toFixed(1)}`;
-        document.getElementById('leads-per-agent-count').textContent = `${uniqueAgents} agent`;
-    } else {
-        document.getElementById('leads-per-agent').textContent = 'N/A';
-        document.getElementById('leads-per-agent-count').textContent = '0 agent';
-    }
-
-    // Calculate Total Orders
-    const totalOrders = data.orders.length;
-    document.getElementById('total-orders').textContent = totalOrders.toString();
-    document.getElementById('total-orders-count').textContent = `${totalOrders} orders`;
-
-    // Update trend indicators (simplified random for demo)
-    document.getElementById('sales-trend').textContent = totalSales > 0 ? '+' + (Math.random() * 20).toFixed(1) + '%' : '-';
-    document.getElementById('roas-trend').textContent = marketingWithRoas.length > 0 ? '+' + (Math.random() * 10).toFixed(1) + '%' : '-';
-    document.getElementById('leads-trend').textContent = leadData.length > 0 ? '+' + (Math.random() * 15).toFixed(1) + '%' : '-';
-    document.getElementById('orders-trend').textContent = totalOrders > 0 ? '+' + (Math.random() * 12).toFixed(1) + '%' : '-';
-}
-
-function updateCharts(data) {
-    // Initialize Chart.js defaults
-    Chart.defaults.color = '#D1D5DB';
-    Chart.defaults.borderColor = 'rgba(75, 85, 99, 0.3)';
-
-    updateSalesTrendChart(data);
-    updateChannelChart(data);
-    updateLeadsChart(data);
-    updateTeamChart(data);
-    updateSpendChart(data);
-}
-
-function updateSalesTrendChart(data = null) {
-    const filteredData = data || {
-        orders: filterByDate(allData.orders, currentFilters.startDate, currentFilters.endDate),
-        salesteam: filterSalesTeamData(allData.salesteam, currentFilters.startDate, currentFilters.endDate, currentFilters.agent)
-    };
-
-    // Group sales by date
-    const salesByDate = {};
-    
-    // Process orders data
-    filteredData.orders.forEach(item => {
-        let date;
-        if (item.tarikh) {
-            date = item.tarikh;
-        } else if (item.createdAt) {
-            date = (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt)).toISOString().split('T')[0];
         } else {
-            return;
+            throw new Error('Format fail tidak disokong. Sila muat naik fail CSV atau PDF sahaja.');
+        }
+
+        if (!orders || orders.length === 0) {
+            throw new Error('Tiada data order yang sah ditemui dalam fail.');
+        }
+
+        const { successCount, errorCount } = await saveOrdersToFirebase(orders);
+
+        processingIndicator.classList.remove('show');
+        
+        const successTitle = document.getElementById('success-title');
+        const successDetails = document.getElementById('success-details');
+
+        if (successTitle && successDetails) {
+            successTitle.textContent = 'Fail Anda Telah Berjaya Dihantar!';
+            successDetails.textContent = `Ringkasan: ${successCount} order dari fail ${fileSource} telah disimpan. Gagal: ${errorCount}.`;
+        }
+        successIndicator.classList.add('show');
+
+    } catch (error) {
+        console.error('Ralat semasa memproses fail:', error);
+        showFeedback(`Ralat: ${error.message}`, 'error');
+        processingIndicator.classList.remove('show');
+    } finally {
+        setTimeout(() => {
+            uploadSection.style.display = 'block';
+            hideIndicators();
+        }, 7000);
+        
+        document.getElementById('fileInput').value = '';
+    }
+}
+
+/**
+ * ENHANCED PDF PARSER - Fixed untuk Firestore compatibility
+ * Mem-parse fail PDF invoice dengan structured product breakdown
+ */
+async function parsePdfInvoice(file) {
+    // Check if pdf.js is loaded
+    if (typeof window.pdfjsLib === 'undefined' && typeof pdfjsLib === 'undefined') {
+        console.error('PDF.js library not found');
+        throw new Error('PDF.js library tidak dimuatkan. Sila refresh halaman dan cuba lagi.');
+    }
+
+    const pdfLib = window.pdfjsLib || pdfjsLib;
+    pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const fileReader = new FileReader();
+    
+    return new Promise((resolve, reject) => {
+        fileReader.onload = async function() {
+            try {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfLib.getDocument(typedarray).promise;
+                let fullText = '';
+
+                console.log(`PDF loaded successfully. Pages: ${pdf.numPages}`);
+
+                // Extract text from all pages
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + ' ';
+                }
+
+                console.log('Full PDF text extracted:', fullText.substring(0, 500));
+
+                if (fullText.trim().length < 10) {
+                    throw new Error('PDF ini mungkin adalah scan/gambar. Sila gunakan PDF yang mengandungi teks yang boleh dipilih.');
+                }
+
+                // ===== ENHANCED DATA EXTRACTION =====
+                
+                // 1. Extract Invoice Number
+                const invoiceRegex = /Invoice:\s*#(Inv-[\d-]+)/i;
+                const invoiceMatch = fullText.match(invoiceRegex);
+                
+                // 2. Extract Date
+                const dateRegex = /(\d{2}\/\d{2}\/\d{4})\s+\d{2}:\d{2}/;
+                const dateMatch = fullText.match(dateRegex);
+                
+                // 3. Extract Customer Name
+                const customerRegex = /BILLING ADDRESS:\s*([^\n\r]+?)(?:\s+Jabatan|\s+[A-Z]{2,}|\s*$)/i;
+                const customerMatch = fullText.match(customerRegex);
+                
+                // 4. Extract Contact Number
+                const contactRegex = /Contact no:\s*([\d-]+)/i;
+                const contactMatch = fullText.match(contactRegex);
+                
+                // 5. Extract Total Paid Amount
+                const totalPaidRegex = /Total Paid:\s*RM\s*([\d,]+\.?\d*)/i;
+                const totalPaidMatch = fullText.match(totalPaidRegex);
+                
+                // 6. Extract Team Sale
+                const customerNoteRegex = /Customer Note:\s*\*(\w+)/i;
+                const customerNoteMatch = fullText.match(customerNoteRegex);
+
+                // ===== ENHANCED PRODUCT PARSING =====
+                const enhancedProducts = [];
+                
+                // Extract Ready Stock Products dengan detailed parsing
+                const readyStockRegex = /Ready Stock([\s\S]*?)(?:Pre-Order|Sub Total:|Total:|$)/i;
+                const readyStockMatch = fullText.match(readyStockRegex);
+                
+                if (readyStockMatch) {
+                    const readyStockProducts = parseProductSection(readyStockMatch[1], 'Ready Stock');
+                    enhancedProducts.push(...readyStockProducts);
+                }
+                
+                // Extract Pre-Order Products
+                const preOrderRegex = /Pre-Order([\s\S]*?)(?:Sub Total:|Total:|$)/i;
+                const preOrderMatch = fullText.match(preOrderRegex);
+                
+                if (preOrderMatch) {
+                    const preOrderProducts = parseProductSection(preOrderMatch[1], 'Pre-Order');
+                    enhancedProducts.push(...preOrderProducts);
+                }
+
+                console.log('Enhanced products extracted:', enhancedProducts.length);
+
+                // Validate required data
+                if (!invoiceMatch) {
+                    throw new Error('Nombor invoice tidak ditemui. Pastikan PDF adalah invoice dari Desa Murni Batik.');
+                }
+                
+                if (!totalPaidMatch) {
+                    throw new Error('Total amount tidak ditemui dalam PDF.');
+                }
+                
+                // Format date to YYYY-MM-DD
+                let formattedDate = new Date().toISOString().split('T')[0];
+                if (dateMatch) {
+                    const [day, month, year] = dateMatch[1].split('/');
+                    formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+
+                // ===== CREATE FIRESTORE-COMPATIBLE ORDER OBJECT =====
+                const structuredProducts = createFirestoreCompatibleProducts(enhancedProducts);
+                const totalQuantity = enhancedProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
+                const uniqueSizes = extractUniqueSizes(enhancedProducts);
+
+                const order = {
+                    // Basic order info
+                    nombor_po_invoice: invoiceMatch[1].trim(),
+                    tarikh: formattedDate,
+                    nama_customer: customerMatch ? customerMatch[1].trim() : 'Customer dari PDF',
+                    team_sale: customerNoteMatch ? customerNoteMatch[1].trim() : 'Manual',
+                    nombor_phone: contactMatch ? contactMatch[1].trim() : '',
+                    total_rm: parseFloat(totalPaidMatch[1].replace(/,/g, '')),
+                    platform: 'Website Desa Murni',
+                    jenis_order: getDominantProductName(structuredProducts),
+                    code_kain: getDominantSKU(structuredProducts),
+                    
+                    // ===== FIRESTORE-COMPATIBLE STRUCTURED DATA =====
+                    products: enhancedProducts, // Raw product data (plain objects)
+                    structuredProducts: structuredProducts, // For display (plain objects)
+                    totalQuantity: totalQuantity,
+                    uniqueSizes: uniqueSizes, // Plain array
+                    productCount: structuredProducts.length,
+                    sizeCount: uniqueSizes.length,
+                    
+                    // Metadata
+                    createdAt: Timestamp.now(),
+                    source: 'pdf_desa_murni_enhanced',
+                    pdf_processed_at: new Date().toISOString()
+                };
+
+                console.log('Final Firestore-compatible order:', {
+                    invoice: order.nombor_po_invoice,
+                    customer: order.nama_customer,
+                    products: order.productCount,
+                    totalQty: order.totalQuantity,
+                    structuredProducts: order.structuredProducts
+                });
+                
+                // Show enhanced preview
+                showEnhancedExtractedPreview(order);
+                
+                resolve([order]);
+
+            } catch (err) {
+                console.error('Error parsing PDF:', err);
+                reject(new Error(`Gagal memproses PDF: ${err.message}`));
+            }
+        };
+
+        fileReader.onerror = (error) => {
+            console.error('File reader error:', error);
+            reject(new Error('Gagal membaca fail PDF. Pastikan fail tidak rosak.'));
+        };
+        
+        fileReader.readAsArrayBuffer(file);
+    });
+}
+
+/**
+ * Create Firestore-compatible structured products (NO MAP OBJECTS)
+ * @param {Array} products Raw products array
+ * @returns {Array} Structured products for display (plain objects only)
+ */
+function createFirestoreCompatibleProducts(products) {
+    const productGroups = {}; // Use plain object instead of Map
+    
+    // Group products by base name
+    products.forEach(product => {
+        const baseName = product.base_name || product.product_name;
+        
+        if (!productGroups[baseName]) {
+            productGroups[baseName] = {
+                name: baseName,
+                sku: product.sku,
+                totalQty: 0,
+                sizes: {}, // Use plain object instead of Map
+                type: product.type,
+                products: []
+            };
         }
         
-        if (!salesByDate[date]) salesByDate[date] = { direct: 0, team: 0 };
-        salesByDate[date].direct += parseFloat(item.total_rm) || 0;
-    });
-
-    // Process sales team data
-    filteredData.salesteam
-        .filter(item => item.type === 'power_metrics')
-        .forEach(item => {
-            let date;
-            if (item.tarikh) {
-                date = item.tarikh;
-            } else if (item.createdAt) {
-                date = (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt)).toISOString().split('T')[0];
-            } else {
-                return;
-            }
-            
-            if (!salesByDate[date]) salesByDate[date] = { direct: 0, team: 0 };
-            salesByDate[date].team += parseFloat(item.total_sale_bulan) || 0;
-        });
-
-    // Get dates within period
-    const sortedDates = Object.keys(salesByDate)
-        .sort((a, b) => new Date(a) - new Date(b))
-        .slice(-currentFilters.period);
-
-    const ctx = document.getElementById('salesTrendChart').getContext('2d');
-    
-    if (charts.salesTrend) {
-        charts.salesTrend.destroy();
-    }
-
-    charts.salesTrend = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: sortedDates.map(date => formatDate(date)),
-            datasets: [
-                {
-                    label: 'Direct Orders',
-                    data: sortedDates.map(date => salesByDate[date]?.direct || 0),
-                    borderColor: '#10B981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 3
-                },
-                {
-                    label: 'Sales Team',
-                    data: sortedDates.map(date => salesByDate[date]?.team || 0),
-                    borderColor: '#F59E0B',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 3
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
-            plugins: {
-                legend: { 
-                    labels: { 
-                        color: '#D1D5DB',
-                        usePointStyle: true,
-                        padding: 20
-                    }
-                }
-            },
-            scales: {
-                y: { 
-                    beginAtZero: true,
-                    ticks: { 
-                        color: '#9CA3AF',
-                        callback: function(value) {
-                            return 'RM ' + value.toLocaleString();
-                        }
-                    },
-                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
-                },
-                x: { 
-                    ticks: { color: '#9CA3AF' },
-                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
-                }
-            }
+        const group = productGroups[baseName];
+        group.totalQty += product.quantity;
+        group.products.push(product);
+        
+        // Add to sizes object
+        if (group.sizes[product.size]) {
+            group.sizes[product.size] += product.quantity;
+        } else {
+            group.sizes[product.size] = product.quantity;
         }
     });
-}
-
-function updateChannelChart(data) {
-    // Group by platform
-    const channelData = {};
     
-    data.orders.forEach(item => {
-        const platform = item.platform || 'Unknown';
-        channelData[platform] = (channelData[platform] || 0) + (parseFloat(item.total_rm) || 0);
-    });
-
-    const ctx = document.getElementById('channelChart').getContext('2d');
-    
-    if (charts.channel) {
-        charts.channel.destroy();
-    }
-
-    const colors = ['#FF6B35', '#F7931E', '#3B82F6', '#E1306C', '#1877F2', '#10B981'];
-    
-    charts.channel = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(channelData),
-            datasets: [{
-                data: Object.values(channelData),
-                backgroundColor: colors.slice(0, Object.keys(channelData).length),
-                borderWidth: 0,
-                hoverOffset: 10
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: { 
-                        color: '#D1D5DB', 
-                        padding: 20,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return context.label + ': RM ' + context.parsed.toLocaleString() + ' (' + percentage + '%)';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function updateLeadsChart(data) {
-    // Group leads by agent
-    const leadsByAgent = {};
-    
-    data.salesteam
-        .filter(item => item.type === 'lead')
-        .forEach(item => {
-            const agent = item.team || 'Unknown';
-            const leads = parseInt(item.total_lead) || 0;
-            leadsByAgent[agent] = (leadsByAgent[agent] || 0) + leads;
-        });
-
-    const ctx = document.getElementById('leadsChart').getContext('2d');
-    
-    if (charts.leads) {
-        charts.leads.destroy();
-    }
-
-    const colors = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#6366F1'];
-
-    charts.leads = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: Object.keys(leadsByAgent),
-            datasets: [{
-                data: Object.values(leadsByAgent),
-                backgroundColor: colors.slice(0, Object.keys(leadsByAgent).length),
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: { 
-                        color: '#D1D5DB',
-                        padding: 15,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.label + ': ' + context.parsed + ' leads';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function updateTeamChart(data) {
-    // Calculate performance metrics by team
-    const teamPerformance = {};
-    
-    // Get leads data
-    data.salesteam
-        .filter(item => item.type === 'lead')
-        .forEach(item => {
-            const team = item.team || 'Unknown';
-            if (!teamPerformance[team]) {
-                teamPerformance[team] = { leads: 0, sales: 0, closes: 0 };
-            }
-            teamPerformance[team].leads += parseInt(item.total_lead) || 0;
-        });
-
-    // Get power metrics data
-    data.salesteam
-        .filter(item => item.type === 'power_metrics')
-        .forEach(item => {
-            const team = item.team || 'Unknown';
-            if (!teamPerformance[team]) {
-                teamPerformance[team] = { leads: 0, sales: 0, closes: 0 };
-            }
-            teamPerformance[team].sales += parseFloat(item.total_sale_bulan) || 0;
-            teamPerformance[team].closes += parseInt(item.total_close_bulan) || 0;
-        });
-
-    // Convert to performance scores
-    const teams = Object.keys(teamPerformance);
-    const scores = teams.map(team => {
-        const data = teamPerformance[team];
-        const closeRate = data.leads > 0 ? (data.closes / data.leads) * 100 : 0;
-        return Math.min(closeRate + (data.sales / 10000), 100);
-    });
-
-    const ctx = document.getElementById('teamChart').getContext('2d');
-    
-    if (charts.team) {
-        charts.team.destroy();
-    }
-
-    charts.team = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: teams,
-            datasets: [{
-                label: 'Performance Score',
-                data: scores,
-                backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                borderColor: '#22C55E',
-                pointBackgroundColor: '#22C55E',
-                pointBorderColor: '#22C55E',
-                pointRadius: 6,
-                borderWidth: 3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        color: '#9CA3AF',
-                        stepSize: 20,
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    },
-                    grid: { color: 'rgba(75, 85, 99, 0.3)' },
-                    pointLabels: { color: '#D1D5DB', font: { size: 11 } }
-                }
-            }
-        }
-    });
-}
-
-function updateSpendChart(data) {
-    // Group marketing spend by date
-    const spendByDate = {};
-    
-    data.marketing
-        .filter(item => item.type === 'detail_ads')
-        .forEach(item => {
-            let date;
-            if (item.tarikh) {
-                date = item.tarikh;
-            } else if (item.createdAt) {
-                date = (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt)).toISOString().split('T')[0];
-            } else {
-                return;
-            }
-            
-            const spend = parseFloat(item.amount_spent) || 0;
-            spendByDate[date] = (spendByDate[date] || 0) + spend;
-        });
-
-    const sortedDates = Object.keys(spendByDate).sort().slice(-7); // Last 7 days
-
-    const ctx = document.getElementById('spendChart').getContext('2d');
-    
-    if (charts.spend) {
-        charts.spend.destroy();
-    }
-
-    charts.spend = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: sortedDates.map(date => formatDate(date)),
-            datasets: [{
-                label: 'Marketing Spend',
-                data: sortedDates.map(date => spendByDate[date] || 0),
-                backgroundColor: '#8B5CF6',
-                borderRadius: 8,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Spend: RM ' + context.parsed.y.toLocaleString();
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: { 
-                    beginAtZero: true,
-                    ticks: { 
-                        color: '#9CA3AF',
-                        callback: function(value) {
-                            return 'RM ' + value.toLocaleString();
-                        }
-                    },
-                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
-                },
-                x: { 
-                    ticks: { color: '#9CA3AF' },
-                    grid: { display: false }
-                }
-            }
-        }
-    });
-}
-
-function updateRecentActivity(data) {
-    const activityFeed = document.getElementById('activity-feed');
-    const activities = [];
-
-    // Get recent activities from orders
-    const orderActivities = data.orders.map(item => ({
-        type: 'order',
-        message: `Order baharu - ${item.nama_customer} - RM ${parseFloat(item.total_rm || 0).toFixed(2)}`,
-        time: item.createdAt ? (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt)) : new Date(),
-        platform: item.platform
+    // Convert to array dengan sorted sizes (plain objects only)
+    const structuredProducts = Object.values(productGroups).map(group => ({
+        name: group.name,
+        sku: group.sku,
+        totalQty: group.totalQty,
+        type: group.type,
+        products: group.products,
+        sizeBreakdown: Object.entries(group.sizes)
+            .map(([size, qty]) => ({ size, quantity: qty }))
+            .sort((a, b) => sortSizes(a.size, b.size)),
+        // Store sizes as plain object for Firestore
+        sizesObject: group.sizes
     }));
+    
+    return structuredProducts;
+}
 
-    // Get recent activities from sales team
-    const salesActivities = data.salesteam
-        .filter(item => item.type === 'lead')
-        .map(item => ({
-            type: 'sales',
-            message: `${item.team} - ${item.total_lead || 0} leads baharu`,
-            time: item.createdAt ? (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt)) : new Date(),
-            agent: item.team
-        }));
-
-    const allActivities = [...orderActivities, ...salesActivities];
-
-    // Sort by time and take latest 10
-    const recentActivities = allActivities
-        .sort((a, b) => b.time - a.time)
-        .slice(0, 10);
-
-    if (recentActivities.length === 0) {
-        activityFeed.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <p>Tiada aktiviti terkini</p>
-            </div>
-        `;
-        return;
-    }
-
-    activityFeed.innerHTML = recentActivities.map(activity => {
-        const colorClass = activity.type === 'order' ? 'bg-green-400' : 'bg-purple-400';
+/**
+ * Parse product section dengan enhanced detection
+ * @param {string} sectionText Text dari section Ready Stock atau Pre-Order
+ * @param {string} type Type produk (Ready Stock / Pre-Order)
+ * @returns {Array} Array of parsed products (plain objects only)
+ */
+function parseProductSection(sectionText, type) {
+    const products = [];
+    console.log(`Parsing ${type} section:`, sectionText.substring(0, 200));
+    
+    // Enhanced regex untuk match product lines
+    // Pattern: SKU ProductName - (Size: X) Qty RM Price
+    const productLineRegex = /(BZ[LP]\d{2}[A-Z]{2})\s+(.+?)\s*-\s*\(Size:\s*([^)]+)\)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g;
+    
+    let match;
+    while ((match = productLineRegex.exec(sectionText)) !== null) {
+        const [, sku, productName, size, quantity, price] = match;
         
-        return `
-            <div class="flex items-center space-x-4 p-3 bg-gray-800/50 rounded-lg">
-                <div class="w-2 h-2 ${colorClass} rounded-full ${activity.type === 'order' ? 'animate-pulse' : ''}"></div>
-                <div class="flex-1">
-                    <p class="text-sm">${activity.message}</p>
-                    <p class="text-xs text-gray-400">${formatRelativeTime(activity.time)}</p>
+        // Create plain object (no Map, no complex objects)
+        products.push({
+            sku: sku.trim(),
+            product_name: `${productName.trim()} - (Size: ${size.trim()})`,
+            base_name: productName.trim(),
+            size: size.trim(),
+            quantity: parseInt(quantity),
+            price: parseFloat(price.replace(/,/g, '')),
+            type: type
+        });
+    }
+    
+    // Fallback regex jika format berbeza
+    if (products.length === 0) {
+        const fallbackRegex = /(BZ[LP]\d{2}[A-Z]{2})\s+([^0-9]+?)\s+(\d+)\s+RM\s*([\d,]+\.?\d*)/g;
+        
+        while ((match = fallbackRegex.exec(sectionText)) !== null) {
+            const [, sku, productName, quantity, price] = match;
+            
+            // Extract size dari product name jika ada
+            const sizeMatch = productName.match(/\(Size:\s*([^)]+)\)|\b(XS|S|M|L|XL|2XL|3XL|4XL|5XL)\b/i);
+            const extractedSize = sizeMatch ? (sizeMatch[1] || sizeMatch[2]) : 'Unknown';
+            
+            // Create plain object (no Map, no complex objects)
+            products.push({
+                sku: sku.trim(),
+                product_name: productName.trim(),
+                base_name: productName.replace(/\s*-\s*\(Size:[^)]+\)/i, '').trim(),
+                size: extractedSize,
+                quantity: parseInt(quantity),
+                price: parseFloat(price.replace(/,/g, '')),
+                type: type
+            });
+        }
+    }
+    
+    console.log(`Extracted ${products.length} products from ${type} section`);
+    return products;
+}
+
+function extractUniqueSizes(products) {
+    const sizes = new Set();
+    products.forEach(product => {
+        if (product.size && product.size !== 'Unknown') {
+            sizes.add(product.size);
+        }
+    });
+    
+    return Array.from(sizes).sort(sortSizes);
+}
+
+/**
+ * Sort sizes dalam logical order
+ * @param {string} a First size
+ * @param {string} b Second size
+ * @returns {number} Sort comparison
+ */
+function sortSizes(a, b) {
+    const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+    const indexA = sizeOrder.indexOf(a);
+    const indexB = sizeOrder.indexOf(b);
+    
+    if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+    }
+    
+    return a.localeCompare(b);
+}
+
+/**
+ * Get dominant product name untuk display
+ * @param {Array} structuredProducts Structured products
+ * @returns {string} Dominant product name
+ */
+function getDominantProductName(structuredProducts) {
+    if (structuredProducts.length === 0) return 'Mixed Products';
+    
+    // Find product dengan highest total quantity
+    const dominant = structuredProducts.reduce((max, current) => 
+        current.totalQty > max.totalQty ? current : max
+    );
+    
+    return dominant.name;
+}
+
+/**
+ * Get dominant SKU untuk display
+ * @param {Array} structuredProducts Structured products
+ * @returns {string} Dominant SKU
+ */
+function getDominantSKU(structuredProducts) {
+    if (structuredProducts.length === 0) return 'MIXED';
+    
+    const dominant = structuredProducts.reduce((max, current) => 
+        current.totalQty > max.totalQty ? current : max
+    );
+    
+    return dominant.sku;
+}
+
+/**
+ * Enhanced preview display dengan structured data
+ * @param {Object} order Enhanced order object
+ */
+function showEnhancedExtractedPreview(order) {
+    const previewDiv = document.getElementById('extractedPreview');
+    const previewContent = document.getElementById('previewContent');
+    
+    if (!previewDiv || !previewContent) return;
+    
+    let previewHTML = `
+        <div class="pdf-summary">
+            <div class="summary-badge">
+                <i class="fas fa-file-pdf"></i>
+                <span>Enhanced Data dari PDF Desa Murni Batik</span>
+            </div>
+            <div class="summary-stats">
+                <div class="stat-item">Products: <strong>${order.productCount}</strong></div>
+                <div class="stat-item">Total Qty: <strong>${order.totalQuantity}</strong></div>
+                <div class="stat-item">Unique Sizes: <strong>${order.sizeCount}</strong></div>
+                <div class="stat-item">Amount: <strong>RM ${order.total_rm?.toFixed(2)}</strong></div>
+            </div>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Invoice:</span>
+            <span class="preview-value">${order.nombor_po_invoice}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Customer:</span>
+            <span class="preview-value">${order.nama_customer}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Team Sale:</span>
+            <span class="preview-value">${order.team_sale}</span>
+        </div>
+    `;
+    
+    // Add structured products breakdown
+    if (order.structuredProducts && order.structuredProducts.length > 0) {
+        previewHTML += `
+            <div style="margin-top: 1.5rem;">
+                <h4 style="color: #60a5fa; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-layer-group"></i> 
+                    Product Breakdown (${order.structuredProducts.length} jenis)
+                </h4>
+        `;
+        
+        order.structuredProducts.forEach((product, index) => {
+            previewHTML += `
+                <div style="background: rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; border-left: 3px solid #3b82f6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <div>
+                            <strong style="color: #e2e8f0;">${product.name}</strong>
+                            <div style="color: #94a3b8; font-size: 0.8rem;">SKU: ${product.sku} | Type: ${product.type}</div>
+                        </div>
+                        <span style="background: #10b981; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-weight: 600;">
+                            Total: ${product.totalQty}
+                        </span>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+            `;
+            
+            // Add size badges
+            product.sizeBreakdown.forEach(size => {
+                const sizeColor = getSizeColor(size.size);
+                previewHTML += `
+                    <span style="background: ${sizeColor}; color: white; padding: 0.125rem 0.5rem; border-radius: 8px; font-size: 0.7rem; font-weight: 600;">
+                        ${size.size}: ${size.quantity}
+                    </span>
+                `;
+            });
+            
+            previewHTML += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        previewHTML += `</div>`;
+    }
+    
+    previewContent.innerHTML = previewHTML;
+    previewDiv.classList.add('show');
+    
+    // Auto-fill form dengan extracted data
+    populateForm(order);
+}
+
+/**
+ * Get color untuk size badge
+ * @param {string} size Size string
+ * @returns {string} Color hex code
+ */
+function getSizeColor(size) {
+    const sizeColors = {
+        'XS': '#ef4444',   // red
+        'S': '#f59e0b',    // amber
+        'M': '#10b981',    // emerald
+        'L': '#3b82f6',    // blue
+        'XL': '#8b5cf6',   // violet
+        '2XL': '#ec4899',  // pink
+        '3XL': '#06b6d4',  // cyan
+        '4XL': '#84cc16',  // lime
+        '5XL': '#f97316'   // orange
+    };
+    
+    return sizeColors[size] || '#64748b'; // default gray
+}
+
+/**
+ * Detect source of CSV file
+ */
+function detectSource(csvText) {
+    const headers = csvText.split('\n')[0].toLowerCase();
+    
+    if (headers.includes('recipient') && headers.includes('order id')) {
+        return 'shopee';
+    } else if (headers.includes('buyer name') && headers.includes('order number')) {
+        return 'tiktok';
+    } else if (headers.includes('tarikh') && headers.includes('code_kain')) {
+        return 'manual';
+    }
+    
+    return 'unknown';
+}
+
+/**
+ * Mem-parse teks CSV kepada array of order objects berdasarkan sumber
+ * @param {string} csvText Kandungan teks dari fail CSV
+ * @param {string} source Sumber fail (shopee, tiktok, manual)
+ * @returns {Array<Object>} Array yang mengandungi objek order
+ */
+function parseCSV(csvText, source) {
+    const lines = csvText.split('\n').filter(line => line.trim() !== '');
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const dataRows = lines.slice(1);
+    const orders = [];
+
+    dataRows.forEach(row => {
+        const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
+        if (values.length !== headers.length) return;
+
+        const rawData = headers.reduce((obj, header, index) => {
+            obj[header] = values[index];
+            return obj;
+        }, {});
+
+        let order = {};
+        let isValid = true;
+
+        switch (source) {
+            case 'shopee':
+                order = {
+                    nama_customer: rawData['Recipient'],
+                    total_rm: parseFloat(rawData['Order Amount']) || 0,
+                    jenis_order: rawData['Product Name'],
+                    nombor_po_invoice: rawData['Order ID'],
+                    code_kain: rawData['Seller SKU'],
+                    nombor_phone: rawData['Phone'] || '',
+                    team_sale: 'Shopee',
+                    platform: 'Shopee'
+                };
+                if (rawData['Created Time']) {
+                    const [datePart] = rawData['Created Time'].split(' ');
+                    const [day, month, year] = datePart.split('/');
+                    order.tarikh = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+                break;
+
+            case 'tiktok':
+                order = {
+                    nama_customer: rawData['Buyer Name'],
+                    total_rm: parseFloat(rawData['Total Price']) || 0,
+                    jenis_order: rawData['Product Name'],
+                    nombor_po_invoice: rawData['Order Number'],
+                    code_kain: rawData['SKU'],
+                    nombor_phone: rawData['Phone Number'] || '',
+                    team_sale: 'Tiktok',
+                    platform: 'Tiktok'
+                };
+                if (rawData['Created At']) {
+                    order.tarikh = new Date(rawData['Created At']).toISOString().split('T')[0];
+                }
+                break;
+
+            case 'manual':
+                order = {
+                    tarikh: rawData['tarikh'],
+                    code_kain: rawData['code_kain'],
+                    nombor_po_invoice: rawData['nombor_po_invoice'],
+                    nama_customer: rawData['nama_customer'],
+                    team_sale: rawData['team_sale'],
+                    nombor_phone: rawData['nombor_phone'] || '',
+                    jenis_order: rawData['jenis_order'],
+                    total_rm: parseFloat(rawData['total_rm']) || 0,
+                    platform: rawData['platform']
+                };
+                break;
+
+            default:
+                isValid = false;
+        }
+
+        if (isValid && order.nombor_po_invoice) {
+            order.tarikh = order.tarikh || new Date().toISOString().split('T')[0];
+            order.createdAt = Timestamp.now();
+            order.source = `csv_${source}`;
+            orders.push(order);
+        }
+    });
+
+    return orders;
+}
+
+/**
+ * Menyimpan array of orders ke dalam Firestore
+ * @param {Array<Object>} orders Array objek order
+ * @returns {Promise<{successCount: number, errorCount: number}>} Bilangan kejayaan dan kegagalan
+ */
+async function saveOrdersToFirebase(orders) {
+    const ordersCollection = collection(window.db, 'orderData');
+    let successCount = 0;
+    let errorCount = 0;
+
+    const promises = orders.map(order => 
+        addDoc(ordersCollection, order)
+            .then(() => successCount++)
+            .catch(err => {
+                console.error('Gagal menyimpan order:', order.nombor_po_invoice, err);
+                errorCount++;
+            })
+    );
+
+    await Promise.all(promises);
+    return { successCount, errorCount };
+}
+
+/**
+ * Mengendalikan penghantaran borang secara manual
+ * @param {Event} e Objek event dari submit
+ */
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const orderData = Object.fromEntries(formData.entries());
+
+    orderData.total_rm = parseFloat(orderData.total_rm);
+    orderData.createdAt = Timestamp.now();
+    orderData.source = 'manual_form';
+
+    try {
+        const ordersCollection = collection(window.db, 'orderData');
+        await addDoc(ordersCollection, orderData);
+        showFeedback('Order berjaya dihantar!', 'success');
+        form.reset();
+        document.getElementById('tarikh').valueAsDate = new Date();
+    } catch (error) {
+        console.error('Ralat menghantar borang:', error);
+        showFeedback('Gagal menghantar order. Sila cuba lagi.', 'error');
+    }
+}
+
+/**
+ * Memaparkan mesej maklum balas kepada pengguna
+ * @param {string} message Mesej untuk dipaparkan
+ * @param {'success' | 'error' | 'info'} type Jenis mesej
+ */
+function showFeedback(message, type) {
+    const feedbackDiv = document.getElementById('feedback-message');
+    feedbackDiv.textContent = message;
+    feedbackDiv.className = `feedback-message show ${type}`;
+    
+    setTimeout(() => {
+        feedbackDiv.className = 'feedback-message';
+    }, 5000);
+}
+
+/**
+ * Menyembunyikan semua penunjuk proses upload
+ */
+function hideIndicators() {
+    document.getElementById('processingIndicator').classList.remove('show');
+    document.getElementById('successIndicator').classList.remove('show');
+}
+
+/**
+ * Memaparkan preview data yang diekstrak dari PDF
+ * @param {Object} order Data order yang diekstrak
+ */
+function showExtractedPreview(order) {
+    const previewDiv = document.getElementById('extractedPreview');
+    const previewContent = document.getElementById('previewContent');
+    
+    if (!previewDiv || !previewContent) return;
+    
+    // Create preview HTML
+    let previewHTML = `
+        <div class="pdf-summary">
+            <div class="summary-badge">
+                <i class="fas fa-file-pdf"></i>
+                <span>Data dari PDF Desa Murni Batik</span>
+            </div>
+            <div class="summary-stats">
+                <div class="stat-item">Total Produk: <strong>${order.products?.length || 0}</strong></div>
+                <div class="stat-item">Kuantiti: <strong>${order.total_quantity || 0}</strong></div>
+                <div class="stat-item">Jumlah: <strong>RM ${order.total_rm?.toFixed(2) || '0.00'}</strong></div>
+            </div>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Invoice:</span>
+            <span class="preview-value">${order.nombor_po_invoice}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Tarikh:</span>
+            <span class="preview-value">${order.tarikh}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Customer:</span>
+            <span class="preview-value">${order.nama_customer}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Phone:</span>
+            <span class="preview-value">${order.nombor_phone || 'Tidak ditemui'}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Team Sale:</span>
+            <span class="preview-value">${order.team_sale}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Platform:</span>
+            <span class="preview-value">${order.platform}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Jenis Order:</span>
+            <span class="preview-value">${order.jenis_order}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Code Kain (Dominan):</span>
+            <span class="preview-value">${order.code_kain}</span>
+        </div>
+        
+        <div class="preview-item">
+            <span class="preview-label">Total Amount:</span>
+            <span class="preview-value">RM ${order.total_rm?.toFixed(2)}</span>
+        </div>
+    `;
+    
+    // Add products table if available
+    if (order.products && order.products.length > 0) {
+        previewHTML += `
+            <div style="margin-top: 1rem;">
+                <h4 style="color: #60a5fa; margin-bottom: 0.5rem;">
+                    <i class="fas fa-list"></i> Senarai Produk (${order.products.length})
+                </h4>
+                <div class="csv-preview-table" style="max-height: 200px; overflow-y: auto;">
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Produk</th>
+                                <th>Qty</th>
+                                <th>Harga</th>
+                                <th>Jenis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        order.products.forEach(product => {
+            previewHTML += `
+                <tr>
+                    <td>${product.sku}</td>
+                    <td style="font-size: 0.7rem;">${product.product_name.substring(0, 30)}...</td>
+                    <td>${product.quantity}</td>
+                    <td>RM ${product.price.toFixed(2)}</td>
+                    <td><span style="font-size: 0.7rem; color: ${product.type === 'Ready Stock' ? '#22c55e' : '#f59e0b'}">${product.type}</span></td>
+                </tr>
+            `;
+        });
+        
+        previewHTML += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="preview-footer">
+                    Ready Stock: ${order.ready_stock_count} | Pre-Order: ${order.pre_order_count}
                 </div>
             </div>
         `;
-    }).join('');
+    }
+    
+    previewContent.innerHTML = previewHTML;
+    previewDiv.classList.add('show');
+    
+    // Auto-fill form with extracted data
+    populateForm(order);
 }
 
-function showNoDataState() {
-    document.getElementById('total-sales').textContent = 'RM 0.00';
-    document.getElementById('total-sales-count').textContent = '0 entri (Tiada data)';
-    document.getElementById('avg-roas').textContent = 'N/A';
-    document.getElementById('avg-roas-count').textContent = '0 entri (Tiada data)';
-    document.getElementById('leads-per-agent').textContent = 'N/A';
-    document.getElementById('leads-per-agent-count').textContent = '0 agent (Tiada data)';
-    document.getElementById('total-orders').textContent = '0';
-    document.getElementById('total-orders-count').textContent = '0 orders (Tiada data)';
+/**
+ * Auto-populate form dengan data yang diekstrak
+ * @param {Object} order Data order
+ */
+function populateForm(order) {
+    const fields = [
+        'tarikh', 'nombor_po_invoice', 'nama_customer', 
+        'team_sale', 'nombor_phone', 'jenis_order', 
+        'code_kain', 'total_rm', 'platform'
+    ];
     
-    const activityFeed = document.getElementById('activity-feed');
-    activityFeed.innerHTML = `
-        <div class="text-center text-yellow-500 py-8">
-            <svg class="w-16 h-16 mx-auto mb-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <h3 class="text-lg font-semibold mb-2">Tiada Data Tersedia</h3>
-            <p class="text-gray-400">Sila submit data melalui borang yang tersedia untuk melihat analytics.</p>
-            <div class="mt-4 space-x-2">
-                <a href="ecommerce.html" class="text-blue-400 hover:text-blue-300">Borang Order</a> |
-                <a href="marketing.html" class="text-blue-400 hover:text-blue-300">Marketing</a> |
-                <a href="salesteam.html" class="text-blue-400 hover:text-blue-300">Sales Team</a>
-            </div>
-        </div>
-    `;
-}
-
-// Utility functions
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ms-MY');
-}
-
-function formatRelativeTime(date) {
-    const now = new Date();
-    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Baru sahaja';
-    if (diffInMinutes < 60) return `${diffInMinutes} minit yang lalu`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours} jam yang lalu`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays} hari yang lalu`;
-    
-    return date.toLocaleDateString('ms-MY');
-}
-
-function updateCurrentTime() {
-    const now = new Date();
-    const timeElement = document.getElementById('current-time');
-    if (timeElement) {
-        timeElement.textContent = now.toLocaleString('ms-MY');
-    }
-}
-
-function showLoadingState() {
-    document.getElementById('total-sales').textContent = 'Loading...';
-    document.getElementById('avg-roas').textContent = 'Loading...';
-    document.getElementById('leads-per-agent').textContent = 'Loading...';
-    document.getElementById('total-orders').textContent = 'Loading...';
-    
-    const activityFeed = document.getElementById('activity-feed');
-    activityFeed.innerHTML = '<div class="text-center text-blue-500 py-8"><div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>Memuatkan data...</div>';
-}
-
-function showErrorState() {
-    document.getElementById('total-sales').textContent = 'Error';
-    document.getElementById('avg-roas').textContent = 'Error';
-    document.getElementById('leads-per-agent').textContent = 'Error';
-    document.getElementById('total-orders').textContent = 'Error';
-    
-    const activityFeed = document.getElementById('activity-feed');
-    activityFeed.innerHTML = `
-        <div class="text-center text-red-500 py-8">
-            <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-            </svg>
-            <h3 class="text-lg font-semibold mb-2">Gagal Memuatkan Data</h3>
-            <p class="text-gray-400">Sila refresh halaman atau check console untuk error details.</p>
-        </div>
-    `;
-}
-
-// Power Metrics Calculator
-const MONTHLY_KPI = 15000; // RM 15,000 monthly target
-
-class PowerMetricsCalculator {
-    constructor() {
-        this.monthlyKPI = MONTHLY_KPI;
-        this.currentDate = new Date();
-        this.currentMonth = this.currentDate.getMonth() + 1;
-        this.currentYear = this.currentDate.getFullYear();
-        this.currentDay = this.currentDate.getDate();
-    }
-
-    // Calculate working days in current month (excluding weekends)
-    getWorkingDaysInMonth() {
-        const year = this.currentYear;
-        const month = this.currentMonth;
-        const firstDay = new Date(year, month - 1, 1);
-        const lastDay = new Date(year, month, 0);
-        
-        let workingDays = 0;
-        for (let day = new Date(firstDay); day <= lastDay; day.setDate(day.getDate() + 1)) {
-            const dayOfWeek = day.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday (0) or Saturday (6)
-                workingDays++;
-            }
-        }
-        return workingDays;
-    }
-
-    // Calculate working days from start of month to current date
-    getWorkingDaysToDate() {
-        const year = this.currentYear;
-        const month = this.currentMonth;
-        const firstDay = new Date(year, month - 1, 1);
-        const currentDate = new Date(year, month - 1, this.currentDay);
-        
-        let workingDays = 0;
-        for (let day = new Date(firstDay); day <= currentDate; day.setDate(day.getDate() + 1)) {
-            const dayOfWeek = day.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday (0) or Saturday (6)
-                workingDays++;
-            }
-        }
-        return workingDays;
-    }
-
-    // Calculate remaining working days in the month
-    getRemainingWorkingDays() {
-        const totalWorkingDays = this.getWorkingDaysInMonth();
-        const workingDaysToDate = this.getWorkingDaysToDate();
-        return Math.max(0, totalWorkingDays - workingDaysToDate);
-    }
-
-    // Calculate KPI Harian
-    calculateKPIHarian() {
-        const totalWorkingDays = this.getWorkingDaysInMonth();
-        return this.monthlyKPI / totalWorkingDays;
-    }
-
-    // Calculate KPI MTD
-    calculateKPIMTD() {
-        const workingDaysToDate = this.getWorkingDaysToDate();
-        const kpiHarian = this.calculateKPIHarian();
-        return kpiHarian * workingDaysToDate;
-    }
-
-    // Get Sale MTD from power metrics data
-    getSaleMTD(salesTeamData) {
-        const currentMonth = this.currentMonth;
-        const currentYear = this.currentYear;
-        
-        return salesTeamData
-            .filter(item => {
-                // Check if item is power_metrics type
-                if (item.type !== 'power_metrics') return false;
-                
-                let itemDate;
-                // Handle different date formats
-                if (item.tarikh) {
-                    itemDate = new Date(item.tarikh);
-                } else if (item.createdAt) {
-                    // Handle Firestore timestamp
-                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-                } else {
-                    return false;
-                }
-                
-                return itemDate.getMonth() + 1 === currentMonth && 
-                       itemDate.getFullYear() === currentYear;
-            })
-            .reduce((total, item) => {
-                const saleAmount = parseFloat(item.total_sale_bulan) || 0;
-                return total + saleAmount;
-            }, 0);
-    }
-
-    // Calculate Balance Bulanan
-    calculateBalanceBulanan(saleMTD) {
-        return this.monthlyKPI - saleMTD;
-    }
- 
-    // Calculate Balance MTD
-    calculateBalanceMTD(saleMTD) {
-        const kpiMTD = this.calculateKPIMTD();
-        return kpiMTD - saleMTD;
-    }
-
-    // Get Total Close Count from power metrics
-    getTotalCloseCount(salesTeamData) {
-        const currentMonth = this.currentMonth;
-        const currentYear = this.currentYear;
-        
-        return salesTeamData
-            .filter(item => {
-                if (item.type !== 'power_metrics') return false;
-                
-                let itemDate;
-                if (item.tarikh) {
-                    itemDate = new Date(item.tarikh);
-                } else if (item.createdAt) {
-                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-                } else {
-                    return false;
-                }
-                
-                return itemDate.getMonth() + 1 === currentMonth && 
-                       itemDate.getFullYear() === currentYear;
-            })
-            .reduce((total, item) => {
-                const closeCount = parseInt(item.total_close_bulan) || 0;
-                return total + closeCount;
-            }, 0);
-    }
-
-    // Get Total Lead Count from power metrics
-    getTotalLeadCount(salesTeamData) {
-        const currentMonth = this.currentMonth;
-        const currentYear = this.currentYear;
-        
-        return salesTeamData
-            .filter(item => {
-                if (item.type !== 'power_metrics') return false;
-                
-                let itemDate;
-                if (item.tarikh) {
-                    itemDate = new Date(item.tarikh);
-                } else if (item.createdAt) {
-                    itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-                } else {
-                    return false;
-                }
-                
-                return itemDate.getMonth() + 1 === currentMonth && 
-                       itemDate.getFullYear() === currentYear;
-            })
-            .reduce((total, item) => {
-                const leadCount = parseInt(item.total_lead_bulan) || 0;
-                return total + leadCount;
-            }, 0);
-    }
-
-    // Calculate Total Close Percentage
-    calculateTotalCloseRate(salesTeamData) {
-        const totalClose = this.getTotalCloseCount(salesTeamData);
-        const totalLead = this.getTotalLeadCount(salesTeamData);
-        
-        if (totalLead === 0) return 0;
-        return (totalClose / totalLead) * 100;
-    }
-
-    // Calculate Performance Status
-    getPerformanceStatus(saleMTD) {
-        const kpiMTD = this.calculateKPIMTD();
-        const monthlyProgress = (saleMTD / this.monthlyKPI) * 100;
-        const mtdProgress = kpiMTD > 0 ? (saleMTD / kpiMTD) * 100 : 0;
-        
-        const workingDaysToDate = this.getWorkingDaysToDate();
-        const totalWorkingDays = this.getWorkingDaysInMonth();
-        const expectedProgress = (workingDaysToDate / totalWorkingDays) * 100;
-        
-        return {
-            monthlyProgress,
-            mtdProgress,
-            expectedProgress,
-            isAhead: monthlyProgress >= expectedProgress,
-            isOnTrack: mtdProgress >= 90, // 90% of MTD target
-            performanceGap: monthlyProgress - expectedProgress
-        };
-    }
-
-    // Calculate all metrics
-    calculateAllMetrics(salesTeamData) {
-        const saleMTD = this.getSaleMTD(salesTeamData);
-        const kpiHarian = this.calculateKPIHarian();
-        const kpiMTD = this.calculateKPIMTD();
-        const balanceBulanan = this.calculateBalanceBulanan(saleMTD);
-        const balanceMTD = this.calculateBalanceMTD(saleMTD);
-        const totalCloseRate = this.calculateTotalCloseRate(salesTeamData);
-        const totalWorkingDays = this.getWorkingDaysInMonth();
-        const workingDaysToDate = this.getWorkingDaysToDate();
-        const remainingWorkingDays = this.getRemainingWorkingDays();
-        const performanceStatus = this.getPerformanceStatus(saleMTD);
-
-        return {
-            // KPI Values
-            kpiHarian: kpiHarian,
-            kpiMTD: kpiMTD,
-            saleMTD: saleMTD,
-            balanceBulanan: balanceBulanan,
-            balanceMTD: balanceMTD,
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element && order[field]) {
+            element.value = order[field];
             
-            // Performance Metrics
-            bilanganTerjual: this.getTotalCloseCount(salesTeamData),
-            totalCloseRate: totalCloseRate,
+            // Add visual feedback
+            element.style.background = 'rgba(34, 197, 94, 0.1)';
+            element.style.borderColor = '#22c55e';
             
-            // Day Calculations
-            totalWorkingDays: totalWorkingDays,
-            workingDaysToDate: workingDaysToDate,
-            remainingWorkingDays: remainingWorkingDays,
-            
-            // Progress Indicators
-            monthlyProgress: performanceStatus.monthlyProgress,
-            mtdProgress: performanceStatus.mtdProgress,
-            expectedProgress: performanceStatus.expectedProgress,
-            performanceGap: performanceStatus.performanceGap,
-            
-            // Status Flags
-            isAhead: performanceStatus.isAhead,
-            isOnTrack: performanceStatus.isOnTrack
-        };
-    }
-}
-
-function updatePowerMetricsDisplay(salesTeamData) {
-    const calculator = new PowerMetricsCalculator();
-    const metrics = calculator.calculateAllMetrics(salesTeamData);
-
-    // Helper function untuk update element
-    const updateElement = (id, value) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = value;
+            // Remove highlight after 3 seconds
+            setTimeout(() => {
+                element.style.background = '';
+                element.style.borderColor = '';
+            }, 3000);
         }
-    };
-
-    // Update KPI displays
-    updateElement('kpi-harian', `RM ${metrics.kpiHarian.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
-    updateElement('kpi-mtd', `RM ${metrics.kpiMTD.toLocaleString('ms-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
-    updateElement('sale-mtd', `RM ${metrics.saleMTD.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-    updateElement('balance-bulanan', `RM ${metrics.balanceBulanan.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-    updateElement('balance-mtd', `RM ${metrics.balanceMTD.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-    updateElement('bilangan-terjual', metrics.bilanganTerjual.toString());
-    updateElement('total-close-rate', `${metrics.totalCloseRate.toFixed(1)}%`);
-    updateElement('working-days-info', `${metrics.workingDaysToDate} / ${metrics.totalWorkingDays}`);
-
-    // Update descriptions
-    updateElement('kpi-harian-desc', `per hari kerja`);
-    updateElement('kpi-mtd-desc', `sasaran bulan ini`);
-    updateElement('sale-mtd-desc', `jualan sebenar`);
-    updateElement('balance-bulanan-desc', `perlu dicapai`);
-    updateElement('balance-mtd-desc', metrics.balanceMTD > 0 ? 'gap sasaran' : 'melebihi MTD');
-    updateElement('bilangan-terjual-desc', `unit terjual`);
-    updateElement('total-close-rate-desc', `conversion rate`);
-    updateElement('working-days-desc', `hari ini / total`);
-
-    // Update progress bars
-    const monthlyProgressBar = document.getElementById('monthly-progress-bar');
-    const mtdProgressBar = document.getElementById('mtd-progress-bar');
+    });
     
-    if (monthlyProgressBar && mtdProgressBar) {
-        // Monthly progress
-        const monthlyProgressPercent = Math.min(Math.max(metrics.monthlyProgress, 0), 100);
-        monthlyProgressBar.style.width = `${monthlyProgressPercent}%`;
-        
-        // Change color based on performance
-        if (metrics.isAhead) {
-            monthlyProgressBar.className = 'bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300';
-        } else if (metrics.performanceGap > -10) {
-            monthlyProgressBar.className = 'bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-300';
-        } else {
-            monthlyProgressBar.className = 'bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300';
-        }
-        
-        updateElement('monthly-progress-text', `${monthlyProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${MONTHLY_KPI.toLocaleString('ms-MY')})`);
-
-        // MTD progress
-        const mtdProgressPercent = Math.min(Math.max(metrics.mtdProgress, 0), 100);
-        mtdProgressBar.style.width = `${mtdProgressPercent}%`;
-        
-        // Change MTD progress bar color
-        if (metrics.isOnTrack) {
-            mtdProgressBar.className = 'bg-gradient-to-r from-green-500 to-teal-500 h-2 rounded-full transition-all duration-300';
-        } else if (mtdProgressPercent >= 70) {
-            mtdProgressBar.className = 'bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-300';
-        } else {
-            mtdProgressBar.className = 'bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300';
-        }
-        
-        updateElement('mtd-progress-text', `${mtdProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${metrics.kpiMTD.toLocaleString('ms-MY')})`);
-    }
-
-    // Update status indicators
-    updateStatusIndicators(metrics);
-
-    console.log('Power Metrics Updated:', metrics);
+    // Show success message
+    showFeedback('Data PDF berjaya diekstrak dan diisi ke dalam form!', 'success');
 }
 
-function updateStatusIndicators(metrics) {
-    const updateStatusElement = (id, text, className = null) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = text;
-            if (className) {
-                element.className = className;
-            }
-        }
-    };
-
-    // KPI Harian Status
-    updateStatusElement('kpi-harian-status', 'Target', 'text-xs text-blue-400 bg-blue-400/20 px-2 py-1 rounded-full');
-    
-    // KPI MTD Status
-    updateStatusElement('kpi-mtd-status', 'MTD', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-
-    // Sale MTD Trend
-    if (metrics.isAhead) {
-        updateStatusElement('sale-mtd-trend', '✓ Ahead', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.performanceGap > -10) {
-        updateStatusElement('sale-mtd-trend', '△ Close', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
-    } else {
-        updateStatusElement('sale-mtd-trend', '⚠ Behind', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
-    }
-
-    // Balance Bulanan Status
-    if (metrics.balanceBulanan <= 0) {
-        updateStatusElement('balance-bulanan-status', '🎯 Achieved', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.remainingWorkingDays <= 0) {
-        updateStatusElement('balance-bulanan-status', '❌ Missed', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
-    } else {
-        updateStatusElement('balance-bulanan-status', `${metrics.remainingWorkingDays} days`, 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full');
-    }
-
-    // Balance MTD Status
-    if (metrics.isOnTrack) {
-        updateStatusElement('balance-mtd-status', '✓ On Track', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.mtdProgress >= 70) {
-        updateStatusElement('balance-mtd-status', '△ Recovery', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
-    } else {
-        updateStatusElement('balance-mtd-status', '🚨 Critical', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
-    }
-
-    // Close Rate Status
-    if (metrics.totalCloseRate >= 20) {
-        updateStatusElement('close-rate-status', '✓ Excellent', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.totalCloseRate >= 10) {
-        updateStatusElement('close-rate-status', '△ Good', 'text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full');
-    } else {
-        updateStatusElement('close-rate-status', 'Need Focus', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
-    }
-
-    // Working Days Status
-    if (metrics.remainingWorkingDays <= 0) {
-        updateStatusElement('working-days-status', '🏁 Month End', 'text-xs text-purple-400 bg-purple-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.isAhead) {
-        updateStatusElement('working-days-status', '✓ Ahead', 'text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full');
-    } else if (metrics.remainingWorkingDays <= 5) {
-        updateStatusElement('working-days-status', '🔥 Urgent', 'text-xs text-red-400 bg-red-400/20 px-2 py-1 rounded-full');
-    } else {
-        updateStatusElement('working-days-status', 'Push Harder', 'text-xs text-orange-400 bg-orange-400/20 px-2 py-1 rounded-full');
-    }
-}
-
-console.log('Dashboard.js loaded successfully');
+// Export functions untuk integration
+window.parsePdfInvoice = parsePdfInvoice;
+window.showEnhancedExtractedPreview = showEnhancedExtractedPreview;
