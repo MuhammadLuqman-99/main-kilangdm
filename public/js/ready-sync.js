@@ -438,15 +438,20 @@ async function syncNowWithYourSheets() {
             throw new Error('Firebase not initialized. Please wait and try again.');
         }
         
-            // Check if data is available
+         // Check if data is available
         const dataCount = checkDataAvailability();
+
         if (dataCount === 0 && !window.db) {
             throw new Error('No data available and Firebase not ready');
         }
 
-        console.log(`📊 Data available: ${dataCount} records`);
-        
-        console.log(`📊 Preparing to sync ${total} records...`);
+        if (dataCount === 0) {
+            console.log('📥 No dashboard data, will load from Firestore...');
+        } else {
+            console.log(`📊 Dashboard data available: ${dataCount} records`);
+        }
+
+        console.log(`📊 Preparing to sync data...`);
         
         const result = await syncInstance.syncAllData();
         
