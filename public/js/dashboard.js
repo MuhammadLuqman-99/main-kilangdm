@@ -113,13 +113,20 @@ async function initializeDashboard() {
         updateCurrentTime();
         setInterval(updateCurrentTime, 60000); // Update every minute
         
-        // Initialize charts with allData
-        updateSalesTrendChart(allData);
-        updateLeadsOnlyChart(allData); // Use the new leads-only function
-        updateChannelChart(allData);
-        updateTeamChart(allData);
-        updateSpendChart(allData);
-        updateLeadQualityChart(allData);
+        // Initialize professional charts with allData
+        if (window.ProfessionalCharts) {
+            window.ProfessionalCharts.updateSalesTrendChart(allData);
+            window.ProfessionalCharts.updateLeadSourcesChart(allData);
+            window.ProfessionalCharts.updateChannelChart(allData);
+            window.ProfessionalCharts.updateTeamChart(allData);
+            window.ProfessionalCharts.updateMarketingROIChart(allData);
+        } else {
+            // Fallback to original charts if professional charts not loaded
+            updateSalesTrendChart(allData);
+            updateLeadsOnlyChart(allData);
+            updateChannelChart(allData);
+            updateTeamChart(allData);
+        }
         
         // Initialize marketing cost chart (this is async)
         try {
@@ -387,8 +394,17 @@ function applyFilters() {
     // Refresh power metrics with updated target
     updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
     
-    // Use the NEW leads-only chart function
-    updateLeadsOnlyChart(filteredData);
+    // Update professional charts with filtered data
+    if (window.ProfessionalCharts) {
+        window.ProfessionalCharts.updateSalesTrendChart(filteredData);
+        window.ProfessionalCharts.updateLeadSourcesChart(filteredData);
+        window.ProfessionalCharts.updateChannelChart(filteredData);
+        window.ProfessionalCharts.updateTeamChart(filteredData);
+        window.ProfessionalCharts.updateMarketingROIChart(filteredData);
+    } else {
+        // Fallback to original chart function
+        updateLeadsOnlyChart(filteredData);
+    }
     
     if (window.getEnhancedFilterSelection) {
         const enhanced = window.getEnhancedFilterSelection();
