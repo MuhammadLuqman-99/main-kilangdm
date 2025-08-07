@@ -360,11 +360,8 @@ function updateSalesTrendChart(data) {
     const ctx = document.getElementById('salesTrendChart');
     if (!ctx || !data) return;
 
-    // Destroy existing chart if it exists
-    if (window.salesTrendChartInstance) {
-        window.salesTrendChartInstance.destroy();
-        console.log('🗑️ Previous sales trend chart destroyed');
-    }
+    // Use safe chart destruction
+    safeDestroyChart('salesTrendChart', 'salesTrendChartInstance');
 
     const salesData = data.orders || [];
     const last30Days = getLast30Days();
@@ -416,11 +413,8 @@ function updateLeadSourcesChart(data) {
     const ctx = document.getElementById('leadsChart');
     if (!ctx || !data) return;
 
-    // Destroy existing chart if it exists
-    if (window.leadsChartInstance) {
-        window.leadsChartInstance.destroy();
-        console.log('🗑️ Previous leads chart destroyed');
-    }
+    // Use safe chart destruction
+    safeDestroyChart('leadsChart', 'leadsChartInstance');
 
     const leadSources = {};
     
@@ -462,11 +456,8 @@ function updateChannelChart(data) {
     const ctx = document.getElementById('channelChart');
     if (!ctx || !data) return;
 
-    // Destroy existing chart if it exists
-    if (window.channelChartInstance) {
-        window.channelChartInstance.destroy();
-        console.log('🗑️ Previous channel chart destroyed');
-    }
+    // Use safe chart destruction
+    safeDestroyChart('channelChart', 'channelChartInstance');
 
     const channelRevenue = {};
     
@@ -503,11 +494,8 @@ function updateTeamChart(data) {
     const ctx = document.getElementById('teamChart');
     if (!ctx || !data) return;
 
-    // Destroy existing chart if it exists
-    if (window.teamChartInstance) {
-        window.teamChartInstance.destroy();
-        console.log('🗑️ Previous team chart destroyed');
-    }
+    // Use safe chart destruction
+    safeDestroyChart('teamChart', 'teamChartInstance');
 
     const teamPerformance = {};
     
@@ -549,11 +537,8 @@ function updateMarketingROIChart(data) {
     const ctx = document.getElementById('costPerLeadChart');
     if (!ctx || !data) return;
 
-    // Destroy existing chart if it exists
-    if (window.marketingROIChartInstance) {
-        window.marketingROIChartInstance.destroy();
-        console.log('🗑️ Previous marketing ROI chart destroyed');
-    }
+    // Use safe chart destruction
+    safeDestroyChart('costPerLeadChart', 'marketingROIChartInstance');
 
     const last7Days = getLast7Days();
     const spendData = [];
@@ -634,24 +619,43 @@ function getLast7Days() {
 }
 
 // ===================================================
-// CHART CLEANUP FUNCTION
+// CHART CLEANUP UTILITIES
 // ===================================================
 
+function safeDestroyChart(canvasId, instanceName) {
+    const ctx = document.getElementById(canvasId);
+    if (ctx) {
+        // Destroy Chart.js instance on canvas
+        const existingChart = Chart.getChart(ctx);
+        if (existingChart) {
+            existingChart.destroy();
+            console.log(`🗑️ Destroyed chart on canvas: ${canvasId}`);
+        }
+    }
+    
+    // Destroy our stored instance
+    if (window[instanceName]) {
+        try {
+            window[instanceName].destroy();
+            console.log(`🗑️ Destroyed stored instance: ${instanceName}`);
+        } catch (e) {
+            console.log(`⚠️ Instance ${instanceName} already destroyed`);
+        }
+        window[instanceName] = null;
+    }
+}
+
 function destroyAllCharts() {
-    const chartInstances = [
-        'salesTrendChartInstance',
-        'leadsChartInstance', 
-        'channelChartInstance',
-        'teamChartInstance',
-        'marketingROIChartInstance'
+    const charts = [
+        ['salesTrendChart', 'salesTrendChartInstance'],
+        ['leadsChart', 'leadsChartInstance'],
+        ['channelChart', 'channelChartInstance'],
+        ['teamChart', 'teamChartInstance'],
+        ['costPerLeadChart', 'marketingROIChartInstance']
     ];
     
-    chartInstances.forEach(instanceName => {
-        if (window[instanceName]) {
-            window[instanceName].destroy();
-            window[instanceName] = null;
-            console.log(`🗑️ Destroyed ${instanceName}`);
-        }
+    charts.forEach(([canvasId, instanceName]) => {
+        safeDestroyChart(canvasId, instanceName);
     });
 }
 
