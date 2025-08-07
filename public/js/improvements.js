@@ -96,13 +96,13 @@ class KilangDMEnhancements {
     // ==========================================
     initTooltips() {
         document.addEventListener('mouseenter', (e) => {
-            if (e.target.hasAttribute('data-tooltip')) {
+            if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-tooltip')) {
                 this.showTooltip(e.target);
             }
         }, true);
 
         document.addEventListener('mouseleave', (e) => {
-            if (e.target.hasAttribute('data-tooltip')) {
+            if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-tooltip')) {
                 this.hideTooltip(e.target);
             }
         }, true);

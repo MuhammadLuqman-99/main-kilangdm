@@ -384,6 +384,9 @@ function applyFilters() {
     // UPDATE: Add this line at the end of applyFilters function
     updateTeamDisplay(); // <-- TAMBAH LINE INI
     
+    // Refresh power metrics with updated target
+    updatePowerMetrics(filteredData.salesteam);
+    
     // Use the NEW leads-only chart function
     updateLeadsOnlyChart(filteredData);
     
@@ -1184,7 +1187,7 @@ function showErrorState() {
 
 class EnhancedPowerMetricsCalculator {
     constructor(customWorkingDays = null) {
-        this.monthlyKPI = 15000; // RM 15,000 monthly target
+        this.monthlyKPI = this.getMonthlyTarget(); // Dynamic target based on team size
         this.currentDate = new Date();
         this.currentMonth = this.currentDate.getMonth() + 1;
         this.currentYear = this.currentDate.getFullYear();
@@ -1195,6 +1198,32 @@ class EnhancedPowerMetricsCalculator {
         
         console.log(`📅 Current Date: ${this.currentDate.toLocaleDateString('ms-MY')}`);
         console.log(`📊 Monthly KPI: RM ${this.monthlyKPI.toLocaleString()}`);
+    }
+
+    // Get monthly target based on selected team or total team size
+    getMonthlyTarget() {
+        const baseTargetPerPerson = 15000; // RM 15,000 per person
+        
+        // Check if specific team is selected
+        let selectedTeam = '';
+        
+        // Check enhanced filter first
+        if (window.getEnhancedFilterSelection) {
+            const enhanced = window.getEnhancedFilterSelection();
+            selectedTeam = enhanced.agent || '';
+        } else {
+            // Fallback to old filter
+            const agentFilter = document.getElementById('agent-filter');
+            selectedTeam = agentFilter?.value || '';
+        }
+        
+        if (selectedTeam) {
+            // Individual team member target
+            return baseTargetPerPerson;
+        } else {
+            // Calculate total target for all team members
+            return calculateTotalSalesTeamTarget();
+        }
     }
 
     // Enhanced working days calculation with custom configuration
@@ -2817,4 +2846,77 @@ function updateTeamDisplay() {
         teamDisplay.style.display = 'none';
         teamNameElement.textContent = 'Semua Team';
     }
+    
+    // Update target display based on team selection
+    updateTargetDisplay(selectedTeam);
+}
+
+// Function to update target display based on team filter
+function updateTargetDisplay(selectedTeam) {
+    const targetLabel = document.querySelector('.target-label');
+    const targetValue = document.querySelector('.target-value');
+    
+    // Also update header stats target (the one near "Live" status)
+    const headerStatLabel = document.querySelector('.header-stats .stat-label');
+    const headerStatValue = document.querySelector('.header-stats .stat-value');
+    
+    if (selectedTeam) {
+        // Show individual team member target
+        if (targetLabel && targetValue) {
+            targetLabel.textContent = `Target ${selectedTeam}`;
+            targetValue.textContent = 'RM 15,000'; // Per person target
+            targetValue.style.color = '#60A5FA'; // Blue for individual
+        }
+        
+        // Update header stats
+        if (headerStatLabel && headerStatValue) {
+            headerStatLabel.textContent = `Target ${selectedTeam}`;
+            headerStatValue.textContent = 'RM 15,000';
+            headerStatValue.style.color = '#60A5FA'; // Blue for individual
+        }
+    } else {
+        // Calculate total target for all sales team members
+        const totalTeamTarget = calculateTotalSalesTeamTarget();
+        
+        if (targetLabel && targetValue) {
+            targetLabel.textContent = 'Target Keseluruhan Team';
+            targetValue.textContent = `RM ${totalTeamTarget.toLocaleString()}`;
+            targetValue.style.color = '#10B981'; // Green for overall
+        }
+        
+        // Update header stats  
+        if (headerStatLabel && headerStatValue) {
+            headerStatLabel.textContent = 'Target Keseluruhan Team';
+            headerStatValue.textContent = `RM ${totalTeamTarget.toLocaleString()}`;
+            headerStatValue.style.color = '#10B981'; // Green for overall
+        }
+    }
+}
+
+// Calculate total target based on number of sales team members
+function calculateTotalSalesTeamTarget() {
+    const baseTargetPerPerson = 15000; // RM 15,000 per person
+    
+    if (!allData.salesteam) return baseTargetPerPerson;
+    
+    // Get unique team members from sales team data
+    const uniqueTeamMembers = new Set();
+    
+    allData.salesteam.forEach(item => {
+        if (item.team && item.team.trim()) {
+            uniqueTeamMembers.add(item.team.trim());
+        }
+    });
+    
+    const teamCount = uniqueTeamMembers.size || 1; // Minimum 1 to avoid 0
+    const totalTarget = baseTargetPerPerson * teamCount;
+    
+    console.log(`🎯 Sales Team Target Calculation:`, {
+        baseTargetPerPerson,
+        teamCount,
+        totalTarget,
+        teamMembers: Array.from(uniqueTeamMembers)
+    });
+    
+    return totalTarget;
 }
