@@ -380,6 +380,9 @@ function applyFilters() {
     // Update marketing budget and lead efficiency
     updateMarketingBudgetDisplay(filteredData.marketing);
     updateLeadEfficiencyDisplay(filteredData.salesteam);
+
+    // UPDATE: Add this line at the end of applyFilters function
+    updateTeamDisplay(); // <-- TAMBAH LINE INI
     
     // Use the NEW leads-only chart function
     updateLeadsOnlyChart(filteredData);
@@ -473,6 +476,9 @@ function clearFilters() {
     updateRecentActivity(allData);
     updateActiveFiltersDisplay();
     updateEnhancedPowerMetricsDisplay(allData.salesteam);
+    
+    // UPDATE: Add this line at the end of clearFilters function  
+    updateTeamDisplay(); // <-- TAMBAH LINE INI
     
     // Use the NEW leads-only chart function
     updateLeadsOnlyChart(allData);
@@ -2783,3 +2789,32 @@ if (typeof window !== 'undefined') {
 // Export for external use
 window.loadMarketingCostData = loadMarketingCostData;
 window.updateCostPerLeadKPI = updateCostPerLeadKPI;
+// 3. TAMBAH function ni dalam dashboard.js
+
+function updateTeamDisplay() {
+    const teamDisplay = document.getElementById('selected-team-display');
+    const teamNameElement = document.getElementById('current-team-name');
+    
+    if (!teamDisplay || !teamNameElement) return;
+    
+    // Get selected agent/team from filter
+    let selectedTeam = '';
+    
+    // Check enhanced filter first
+    if (window.getEnhancedFilterSelection) {
+        const enhanced = window.getEnhancedFilterSelection();
+        selectedTeam = enhanced.agent || '';
+    } else {
+        // Fallback to old filter
+        const agentFilter = document.getElementById('agent-filter');
+        selectedTeam = agentFilter?.value || '';
+    }
+    
+    if (selectedTeam) {
+        teamDisplay.style.display = 'block';
+        teamNameElement.textContent = selectedTeam;
+    } else {
+        teamDisplay.style.display = 'none';
+        teamNameElement.textContent = 'Semua Team';
+    }
+}

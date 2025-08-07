@@ -4089,3 +4089,37 @@ canvas {
         max-width: 1400px;
     }
 }
+/* 2. TAMBAH CSS ni dalam style.css */
+
+.selected-team-display {
+    text-align: right;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    margin-left: 1rem;
+}
+
+.team-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--gray-400);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.team-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary-400);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .selected-team-display {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+}
