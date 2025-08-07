@@ -1,0 +1,432 @@
+/* ===================================================
+   KILANGDM UNIFIED THEME
+   Tema seragam untuk semua halaman dashboard
+   ================================================= */
+
+/* Global Variables */
+:root {
+    /* Main Colors */
+    --primary-bg: #0f172a;
+    --secondary-bg: #1e293b;
+    --card-bg: rgba(30, 41, 59, 0.8);
+    --hover-bg: rgba(59, 130, 246, 0.1);
+    
+    /* Gradient Backgrounds */
+    --main-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    --card-gradient: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%);
+    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    
+    /* Text Colors */
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+    --text-accent: #3b82f6;
+    
+    /* Border Colors */
+    --border-primary: rgba(59, 130, 246, 0.3);
+    --border-secondary: rgba(148, 163, 184, 0.2);
+    --border-muted: rgba(100, 116, 139, 0.2);
+    
+    /* Status Colors */
+    --success-color: #22c55e;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --info-color: #3b82f6;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+    
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    
+    /* Fonts */
+    --font-primary: 'Inter', sans-serif;
+}
+
+/* ===================================================
+   GLOBAL STYLES
+   ================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-primary);
+    margin: 0;
+    padding: 0;
+    background: var(--main-gradient);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* Override any existing body styles */
+body.bg-gray-900,
+body[style*="background"] {
+    background: var(--main-gradient) !important;
+    background-attachment: fixed !important;
+}
+
+/* ===================================================
+   NAVIGATION COMPONENTS
+   ================================================= */
+
+.main-nav,
+.nav-container {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.nav-brand h2 {
+    color: var(--text-primary);
+}
+
+.nav-brand span {
+    color: var(--text-secondary);
+}
+
+.nav-link {
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--text-primary);
+    background: var(--hover-bg);
+}
+
+.nav-link.active {
+    color: var(--text-accent);
+    background: var(--hover-bg);
+    border-color: var(--text-accent);
+}
+
+/* ===================================================
+   FLOATING HOME BUTTON
+   ================================================= */
+
+.floating-home-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+}
+
+.home-btn {
+    background: var(--accent-gradient);
+    color: white;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.home-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* ===================================================
+   MAIN CONTAINERS
+   ================================================= */
+
+.main-container,
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.main-container {
+    margin-top: 6rem;
+    min-height: calc(100vh - 8rem);
+}
+
+/* ===================================================
+   CARDS & SECTIONS
+   ================================================= */
+
+.section,
+.card,
+.kpi-card,
+.metric-card,
+.chart-card,
+.upload-container,
+.form-container {
+    background: var(--card-gradient);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+}
+
+.card:hover,
+.kpi-card:hover,
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-primary);
+}
+
+/* ===================================================
+   FORM ELEMENTS
+   ================================================= */
+
+.form-input,
+.form-select,
+.filter-input,
+.filter-select,
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+input[type="file"],
+select,
+textarea {
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-secondary);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    width: 100%;
+    transition: all 0.3s ease;
+    font-family: var(--font-primary);
+}
+
+.form-input:focus,
+.form-select:focus,
+.filter-input:focus,
+.filter-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--text-accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-select option,
+select option {
+    background: var(--secondary-bg);
+    color: var(--text-primary);
+}
+
+/* ===================================================
+   BUTTONS
+   ================================================= */
+
+.btn,
+button:not(.home-btn):not(.mobile-menu-btn) {
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-primary);
+}
+
+.btn:hover,
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-secondary);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--text-accent);
+    color: var(--text-accent);
+}
+
+.btn-outline:hover {
+    background: var(--text-accent);
+    color: white;
+}
+
+/* ===================================================
+   UPLOAD AREAS
+   ================================================= */
+
+.upload-area {
+    border: 3px dashed var(--border-primary);
+    border-radius: var(--radius-xl);
+    padding: 3rem 2rem;
+    text-align: center;
+    background: rgba(59, 130, 246, 0.05);
+    transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: var(--text-accent);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.upload-area.drag-over {
+    border-color: var(--success-color);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+/* ===================================================
+   FILE TYPE BADGES
+   ================================================= */
+
+.file-type-badge {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid var(--border-primary);
+    color: var(--text-accent);
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-type-badge.csv {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: var(--success-color);
+}
+
+.file-type-badge.pdf {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--error-color);
+}
+
+/* ===================================================
+   HEADERS & TITLES
+   ================================================= */
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.page-title,
+.section-title {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.page-subtitle,
+.section-subtitle {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* ===================================================
+   STATUS INDICATORS
+   ================================================= */
+
+.status-success {
+    color: var(--success-color);
+}
+
+.status-warning {
+    color: var(--warning-color);
+}
+
+.status-error {
+    color: var(--error-color);
+}
+
+.status-info {
+    color: var(--info-color);
+}
+
+/* ===================================================
+   RESPONSIVE DESIGN
+   ================================================= */
+
+@media (max-width: 768px) {
+    .main-container {
+        padding: 1rem;
+        margin-top: 5rem;
+    }
+    
+    .main-container.grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .floating-home-btn {
+        bottom: 1rem;
+        right: 1rem;
+    }
+    
+    .home-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .container,
+    .main-container {
+        padding: 1rem;
+    }
+    
+    .card,
+    .upload-container,
+    .form-container {
+        padding: 1rem;
+    }
+}
+
+/* ===================================================
+   UTILITY CLASSES
+   ================================================= */
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-accent { color: var(--text-accent); }
+
+.bg-primary { background: var(--primary-bg); }
+.bg-secondary { background: var(--secondary-bg); }
+.bg-card { background: var(--card-bg); }
+
+.border-primary { border-color: var(--border-primary); }
+.border-secondary { border-color: var(--border-secondary); }
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-xl { border-radius: var(--radius-xl); }

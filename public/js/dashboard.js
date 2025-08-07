@@ -385,7 +385,7 @@ function applyFilters() {
     updateTeamDisplay(); // <-- TAMBAH LINE INI
     
     // Refresh power metrics with updated target
-    updatePowerMetrics(filteredData.salesteam);
+    updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
     
     // Use the NEW leads-only chart function
     updateLeadsOnlyChart(filteredData);
