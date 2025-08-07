@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style/style.css">
     
     <!-- PDF.js dari CDNJS - lebih stabil -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -516,34 +517,6 @@ body {
     box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
 }
 
-.main-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 999;
-    padding: 0.5rem 0;
-}
-
-.nav-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
-}
-
-.nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
 .brand-icon {
     width: 40px;
     height: 40px;
@@ -783,7 +756,7 @@ body {
             </div>
 
             <!-- Time Display -->
-            <div class="nav-time">
+            <div class="main-nav">
                 <div class="time-label">Last Updated</div>
                 <div class="time-value" id="current-time">-</div>
             </div>
