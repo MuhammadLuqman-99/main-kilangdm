@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style/style.css">
+    <!-- 👉 TAMBAH ENHANCED CSS -->
+    <link rel="stylesheet" href="style/improvements.css">
     
     <!-- PDF.js dari CDNJS - lebih stabil -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -714,7 +716,7 @@ body {
     </div>
 
     <!-- Navigation Header -->
-    <nav class="nav-container responsive-nav"">
+    <nav class="nav-container responsive-nav">
         <div class="nav-container">
             <!-- Brand Section -->
             <div class="nav-brand">
@@ -767,6 +769,15 @@ body {
             </button>
         </div>
     </nav>
+    
+    <!-- 👉 TAMBAH BREADCRUMB -->
+    <div class="breadcrumb">
+        <a href="index.html" class="breadcrumb-item">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-item active">Borang Order</span>
+    </div>
 
     <!-- Main Content Container -->
     <div class="main-container">
@@ -805,9 +816,20 @@ body {
                     <input type="file" id="fileInput" accept=".pdf,.csv,.jpg,.jpeg,.png,.txt" hidden />
                 </div>
                 
-                <div class="processing-indicator" id="processingIndicator">
-                    <div class="spinner"></div>
-                    <p>Sedang memproses file...</p>
+                <!-- 👉 TAMBAH PROGRESS INDICATOR -->
+                <div class="progress-indicator" style="display: none; margin-top: 1rem;" id="upload-progress">
+                    <div class="step completed">
+                        <div class="step-icon">1</div>
+                        <span>File Selected</span>
+                    </div>
+                    <div class="step active">
+                        <div class="step-icon">2</div>
+                        <span>Processing</span>
+                    </div>
+                    <div class="step pending">
+                        <div class="step-icon">3</div>
+                        <span>Complete</span>
+                    </div>
                 </div>
 
                 <div class="success-indicator" id="successIndicator">
@@ -833,28 +855,64 @@ body {
                 <p>Isi maklumat order secara manual atau gunakan auto-fill</p>
             </div>
 
-            <form id="order-form" class="order-form">
+            <!-- 3. ENHANCED FORM VALIDATION - Update existing form -->
+            <!-- Cari form dengan id="order-form" dan update -->
+            <form id="order-form" class="order-form" data-validate>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="tarikh"><i class="fas fa-calendar"></i> Tarikh</label>
-                        <input type="date" id="tarikh" name="tarikh" class="form-input" required>
+                        <label for="tarikh" class="form-label">
+                            <i class="fas fa-calendar"></i> Tarikh
+                        </label>
+                        <input type="date" 
+                            id="tarikh" 
+                            name="tarikh" 
+                            class="form-input" 
+                            data-validate-field="required"
+                            required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="code_kain"><i class="fas fa-tag"></i> Code Kain</label>
-                        <input type="text" id="code_kain" name="code_kain" class="form-input" placeholder="e.g., BZL05DR" required>
+                        <label for="code_kain" class="form-label">
+                            <i class="fas fa-tag"></i> Code Kain 
+                            <i class="fas fa-info-circle" 
+                            data-tooltip="Format: 3 huruf + 2 nombor + 2 huruf (cth: BZL05DR)"
+                            data-tooltip-position="top"></i>
+                        </label>
+                        <input type="text" 
+                            id="code_kain" 
+                            name="code_kain" 
+                            class="form-input" 
+                            data-validate-field="required|min:6|max:10"
+                            placeholder="e.g., BZL05DR" 
+                            required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="nombor_po_invoice"><i class="fas fa-receipt"></i> Nombor PO / Invoice</label>
-                        <input type="text" id="nombor_po_invoice" name="nombor_po_invoice" class="form-input" placeholder="e.g., Inv-100403-210725" required>
+                        <label for="nombor_po_invoice" class="form-label">
+                            <i class="fas fa-receipt"></i> Nombor PO / Invoice
+                        </label>
+                        <input type="text" 
+                            id="nombor_po_invoice" 
+                            name="nombor_po_invoice" 
+                            class="form-input" 
+                            data-validate-field="required|min:5"
+                            placeholder="e.g., Inv-100403-210725" 
+                            required>
                     </div>
 
                     <div class="form-group">
-                        <label for="nama_customer"><i class="fas fa-user"></i> Nama Customer</label>
-                        <input type="text" id="nama_customer" name="nama_customer" class="form-input" placeholder="e.g., Azliza Awang Kechik" required>
+                        <label for="nama_customer" class="form-label">
+                            <i class="fas fa-user"></i> Nama Customer
+                        </label>
+                        <input type="text" 
+                            id="nama_customer" 
+                            name="nama_customer" 
+                            class="form-input" 
+                            data-validate-field="required|min:3|max:100"
+                            placeholder="e.g., Azliza Awang Kechik" 
+                            required>
                     </div>
                 </div>
 
@@ -901,7 +959,7 @@ body {
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn-clear" onclick="clearForm()">
+                    <button type="button" class="btn-clear" onclick="clearFormEnhanced()">
                         <i class="fas fa-eraser"></i> Clear Form
                     </button>
                     <button type="submit" class="btn-submit">
@@ -986,6 +1044,70 @@ body {
             document.getElementById('feedback-message').textContent = '';
             document.getElementById('extractedPreview').style.display = 'none';
         }
+    </script>
+    <!-- 👉 TAMBAH ENHANCED JS -->
+    <script src="js/improvements.js"></script>
+     <!-- 👉 TAMBAH ECOMMERCE SPECIFIC ENHANCEMENTS -->
+    <script>
+        // Enhanced form handling
+        function clearFormEnhanced() {
+            const form = document.getElementById('order-form');
+            form.reset();
+            document.getElementById('tarikh').valueAsDate = new Date();
+            
+            // Remove validation states
+            form.querySelectorAll('.form-input').forEach(input => {
+                input.classList.remove('valid', 'invalid');
+            });
+            form.querySelectorAll('.form-error').forEach(error => error.remove());
+            
+            kilangDMEnhancements.showNotification('Form telah di-reset', 'info', 2000);
+        }
+        
+        // Enhanced file upload
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const progressIndicator = document.getElementById('upload-progress');
+                progressIndicator.style.display = 'flex';
+                
+                kilangDMEnhancements.showNotification(`Processing file: ${file.name}`, 'info');
+                
+                // Simulate processing
+                setTimeout(() => {
+                    const steps = progressIndicator.querySelectorAll('.step');
+                    steps[1].classList.remove('active');
+                    steps[1].classList.add('completed');
+                    steps[2].classList.remove('pending');
+                    steps[2].classList.add('active');
+                    
+                    setTimeout(() => {
+                        steps[2].classList.remove('active');
+                        steps[2].classList.add('completed');
+                        kilangDMEnhancements.showNotification('File berjaya diproses!', 'success');
+                        progressIndicator.style.display = 'none';
+                    }, 1500);
+                }, 2000);
+            }
+        });
+        
+        // Form submission enhancement
+        document.getElementById('order-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            kilangDMEnhancements.showLoading('Menyimpan order...');
+            
+            // Simulate save process
+            setTimeout(() => {
+                kilangDMEnhancements.hideLoading();
+                kilangDMEnhancements.showNotification('Order berjaya disimpan!', 'success');
+                
+                // Reset form after successful submission
+                setTimeout(() => {
+                    clearFormEnhanced();
+                }, 1000);
+            }, 2000);
+        });
     </script>
 </body>
 </html>

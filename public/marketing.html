@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style/style.css">
     <link rel="stylesheet" href="style/marketing.css">   
+    <!-- 👉 TAMBAH ENHANCED CSS -->
+    <link rel="stylesheet" href="style/improvements.css">
+
  <style>
         body { font-family: 'Inter', sans-serif; }
         .form-input, .form-select {
@@ -95,17 +98,40 @@
         </div>
     </nav>
 
+    <!-- 👉 TAMBAH BREADCRUMB -->
+    <div class="breadcrumb">
+        <a href="index.html" class="breadcrumb-item">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-item active">Marketing</span>
+    </div>
+
         <!-- Borang Lead Semasa - Top Section -->
         <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 mb-8">
             <h2 class="text-2xl font-bold mb-6 text-center text-purple-400">Borang Lead Semasa</h2>
-            <form id="lead-semasa-form" class="grid md:grid-cols-4 gap-4">
+            <form id="lead-semasa-form" class="grid md:grid-cols-4 gap-4" data-validate>
                 <div>
                     <label for="lead-tarikh" class="block mb-2 font-medium">Tarikh</label>
-                    <input type="date" id="lead-tarikh" name="tarikh" class="form-input" required>
+                    <input type="date" 
+                        id="lead-tarikh" 
+                        name="tarikh" 
+                        class="form-input" 
+                        data-validate-field="required"
+                        required>
                 </div>
                 <div>
-                    <label for="lead-masa" class="block mb-2 font-medium">Masa</label>
-                    <select id="lead-masa" name="masa" class="form-select" required>
+                    <label for="lead-masa" class="block mb-2 font-medium">
+                        Masa 
+                        <i class="fas fa-clock" 
+                        data-tooltip="Pilih slot masa untuk tracking lead"
+                        data-tooltip-position="top"></i>
+                    </label>
+                    <select id="lead-masa" 
+                            name="masa" 
+                            class="form-select" 
+                            data-validate-field="required"
+                            required>
                         <option value="">Pilih Masa</option>
                         <option value="9.00am">9.00am</option>
                         <option value="2.30pm">2.30pm</option>
@@ -114,20 +140,38 @@
                     </select>
                 </div>
                 <div>
-                    <label for="lead-spend" class="block mb-2 font-medium">Spend (RM)</label>
-                    <input type="number" id="lead-spend" name="spend" step="0.01" class="form-input" placeholder="e.g., 500.00" required>
+                    <label for="lead-spend" class="block mb-2 font-medium">
+                        Spend (RM) 
+                        <i class="fas fa-info-circle" 
+                        data-tooltip="Jumlah perbelanjaan iklan untuk slot ini"
+                        data-tooltip-position="top"></i>
+                    </label>
+                    <input type="number" 
+                        id="lead-spend" 
+                        name="spend" 
+                        step="0.01" 
+                        class="form-input" 
+                        data-validate-field="required|numeric"
+                        placeholder="e.g., 500.00" 
+                        required>
                 </div>
                 <div>
                     <label for="lead-team" class="block mb-2 font-medium">Team Sale</label>
-                    <select id="lead-team" name="team_sale" class="form-select" required>
+                    <select id="lead-team" 
+                            name="team_sale" 
+                            class="form-select" 
+                            data-validate-field="required"
+                            required>
                         <option value="">Pilih Team Sale</option>
                         <option value="Qilah">Qilah</option>
                         <option value="Wiyah">Wiyah</option>
                         <option value="Nisya">Nisya</option>
-                    </select>
+                     </select>
                 </div>
                 <div class="md:col-span-4">
-                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Lead Semasa</button>
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                        Hantar Lead Semasa
+                    </button>
                 </div>
             </form>
             <div id="lead-feedback" class="mt-4 text-center"></div>
@@ -136,7 +180,59 @@
         <!-- Borang Detail Ads - Bottom Section (Horizontal Layout) -->
         <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
             <h2 class="text-2xl font-bold mb-6 text-center text-orange-400">Borang Detail Ads</h2>
-            <form id="detail-ads-form" class="space-y-6">
+                <form id="detail-ads-form" class="space-y-6" data-validate>
+                    <!-- Row 5: Performance Metrics dengan tooltips -->
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="ctr" class="block mb-2 font-medium">
+                                CTR (%) 
+                                <i class="fas fa-question-circle" 
+                                data-tooltip="Click Through Rate - Peratusan orang yang klik iklan berbanding yang melihat"
+                                data-tooltip-position="right"></i>
+                            </label>
+                            <input type="number" 
+                                id="ctr" 
+                                name="ctr" 
+                                step="0.01" 
+                                class="form-input" 
+                                data-validate-field="required|numeric"
+                                placeholder="e.g., 1.25" 
+                                required>
+                        </div>
+                        <div>
+                            <label for="cpc" class="block mb-2 font-medium">
+                                CPC (RM) 
+                                <i class="fas fa-question-circle" 
+                                data-tooltip="Cost Per Click - Kos per klik iklan"
+                                data-tooltip-position="top"></i>
+                            </label>
+                            <input type="number" 
+                                id="cpc" 
+                                name="cpc" 
+                                step="0.01" 
+                                class="form-input" 
+                                data-validate-field="required|numeric"
+                                placeholder="e.g., 0.50" 
+                                required>
+                        </div>
+                        <div>
+                            <label for="cpm" class="block mb-2 font-medium">
+                                CPM (RM) 
+                                <i class="fas fa-question-circle" 
+                                data-tooltip="Cost Per Mille - Kos per 1000 impressions"
+                                data-tooltip-position="left"></i>
+                            </label>
+                            <input type="number" 
+                                id="cpm" 
+                                name="cpm" 
+                                step="0.01" 
+                                class="form-input" 
+                                data-validate-field="required|numeric"
+                                placeholder="e.g., 5.00" 
+                                required>
+                        </div>
+                    </div>
+    
                 <!-- Row 1: Basic Info -->
                 <div class="grid md:grid-cols-3 gap-4">
                     <div>
@@ -246,7 +342,9 @@
 
                 <!-- Submit Button -->
                 <div>
-                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">Hantar Detail Ads</button>
+                    <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                        Hantar Detail Ads
+                    </button>
                 </div>
             </form>
             <div id="ads-feedback" class="mt-4 text-center"></div>
@@ -283,13 +381,8 @@
 
     <!-- Marketing JavaScript -->
     <script type="module" src="js/marketing.js"></script>
-
-        // Home button functionality
-        document.getElementById('homeBtn').addEventListener('click', function() {
-            // Replace with your actual homepage URL
-            window.location.href = 'index.html';
-        });
-
+    <!-- 👉 TAMBAH ENHANCED JS -->
+    <script src="js/improvements.js"></script>
     <script>
         // Mobile menu toggle
         document.getElementById('mobileMenuBtn').addEventListener('click', function() {
@@ -311,6 +404,64 @@
         setInterval(updateCurrentTime, 1000);
         updateCurrentTime();
     </script>
-
+    <!-- 👉 TAMBAH MARKETING SPECIFIC ENHANCEMENTS -->
+    <script>
+        // Enhanced form submissions
+        document.getElementById('lead-semasa-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            kilangDMEnhancements.showLoading('Menyimpan data lead semasa...');
+            
+            // Simulate save process
+            setTimeout(() => {
+                kilangDMEnhancements.hideLoading();
+                kilangDMEnhancements.showNotification('Lead semasa berjaya disimpan!', 'success');
+                this.reset();
+            }, 2000);
+        });
+        
+        document.getElementById('detail-ads-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            kilangDMEnhancements.showLoading('Menyimpan detail ads...');
+            
+            // Simulate save process  
+            setTimeout(() => {
+                kilangDMEnhancements.hideLoading();
+                kilangDMEnhancements.showNotification('Detail ads berjaya disimpan!', 'success');
+                this.reset();
+            }, 2500);
+        });
+        
+        // Auto-calculate derived metrics
+        document.getElementById('impressions').addEventListener('input', calculateMetrics);
+        document.getElementById('link-click').addEventListener('input', calculateMetrics);
+        document.getElementById('cost').addEventListener('input', calculateMetrics);
+        
+        function calculateMetrics() {
+            const impressions = parseFloat(document.getElementById('impressions').value) || 0;
+            const clicks = parseFloat(document.getElementById('link-click').value) || 0;
+            const cost = parseFloat(document.getElementById('cost').value) || 0;
+            
+            // Auto-calculate CTR
+            if (impressions > 0 && clicks > 0) {
+                const ctr = (clicks / impressions * 100).toFixed(2);
+                document.getElementById('ctr').value = ctr;
+                kilangDMEnhancements.showNotification(`CTR auto-calculated: ${ctr}%`, 'info', 2000);
+            }
+            
+            // Auto-calculate CPC
+            if (clicks > 0 && cost > 0) {
+                const cpc = (cost / clicks).toFixed(2);
+                document.getElementById('cpc').value = cpc;
+            }
+            
+            // Auto-calculate CPM
+            if (impressions > 0 && cost > 0) {
+                const cpm = (cost / impressions * 1000).toFixed(2);
+                document.getElementById('cpm').value = cpm;
+            }
+        }
+    </script>
 </body>
 </html>

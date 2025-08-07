@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Enhanced Dashboard - KilangDM</title>
+    
+    <!-- Existing CSS -->
     <link rel="stylesheet" href="style/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 👉 TAMBAH BARIS INI -->
+    <link rel="stylesheet" href="style/improvements.css">
     
    <!-- Firebase SDK -->
 <script type="module">
@@ -97,6 +102,20 @@
 
     <!-- Main Content -->
     <main class="main-container">
+        <!-- Enhanced breadcrumb -->
+        <div class="breadcrumb">
+            <a href="index.html" class="breadcrumb-item">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item active">Analytics Dashboard</span>
+        </div>
+
+         <!-- Enhanced search -->
+        <div class="search-container" style="margin-bottom: 2rem;">
+            <input type="text" class="search-input" placeholder="Cari metrics, KPI, data..." id="dashboard-search">
+        </div>
+
         <!-- Dashboard Header -->
         <section class="dashboard-header">
             <div class="header-content">
@@ -118,6 +137,10 @@
                                 Live
                             </span>
                         </div>
+                    </div>
+                    <!-- 👉 TAMBAH STATUS INDICATOR -->
+                    <div class="status-indicator status-live" data-last-update="1640995200000">
+                        <span class="status-dot"></span> Live Data
                     </div>
                 </div>
             </div>
@@ -346,19 +369,45 @@
                     <h3 class="section-title">Key Performance Indicators</h3>
                     <p class="section-subtitle">Real-time business metrics</p>
                 </div>
+                <!-- 👉 TAMBAH/UPDATE SECTION ACTIONS -->
+                <div class="section-actions">
+                    <div class="export-menu">
+                        <button class="btn btn-outline btn-sm" onclick="this.nextElementSibling.classList.toggle('show')">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <div class="export-dropdown">
+                            <button class="export-option" data-format="csv" data-source="kpi">
+                                <i class="fas fa-file-csv"></i> KPI Data (CSV)
+                            </button>
+                            <button class="export-option" data-format="json" data-source="analytics">
+                                <i class="fas fa-file-code"></i> Analytics (JSON)
+                            </button>
+                            <button class="export-option" data-format="pdf" data-source="report">
+                                <i class="fas fa-file-pdf"></i> Full Report (PDF)
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="kpi-grid">
                 <!-- Total Sales -->
-                <div class="kpi-card sales-card">
+               <div class="kpi-card sales-card">
                     <div class="kpi-header">
                         <div class="kpi-icon sales-icon">
                             <i class="fas fa-dollar-sign"></i>
                         </div>
-                        <span class="kpi-trend" id="sales-trend">-</span>
+                        <span class="kpi-trend" id="sales-trend" 
+                            data-tooltip="Perbandingan dengan bulan lepas"
+                            data-tooltip-position="top">-</span>
                     </div>
                     <div class="kpi-content">
-                        <h4 class="kpi-title">Total Sales</h4>
+                        <h4 class="kpi-title">
+                            Total Sales 
+                            <i class="fas fa-info-circle" 
+                            data-tooltip="Jumlah keseluruhan jualan untuk tempoh dipilih"
+                            data-tooltip-position="right"></i>
+                        </h4>
                         <p class="kpi-value" id="total-sales">RM 0.00</p>
                         <p class="kpi-meta" id="total-sales-count">0 entri</p>
                     </div>
@@ -1846,6 +1895,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
 console.log('🎯 Advanced Dashboard Filter loaded!');
 console.log('📊 Features: Year/Month/Day selection, Quick periods, Custom range, Agent filter');
+    </script>
+    <!-- NEW: Enhanced improvements JS -->
+<script src="js/improvements.js"></script>
+  <!-- 👉 TAMBAH DASHBOARD SPECIFIC ENHANCEMENTS -->
+    <script>
+        // Dashboard-specific enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enhanced search for dashboard
+            document.addEventListener('search', (e) => {
+                const searchTerm = e.detail.value.toLowerCase();
+                console.log('Dashboard search:', searchTerm);
+                
+                // Filter visible cards/sections based on search
+                if (!searchTerm) {
+                    // Show all sections
+                    document.querySelectorAll('section, .kpi-card, .metric-card').forEach(el => {
+                        el.style.display = '';
+                    });
+                } else {
+                    // Filter based on text content
+                    document.querySelectorAll('.kpi-card, .metric-card').forEach(card => {
+                        const text = card.textContent.toLowerCase();
+                        card.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                }
+            });
+            
+            // Success notification when page loads
+            setTimeout(() => {
+                kilangDMEnhancements.showNotification('Dashboard loaded successfully!', 'success', 3000);
+            }, 1000);
+        });
+        
+        // Export functionality integration
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.export-option')) {
+                const option = e.target.closest('.export-option');
+                const format = option.getAttribute('data-format');
+                const source = option.getAttribute('data-source');
+                
+                kilangDMEnhancements.showNotification(`Exporting ${source} data as ${format.toUpperCase()}...`, 'info');
+                
+                // Close dropdown
+                option.closest('.export-dropdown').classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>
