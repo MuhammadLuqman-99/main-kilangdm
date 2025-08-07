@@ -1,0 +1,587 @@
+/* ===================================================
+   PROFESSIONAL ORDER DASHBOARD STYLING
+   Clean, focused, and data-driven design
+   ================================================= */
+
+/* ===================================================
+   MAIN CONTAINER & LAYOUT
+   ================================================= */
+
+.order-main-container {
+    max-width: 1600px;
+    margin: 6rem auto 2rem;
+    padding: 2rem;
+    min-height: calc(100vh - 8rem);
+}
+
+/* ===================================================
+   HEADER SECTION - REDESIGNED
+   ================================================= */
+
+.order-dashboard-header {
+    background: var(--card-gradient);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.order-dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8, #6366f1);
+}
+
+.order-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.order-header-left {
+    flex: 1;
+}
+
+.order-header-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.order-header-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--accent-gradient);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.order-header-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.order-header-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.quick-stat {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.quick-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.quick-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Live Status Indicator */
+.order-status-indicator {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ===================================================
+   KPI CARDS - CLEANER DESIGN
+   ================================================= */
+
+.order-kpi-section {
+    margin-bottom: 3rem;
+}
+
+.order-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+.order-kpi-card {
+    background: var(--card-gradient);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden;
+}
+
+.order-kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.order-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+}
+
+.order-kpi-card.revenue::before {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.order-kpi-card.orders::before {
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+}
+
+.order-kpi-card.aov::before {
+    background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+}
+
+.order-kpi-card.conversion::before {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.order-kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.order-kpi-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+}
+
+.order-kpi-icon.revenue { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.order-kpi-icon.orders { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.order-kpi-icon.aov { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.order-kpi-icon.conversion { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.order-kpi-trend {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.order-kpi-trend.negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.order-kpi-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.order-kpi-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    line-height: 1.1;
+}
+
+.order-kpi-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ===================================================
+   CHARTS SECTION - PROFESSIONAL LAYOUT
+   ================================================= */
+
+.order-charts-section {
+    margin-bottom: 3rem;
+}
+
+.order-charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.order-main-chart {
+    background: var(--card-gradient);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.order-secondary-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.order-chart-card {
+    background: var(--card-gradient);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    flex: 1;
+}
+
+.order-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.order-chart-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.order-chart-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0 0;
+}
+
+.order-chart-controls {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.25rem;
+    border-radius: 8px;
+}
+
+.order-period-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.order-period-btn.active,
+.order-period-btn:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+.order-chart-container {
+    position: relative;
+    height: 300px;
+}
+
+.order-main-chart .order-chart-container {
+    height: 400px;
+}
+
+/* ===================================================
+   DATA TABLES - MODERN DESIGN
+   ================================================= */
+
+.order-data-section {
+    margin-bottom: 3rem;
+}
+
+.order-data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.order-data-card {
+    background: var(--card-gradient);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.order-data-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.order-data-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.order-data-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.order-data-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.order-data-list::-webkit-scrollbar-track {
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 2px;
+}
+
+.order-data-list::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 2px;
+}
+
+.order-data-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    transition: all 0.2s ease;
+}
+
+.order-data-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.order-data-item-info {
+    flex: 1;
+}
+
+.order-data-item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.order-data-item-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.order-data-item-value {
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.order-data-item-trend {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.trend-positive { color: #22c55e; }
+.trend-negative { color: #ef4444; }
+
+/* ===================================================
+   AUTO-DETECTION STATUS
+   ================================================= */
+
+.auto-detection-status {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.auto-detection-status .status-dot {
+    background: #22c55e;
+}
+
+/* ===================================================
+   LOADING STATES
+   ================================================= */
+
+.order-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--text-muted);
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.order-loading i {
+    font-size: 2rem;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    font-size: 0.9rem;
+}
+
+/* ===================================================
+   RESPONSIVE DESIGN
+   ================================================= */
+
+@media (max-width: 1200px) {
+    .order-charts-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .order-secondary-charts {
+        flex-direction: row;
+        gap: 2rem;
+    }
+    
+    .order-data-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .order-main-container {
+        padding: 1rem;
+        margin-top: 5rem;
+    }
+    
+    .order-header-content {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .order-header-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .order-kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .order-secondary-charts {
+        flex-direction: column;
+    }
+    
+    .order-chart-container {
+        height: 250px;
+    }
+    
+    .order-main-chart .order-chart-container {
+        height: 300px;
+    }
+    
+    .order-chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .order-chart-controls {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-header-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .order-kpi-card {
+        padding: 1.5rem;
+    }
+    
+    .order-kpi-value {
+        font-size: 1.5rem;
+    }
+    
+    .order-period-btn {
+        flex: 1;
+        font-size: 0.75rem;
+    }
+}

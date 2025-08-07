@@ -9,9 +9,17 @@
     <!-- Unified Theme CSS -->
     <link rel="stylesheet" href="style/unified-theme.css">
     <link rel="stylesheet" href="style/responsive.css">
+    <link rel="stylesheet" href="style/professional-order-dashboard.css">
     <link rel="stylesheet" href="style/style.css">
     <link rel="stylesheet" href="style/enhanced-dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="KilangDM">
     
     <!-- Firebase SDK -->
     <script type="module">
@@ -64,7 +72,7 @@
                 </div>
                 <div class="brand-text">
                     <h2>KilangDM</h2>
-                    <span>Enhanced Analytics Dashboard</span>
+                    <span>Order Management Dashboard</span>
                 </div>
             </div>
 
@@ -75,8 +83,8 @@
                     <span>Dashboard</span>
                 </a>
                 <a href="dashboardbo.html" class="nav-link active">
-                    <i class="fas fa-list-alt"></i>
-                    <span>Enhanced Orders</span>
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Order Dashboard</span>
                 </a>
                 <a href="ecommerce.html" class="nav-link">
                     <i class="fas fa-shopping-cart"></i>
@@ -109,394 +117,234 @@
         </div>
     </nav>
 
-    <!-- Order Analytics Section -->
-    <section class="order-analytics-section">
-        <!-- Section Header -->
-        <div class="order-analytics-header">
-            <div class="header-left">
-                <div class="analytics-icon">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-                <div>
-                    <h3 class="section-title">Enhanced Order Analytics</h3>
-                    <p class="section-subtitle">Auto-detection + detailed product breakdown analysis</p>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="analytics-summary">
-                    <div class="summary-stat">
-                        <span class="stat-number" id="total-orders-today">0</span>
-                        <span class="stat-text">Hari Ini</span>
-                    </div>
-                    <div class="summary-stat">
-                        <span class="stat-number" id="total-revenue-today">RM 0</span>
-                        <span class="stat-text">Revenue Hari Ini</span>
-                    </div>
-                    <div class="summary-stat">
-                        <span class="stat-number" id="avg-order-today">RM 0</span>
-                        <span class="stat-text">Avg Order Hari Ini</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Order Statistics Cards -->
-        <div class="order-stats-grid">
-            <!-- Total Revenue -->
-            <div class="order-stat-card revenue">
-                <div class="stat-header">
-                    <div class="stat-icon revenue-icon">
-                        <i class="fas fa-money-bill-wave"></i>
-                    </div>
-                    <span class="stat-trend trend-up" id="revenue-trend">+0%</span>
-                </div>
-                <div class="stat-content">
-                    <h4 class="stat-title">Total Revenue</h4>
-                    <p class="stat-value" id="total-order-revenue">RM 0.00</p>
-                    <p class="stat-meta" id="revenue-period">daripada semua order</p>
-                </div>
-            </div>
-
-            <!-- Order Volume -->
-            <div class="order-stat-card volume">
-                <div class="stat-header">
-                    <div class="stat-icon volume-icon">
-                        <i class="fas fa-shopping-bag"></i>
-                    </div>
-                    <span class="stat-trend trend-up" id="volume-trend">+0%</span>
-                </div>
-                <div class="stat-content">
-                    <h4 class="stat-title">Order Volume</h4>
-                    <p class="stat-value" id="total-order-count">0</p>
-                    <p class="stat-meta" id="volume-period">jumlah order</p>
-                </div>
-            </div>
-
-            <!-- Average Order Value -->
-            <div class="order-stat-card avg-order">
-                <div class="stat-header">
-                    <div class="stat-icon avg-order-icon">
-                        <i class="fas fa-calculator"></i>
-                    </div>
-                    <span class="stat-trend trend-stable" id="avg-trend">stable</span>
-                </div>
-                <div class="stat-content">
-                    <h4 class="stat-title">Average Order Value</h4>
-                    <p class="stat-value" id="avg-order-value">RM 0.00</p>
-                    <p class="stat-meta" id="avg-period">purata per order</p>
-                </div>
-            </div>
-
-            <!-- Active Platforms -->
-            <div class="order-stat-card platforms">
-                <div class="stat-header">
-                    <div class="stat-icon platforms-icon">
-                        <i class="fas fa-store"></i>
-                    </div>
-                    <span class="stat-trend trend-up" id="platform-trend">+0</span>
-                </div>
-                <div class="stat-content">
-                    <h4 class="stat-title">Active Platforms</h4>
-                    <p class="stat-value" id="active-platforms">0</p>
-                    <p class="stat-meta" id="platform-period">platform aktif</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detailed Analytics -->
-        <div class="detailed-analytics">
-            <!-- Order Trend Chart -->
-            <div class="chart-section">
-                <div class="chart-header">
-                    <h4>Order Trend Analysis</h4>
-                    <div class="chart-controls">
-                        <button class="timeline-btn active" data-period="7">7 Hari</button>
-                        <button class="timeline-btn" data-period="30">30 Hari</button>
-                        <button class="timeline-btn" data-period="90">90 Hari</button>
-                    </div>
-                </div>
-                <div class="chart-container-timeline">
-                    <canvas id="orderTrendChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Breakdowns -->
-            <div class="breakdown-section">
-                <!-- Platform Breakdown -->
-                <div class="breakdown-card">
-                    <h4 class="breakdown-title">
-                        <div class="breakdown-icon">
-                            <i class="fas fa-store"></i>
+    <!-- Main Container -->
+    <div class="order-main-container">
+        
+        <!-- Dashboard Header -->
+        <section class="order-dashboard-header">
+            <div class="order-header-content">
+                <div class="order-header-left">
+                    <div class="order-header-title">
+                        <div class="order-header-icon">
+                            <i class="fas fa-clipboard-list"></i>
                         </div>
-                        Platform Breakdown
-                    </h4>
-                    <div class="breakdown-list" id="platform-breakdown">
-                        <div class="loading-placeholder">Loading platform data...</div>
+                        Order Analytics Dashboard
                     </div>
-                </div>
-
-                <!-- Team Performance -->
-                <div class="breakdown-card">
-                    <h4 class="breakdown-title">
-                        <div class="breakdown-icon">
-                            <i class="fas fa-users"></i>
+                    <p class="order-header-subtitle">
+                        Real-time order processing, revenue tracking, and performance analytics
+                    </p>
+                    <div class="order-header-stats">
+                        <div class="quick-stat">
+                            <div class="quick-stat-value" id="today-orders">0</div>
+                            <div class="quick-stat-label">Hari Ini</div>
                         </div>
-                        Team Performance
-                    </h4>
-                    <div class="breakdown-list" id="team-breakdown">
-                        <div class="loading-placeholder">Loading team data...</div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value" id="today-revenue">RM 0</div>
+                            <div class="quick-stat-label">Revenue</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value" id="today-aov">RM 0</div>
+                            <div class="quick-stat-label">Avg Order</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="order-header-right">
+                    <div class="order-status-indicator">
+                        <div class="status-dot"></div>
+                        Auto-Detection Active
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Order Timeline -->
-        <div class="order-timeline">
-            <div class="timeline-header">
-                <h4>Order Timeline</h4>
-                <div class="timeline-controls">
-                    <button class="timeline-btn active" data-view="daily">Harian</button>
-                    <button class="timeline-btn" data-view="weekly">Mingguan</button>
-                    <button class="timeline-btn" data-view="monthly">Bulanan</button>
+        <!-- KPI Cards -->
+        <section class="order-kpi-section">
+            <div class="order-kpi-grid">
+                <!-- Total Revenue -->
+                <div class="order-kpi-card revenue">
+                    <div class="order-kpi-header">
+                        <div class="order-kpi-icon revenue">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="order-kpi-trend" id="revenue-trend">+0%</div>
+                    </div>
+                    <div class="order-kpi-content">
+                        <h4 class="order-kpi-title">Total Revenue</h4>
+                        <p class="order-kpi-value" id="total-revenue">RM 0</p>
+                        <div class="order-kpi-meta">
+                            <span id="revenue-period">semua masa</span>
+                            <span id="revenue-orders">0 orders</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Count -->
+                <div class="order-kpi-card orders">
+                    <div class="order-kpi-header">
+                        <div class="order-kpi-icon orders">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
+                        <div class="order-kpi-trend" id="orders-trend">+0%</div>
+                    </div>
+                    <div class="order-kpi-content">
+                        <h4 class="order-kpi-title">Total Orders</h4>
+                        <p class="order-kpi-value" id="total-orders">0</p>
+                        <div class="order-kpi-meta">
+                            <span id="orders-period">processed</span>
+                            <span id="orders-status">active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Average Order Value -->
+                <div class="order-kpi-card aov">
+                    <div class="order-kpi-header">
+                        <div class="order-kpi-icon aov">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="order-kpi-trend" id="aov-trend">stable</div>
+                    </div>
+                    <div class="order-kpi-content">
+                        <h4 class="order-kpi-title">Average Order Value</h4>
+                        <p class="order-kpi-value" id="avg-order-value">RM 0</p>
+                        <div class="order-kpi-meta">
+                            <span id="aov-period">per order</span>
+                            <span id="aov-comparison">vs last month</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversion Rate -->
+                <div class="order-kpi-card conversion">
+                    <div class="order-kpi-header">
+                        <div class="order-kpi-icon conversion">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="order-kpi-trend" id="conversion-trend">+0%</div>
+                    </div>
+                    <div class="order-kpi-content">
+                        <h4 class="order-kpi-title">Conversion Rate</h4>
+                        <p class="order-kpi-value" id="conversion-rate">0%</p>
+                        <div class="order-kpi-meta">
+                            <span id="conversion-period">orders/leads</span>
+                            <span id="conversion-performance">performance</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="chart-container-timeline">
-                <canvas id="orderTimelineChart"></canvas>
-            </div>
-        </div>
+        </section>
 
-        <!-- Enhanced Recent Orders Section -->
-        <div class="enhanced-order-details">
-            <div class="order-details-header">
-                <h3 class="order-details-title">
-                    <i class="fas fa-list-alt"></i>
-                    Enhanced Order Details
-                </h3>
-                <div class="order-details-badge">
-                    Auto-detection dengan detailed product & size breakdown
-                </div>
-            </div>
-
-            <div class="recent-orders">
-                <div class="recent-orders-header">
-                    <h4>Recent Orders dengan Product Breakdown</h4>
-                    <div class="tabs-container">
-                        <button class="tab-link active" data-tab="all">Semua</button>
-                        <button class="tab-link" data-tab="shopee">Shopee</button>
-                        <button class="tab-link" data-tab="tiktok">TikTok</button>
-                        <button class="tab-link" data-tab="qilah">Qilah</button>
-                        <button class="tab-link" data-tab="nisya">Nisya</button>
-                        <button class="tab-link" data-tab="wiyah">Wiyah</button>
+        <!-- Charts Section -->
+        <section class="order-charts-section">
+            <div class="order-charts-grid">
+                <!-- Main Chart - Order Trends -->
+                <div class="order-main-chart">
+                    <div class="order-chart-header">
+                        <div>
+                            <h4 class="order-chart-title">
+                                <i class="fas fa-chart-line"></i>
+                                Order Performance Timeline
+                            </h4>
+                            <p class="order-chart-subtitle">Daily orders and revenue tracking</p>
+                        </div>
+                        <div class="order-chart-controls">
+                            <button class="order-period-btn active" data-period="7">7 Hari</button>
+                            <button class="order-period-btn" data-period="30">30 Hari</button>
+                            <button class="order-period-btn" data-period="90">90 Hari</button>
+                        </div>
+                    </div>
+                    <div class="order-chart-container">
+                        <canvas id="orderTrendChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Tab Content untuk All Orders -->
-                <div id="all" class="tab-content active">
-                    <div class="table-container">
-                        <table class="enhanced-orders-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
-                                    <th>INVOICE/PO</th>
-                                    <th>TARIKH</th>
-                                    <th>CUSTOMER</th>
-                                    <th>TEAM</th>
-                                    <th>PLATFORM</th>
-                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
-                                    <th>TOTAL QTY</th>
-                                    <th>AMOUNT</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-orders-tbody-all"></tbody>
-                        </table>
+                <!-- Secondary Charts -->
+                <div class="order-secondary-charts">
+                    <!-- Order Sources -->
+                    <div class="order-chart-card">
+                        <div class="order-chart-header">
+                            <div>
+                                <h4 class="order-chart-title">
+                                    <i class="fas fa-store"></i>
+                                    Order Sources
+                                </h4>
+                                <p class="order-chart-subtitle">Platform breakdown</p>
+                            </div>
+                        </div>
+                        <div class="order-chart-container">
+                            <canvas id="orderSourcesChart"></canvas>
+                        </div>
                     </div>
-                    <div class="pagination-controls" id="pagination-all"></div>
-                </div>
 
-                <!-- Tab Content untuk Shopee -->
-                <div id="shopee" class="tab-content">
-                    <div class="table-container">
-                        <table class="enhanced-orders-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
-                                    <th>INVOICE/PO</th>
-                                    <th>TARIKH</th>
-                                    <th>CUSTOMER</th>
-                                    <th>TEAM</th>
-                                    <th>PLATFORM</th>
-                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
-                                    <th>TOTAL QTY</th>
-                                    <th>AMOUNT</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-orders-tbody-shopee"></tbody>
-                        </table>
+                    <!-- Top Products -->
+                    <div class="order-chart-card">
+                        <div class="order-chart-header">
+                            <div>
+                                <h4 class="order-chart-title">
+                                    <i class="fas fa-star"></i>
+                                    Top Products
+                                </h4>
+                                <p class="order-chart-subtitle">Best sellers</p>
+                            </div>
+                        </div>
+                        <div class="order-chart-container">
+                            <canvas id="topProductsChart"></canvas>
+                        </div>
                     </div>
-                    <div class="pagination-controls" id="pagination-shopee"></div>
-                </div>
-
-                <!-- Tab Content untuk TikTok -->
-                <div id="tiktok" class="tab-content">
-                    <div class="table-container">
-                        <table class="enhanced-orders-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
-                                    <th>INVOICE/PO</th>
-                                    <th>TARIKH</th>
-                                    <th>CUSTOMER</th>
-                                    <th>TEAM</th>
-                                    <th>PLATFORM</th>
-                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
-                                    <th>TOTAL QTY</th>
-                                    <th>AMOUNT</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-orders-tbody-tiktok"></tbody>
-                        </table>
-                    </div>
-                    <div class="pagination-controls" id="pagination-tiktok"></div>
-                </div>
-
-                <!-- Tab Content untuk Qilah -->
-                <div id="qilah" class="tab-content">
-                    <div class="table-container">
-                        <table class="enhanced-orders-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
-                                    <th>INVOICE/PO</th>
-                                    <th>TARIKH</th>
-                                    <th>CUSTOMER</th>
-                                    <th>TEAM</th>
-                                    <th>PLATFORM</th>
-                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
-                                    <th>TOTAL QTY</th>
-                                    <th>AMOUNT</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-orders-tbody-qilah"></tbody>
-                        </table>
-                    </div>
-                    <div class="pagination-controls" id="pagination-qilah"></div>
-                </div>
-
-                <!-- Tab Content untuk Nisya -->
-                <div id="nisya" class="tab-content">
-                    <div class="table-container">
-                        <table class="enhanced-orders-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 30px;"><i class="fas fa-expand-alt"></i></th>
-                                    <th>INVOICE/PO</th>
-                                    <th>TARIKH</th>
-                                    <th>CUSTOMER</th>
-                                    <th>TEAM</th>
-                                    <th>PLATFORM</th>
-                                    <th style="min-width: 350px;">DETAIL PRODUK & SAIZ</th>
-                                    <th>TOTAL QTY</th>
-                                    <th>AMOUNT</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-orders-tbody-nisya"></tbody>
-                        </table>
-                    </div>
-                    <div class="pagination-controls" id="pagination-nisya"></div>
-                </div>
-
-                <!-- Tab Content untuk Wiyah -->
-                <div id="wiyah" class="tab-content">
-                    <div class="table-container">
-                        <table class="enhanced-orders-table">
-                            <thead>
-                                <tr>
-                                    <th><i class="fas fa-expand-alt"></i></th>
-                                    <th>INVOICE/PO</th>
-                                    <th>TARIKH</th>
-                                    <th>CUSTOMER</th>
-                                    <th>TEAM</th>
-                                    <th>PLATFORM</th>
-                                    <th>DETAIL PRODUK & SAIZ</th>
-                                    <th>TOTAL QTY</th>
-                                    <th>AMOUNT</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-orders-tbody-wiyah"></tbody>
-                        </table>
-                    </div>
-                    <div class="pagination-controls" id="pagination-wiyah"></div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Load Scripts -->
-    <script type="module" src="js/enhanced-order-detection.js"></script>
+        <!-- Data Tables Section -->
+        <section class="order-data-section">
+            <div class="order-data-grid">
+                <!-- Recent Orders -->
+                <div class="order-data-card">
+                    <div class="order-data-header">
+                        <h4 class="order-data-title">
+                            <i class="fas fa-clock"></i>
+                            Recent Orders
+                        </h4>
+                        <span class="order-status-indicator">Live</span>
+                    </div>
+                    <div class="order-data-list" id="recent-orders">
+                        <div class="order-loading">
+                            <i class="fas fa-spinner"></i>
+                            <span class="loading-text">Loading recent orders...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Performers -->
+                <div class="order-data-card">
+                    <div class="order-data-header">
+                        <h4 class="order-data-title">
+                            <i class="fas fa-trophy"></i>
+                            Top Performers
+                        </h4>
+                        <span class="order-status-indicator">Updated</span>
+                    </div>
+                    <div class="order-data-list" id="top-performers">
+                        <div class="order-loading">
+                            <i class="fas fa-spinner"></i>
+                            <span class="loading-text">Loading performance data...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
     
-    <script>
-        // Basic functionality
-        document.getElementById('homeBtn').addEventListener('click', function() {
-            window.location.href = 'index.html';
-        });
-
-        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
-            const navLinks = document.getElementById('navLinks');
-            navLinks.classList.toggle('mobile-active');
-        });
-
-        function updateCurrentTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('ms-MY', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            document.getElementById('current-time').textContent = timeString;
-        }
-
-        setInterval(updateCurrentTime, 1000);
-        updateCurrentTime();
-
-        // Global function untuk expand/collapse
-        window.toggleOrderDetails = function(button) {
-            const icon = button.querySelector('i');
-            const isExpanded = button.classList.contains('expanded');
-            
-            if (isExpanded) {
-                button.classList.remove('expanded');
-                icon.className = 'fas fa-plus';
-            } else {
-                button.classList.add('expanded');
-                icon.className = 'fas fa-minus';
-            }
-            
-            // Animation effect
-            button.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                button.style.transform = 'scale(1)';
-            }, 150);
-        };
-
-        // Tab switching functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.tab-link').forEach(button => {
-                button.addEventListener('click', () => {
-                    const tabId = button.dataset.tab;
-                    
-                    // Update active tab
-                    document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-
-                    // Update active content
-                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-        });
-    </script>
-    
-    <!-- Responsive Enhancement Script -->
+    <!-- Professional Order Dashboard Scripts -->
+    <script src="js/professional-order-dashboard.js"></script>
+    <script src="js/dashboard-ui.js"></script>
     <script src="js/responsive-enhancements.js"></script>
+    
+    <!-- Advanced Features -->
+    <script src="js/export-manager.js"></script>
+    <script src="js/notification-system.js"></script>
+    <script src="js/pwa-manager.js"></script>
+    <script src="js/advanced-search.js"></script>
 </body>
 </html>

@@ -360,6 +360,12 @@ function updateSalesTrendChart(data) {
     const ctx = document.getElementById('salesTrendChart');
     if (!ctx || !data) return;
 
+    // Destroy existing chart if it exists
+    if (window.salesTrendChartInstance) {
+        window.salesTrendChartInstance.destroy();
+        console.log('🗑️ Previous sales trend chart destroyed');
+    }
+
     const salesData = data.orders || [];
     const last30Days = getLast30Days();
     
@@ -399,12 +405,22 @@ function updateSalesTrendChart(data) {
         }
     });
 
+    // Store chart instance globally for future destruction
+    window.salesTrendChartInstance = chart;
+    console.log('✅ Sales trend chart created successfully');
+    
     return chart;
 }
 
 function updateLeadSourcesChart(data) {
     const ctx = document.getElementById('leadsChart');
     if (!ctx || !data) return;
+
+    // Destroy existing chart if it exists
+    if (window.leadsChartInstance) {
+        window.leadsChartInstance.destroy();
+        console.log('🗑️ Previous leads chart destroyed');
+    }
 
     const leadSources = {};
     
@@ -435,12 +451,22 @@ function updateLeadSourcesChart(data) {
         }
     });
 
+    // Store chart instance globally for future destruction
+    window.leadsChartInstance = chart;
+    console.log('✅ Leads chart created successfully');
+    
     return chart;
 }
 
 function updateChannelChart(data) {
     const ctx = document.getElementById('channelChart');
     if (!ctx || !data) return;
+
+    // Destroy existing chart if it exists
+    if (window.channelChartInstance) {
+        window.channelChartInstance.destroy();
+        console.log('🗑️ Previous channel chart destroyed');
+    }
 
     const channelRevenue = {};
     
@@ -466,12 +492,22 @@ function updateChannelChart(data) {
         }
     });
 
+    // Store chart instance globally for future destruction
+    window.channelChartInstance = chart;
+    console.log('✅ Channel chart created successfully');
+    
     return chart;
 }
 
 function updateTeamChart(data) {
     const ctx = document.getElementById('teamChart');
     if (!ctx || !data) return;
+
+    // Destroy existing chart if it exists
+    if (window.teamChartInstance) {
+        window.teamChartInstance.destroy();
+        console.log('🗑️ Previous team chart destroyed');
+    }
 
     const teamPerformance = {};
     
@@ -502,12 +538,22 @@ function updateTeamChart(data) {
         }
     });
 
+    // Store chart instance globally for future destruction
+    window.teamChartInstance = chart;
+    console.log('✅ Team chart created successfully');
+    
     return chart;
 }
 
 function updateMarketingROIChart(data) {
     const ctx = document.getElementById('costPerLeadChart');
     if (!ctx || !data) return;
+
+    // Destroy existing chart if it exists
+    if (window.marketingROIChartInstance) {
+        window.marketingROIChartInstance.destroy();
+        console.log('🗑️ Previous marketing ROI chart destroyed');
+    }
 
     const last7Days = getLast7Days();
     const spendData = [];
@@ -556,6 +602,10 @@ function updateMarketingROIChart(data) {
         }
     });
 
+    // Store chart instance globally for future destruction
+    window.marketingROIChartInstance = chart;
+    console.log('✅ Marketing ROI chart created successfully');
+    
     return chart;
 }
 
@@ -582,6 +632,33 @@ function getLast7Days() {
     }
     return days;
 }
+
+// ===================================================
+// CHART CLEANUP FUNCTION
+// ===================================================
+
+function destroyAllCharts() {
+    const chartInstances = [
+        'salesTrendChartInstance',
+        'leadsChartInstance', 
+        'channelChartInstance',
+        'teamChartInstance',
+        'marketingROIChartInstance'
+    ];
+    
+    chartInstances.forEach(instanceName => {
+        if (window[instanceName]) {
+            window[instanceName].destroy();
+            window[instanceName] = null;
+            console.log(`🗑️ Destroyed ${instanceName}`);
+        }
+    });
+}
+
+// Make it available globally
+window.destroyAllCharts = destroyAllCharts;
+
+console.log('📊 Professional Charts Config loaded with chart management');
 
 // ===================================================
 // EXPORT FOR GLOBAL USE
