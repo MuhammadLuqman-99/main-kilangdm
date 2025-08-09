@@ -26,23 +26,30 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Try immediately
     if (!checkDependencies()) {
-        // Wait a bit for Firebase to load
+        // Wait longer for Firebase to load - increased timeout
         let attempts = 0;
-        const maxAttempts = 10;
+        const maxAttempts = 30; // Increased from 10 to 30
         
         const waitForDependencies = setInterval(() => {
             attempts++;
-            console.log(`Attempt ${attempts}: Waiting for dependencies...`);
+            console.log(`Attempt ${attempts}/${maxAttempts}: Waiting for dependencies...`);
             
-            if (checkDependencies() || attempts >= maxAttempts) {
+            if (checkDependencies()) {
                 clearInterval(waitForDependencies);
+                console.log('✅ Dependencies loaded successfully after', attempts, 'attempts');
+            } else if (attempts >= maxAttempts) {
+                clearInterval(waitForDependencies);
+                console.error('❌ Firebase failed to load after maximum attempts');
+                showFeedback('Ralat: Gagal berhubung dengan pangkalan data. Sila refresh halaman.', 'error');
                 
-                if (attempts >= maxAttempts && !window.db) {
-                    console.error('Firebase failed to load after maximum attempts');
-                    showFeedback('Ralat: Gagal berhubung dengan pangkalan data.', 'error');
-                }
+                // Show retry option
+                setTimeout(() => {
+                    if (confirm('Adakah anda mahu cuba lagi? Tekan OK untuk refresh halaman.')) {
+                        window.location.reload();
+                    }
+                }, 2000);
             }
-        }, 500);
+        }, 1000); // Increased interval from 500ms to 1000ms for better stability
     }
 });
 
@@ -157,14 +164,38 @@ async function handleFile(file) {
  * Mem-parse fail PDF invoice dengan structured product breakdown
  */
 async function parsePdfInvoice(file) {
-    // Check if pdf.js is loaded
-    if (typeof window.pdfjsLib === 'undefined' && typeof pdfjsLib === 'undefined') {
-        console.error('PDF.js library not found');
-        throw new Error('PDF.js library tidak dimuatkan. Sila refresh halaman dan cuba lagi.');
+    // Enhanced PDF.js loading check dengan retry mechanism
+    let pdfLib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
+    
+    if (!pdfLib) {
+        console.log('PDF.js not found, attempting to load...');
+        
+        // Try to wait for PDF.js to load
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        while (!pdfLib && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            pdfLib = window.pdfjsLib || (typeof pdfjsLib !== 'undefined' ? pdfjsLib : null);
+            attempts++;
+            console.log(`Waiting for PDF.js... attempt ${attempts}/${maxAttempts}`);
+        }
+        
+        if (!pdfLib) {
+            console.error('❌ PDF.js library still not found after retries');
+            throw new Error('PDF.js library tidak dimuatkan. Sila refresh halaman dan cuba lagi.');
+        }
     }
-
-    const pdfLib = window.pdfjsLib || pdfjsLib;
-    pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
+    console.log('✅ PDF.js library loaded successfully');
+    
+    // Configure worker with error handling
+    try {
+        pdfLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    } catch (error) {
+        console.warn('Failed to set PDF.js worker source:', error);
+        // Continue anyway, PDF.js might still work
+    }
 
     const fileReader = new FileReader();
     

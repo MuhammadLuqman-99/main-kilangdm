@@ -4,24 +4,31 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔄 Initializing Professional Order Dashboard...');
     
-    // Wait for Firebase
+    // Wait for Firebase with improved timeout and error handling
     let attempts = 0;
-    const maxAttempts = 50;
+    const maxAttempts = 100; // Increased from 50 to 100
     
     const checkFirebase = setInterval(() => {
         attempts++;
-        console.log(`Checking Firebase for orders... Attempt ${attempts}`);
+        console.log(`🔄 Checking Firebase for orders... Attempt ${attempts}/${maxAttempts}`);
         
         if (window.db) {
-            console.log('Firebase ready, loading order data...');
+            console.log('✅ Firebase ready, loading order data...');
             clearInterval(checkFirebase);
             initializeOrderDashboard();
         } else if (attempts >= maxAttempts) {
-            console.error('Firebase initialization timeout');
+            console.error('❌ Firebase initialization timeout after', maxAttempts * 100 / 1000, 'seconds');
             clearInterval(checkFirebase);
             showErrorState();
+            
+            // Show user-friendly retry option
+            setTimeout(() => {
+                if (confirm('Connection timeout. Reload page to retry?')) {
+                    window.location.reload();
+                }
+            }, 2000);
         }
-    }, 100);
+    }, 200); // Increased interval from 100ms to 200ms for stability
 });
 
 // ===================================================

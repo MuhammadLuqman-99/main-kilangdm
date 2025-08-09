@@ -769,8 +769,16 @@ function updateSalesTrendChart(data = null) {
         .sort((a, b) => new Date(a) - new Date(b))
         .slice(-currentFilters.period);
 
+    // Enhanced chart destruction - handle both storage systems
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) {
+        existingChart.destroy();
+        console.log('🗑️ Destroyed existing chart on salesTrendChart canvas');
+    }
+    
     if (charts.salesTrend) {
         charts.salesTrend.destroy();
+        charts.salesTrend = null;
     }
 
     charts.salesTrend = new Chart(ctx, {

@@ -625,11 +625,23 @@ function getLast7Days() {
 function safeDestroyChart(canvasId, instanceName) {
     const ctx = document.getElementById(canvasId);
     if (ctx) {
-        // Destroy Chart.js instance on canvas
+        // Destroy Chart.js instance on canvas using Chart.getChart
         const existingChart = Chart.getChart(ctx);
         if (existingChart) {
             existingChart.destroy();
             console.log(`🗑️ Destroyed chart on canvas: ${canvasId}`);
+        }
+        
+        // Also check for global instances (legacy charts system)
+        if (window.charts && window.charts.salesTrend) {
+            window.charts.salesTrend.destroy();
+            window.charts.salesTrend = null;
+            console.log(`🗑️ Destroyed legacy chart instance for: ${canvasId}`);
+        }
+        
+        // Clean up any stored instances
+        if (window[instanceName]) {
+            window[instanceName] = null;
         }
     }
     
