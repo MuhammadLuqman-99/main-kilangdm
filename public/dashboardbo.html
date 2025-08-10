@@ -118,6 +118,7 @@
     </nav>
 
     <!-- Main Container -->
+    <div class="container mx-auto p-4 md:p-8">
     <div class="order-main-container">
         
         <!-- Dashboard Header -->
@@ -334,12 +335,89 @@
             </div>
         </section>
 
+
+        <!-- Enhanced Order Details Section -->
+        <section class="order-data-section">
+            <!-- Filter Controls -->
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label class="filter-label">Platform:</label>
+                    <select id="platform-filter" class="filter-select">
+                        <option value="">Semua Platform</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="shopee">Shopee</option>
+                        <option value="dana">Dana</option>
+                        <option value="website">Website</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Team Sale:</label>
+                    <select id="team-filter" class="filter-select">
+                        <option value="">Semua Team</option>
+                        <option value="nisya">Nisya</option>
+                        <option value="qilah">Qilah</option>
+                        <option value="wiyah">Wiyah</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <button id="reset-filters" class="reset-btn">
+                        <i class="fas fa-refresh"></i>
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Enhanced Order Details Card -->
+            <div class="enhanced-order-card">
+                <div class="enhanced-order-header">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-clipboard-list text-gray-400"></i>
+                        <h3 class="enhanced-order-title">Enhanced Order Details</h3>
+                    </div>
+                    <p class="enhanced-order-subtitle">Detailed breakdown dengan saiz dan kuantiti produk</p>
+                </div>
+
+                <!-- Orange Notice Bar -->
+                <div class="enhanced-notice-bar">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Ini adalah contoh display untuk data order dengan detail produk dan saiz. Data sebenar akan diambil dari Firebase.</span>
+                </div>
+
+                <!-- Column Headers -->
+                <div class="enhanced-headers">
+                    <div class="header-item">INVOICE/PO</div>
+                    <div class="header-item">TARIKH</div>
+                    <div class="header-item">CUSTOMER</div>
+                    <div class="header-item">TEAM</div>
+                    <div class="header-item">PLATFORM</div>
+                    <div class="header-item">DETAIL PRODUK & SAIZ</div>
+                    <div class="header-item">TOTAL QTY</div>
+                    <div class="header-item">AMOUNT</div>
+                </div>
+
+                <!-- Order Rows Container -->
+                <div class="enhanced-rows-container" id="enhanced-orders-container">
+                    <!-- Loading State -->
+                    <div class="enhanced-loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading enhanced order details...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
     </div>
     
     <!-- Professional Order Dashboard Scripts -->
     <script src="js/professional-order-dashboard.js"></script>
     <script src="js/dashboard-ui.js"></script>
     <script src="js/responsive-enhancements.js"></script>
+    
+    <!-- Firebase Data Creation Script -->
+    <script type="module" src="js/create-firebase-data.js"></script>
     
     <!-- Advanced Features -->
     <script src="js/export-manager.js"></script>

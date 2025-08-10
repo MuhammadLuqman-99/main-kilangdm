@@ -21,14 +21,14 @@
         /* Enhanced Ecommerce Styles - overridden by unified theme */
 
 /* Main Container - Side by Side Layout */
-.main-container {
+.ecommerce-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
     max-width: 1400px;
-    margin: 6rem auto 2rem;
-    padding: 0 2rem;
-    min-height: calc(100vh - 8rem);
+    margin: 2rem auto;
+    padding: 0 1rem;
+    min-height: auto;
 }
 
 /* Upload Container (Left Side) */
@@ -566,10 +566,7 @@
     background: rgba(96, 165, 250, 0.2);
 }
 
-.nav-link i {
-    width: 16px;
-    text-align: center;
-}
+/* Navigation icon styles moved to unified-theme.css */
 
 .nav-time {
     text-align: right;
@@ -600,10 +597,10 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .main-container {
+    .ecommerce-container {
         grid-template-columns: 1fr;
         gap: 1.5rem;
-        margin-top: 5rem;
+        margin-top: 1rem;
     }
     
     .upload-container {
@@ -710,7 +707,7 @@
     </div>
 
     <!-- Navigation Header -->
-    <nav class="nav-container responsive-nav">
+    <nav class="main-nav">
         <div class="nav-container">
             <!-- Brand Section -->
             <div class="nav-brand">
@@ -730,8 +727,8 @@
                     <span>Dashboard</span>
                 </a>
                 <a href="dashboardbo.html" class="nav-link">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard Order</span>
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Order Dashboard</span>
                 </a>
                 <a href="ecommerce.html" class="nav-link active">
                     <i class="fas fa-shopping-cart"></i>
@@ -774,7 +771,8 @@
     </div>
 
     <!-- Main Content Container -->
-    <div class="main-container">
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="ecommerce-container">
         <!-- Left Side - PDF/CSV Upload & Auto Detection -->
         <div class="upload-container">
             <div class="upload-header">
@@ -963,6 +961,7 @@
             </form>
 
             <div id="feedback-message" class="feedback-message"></div>
+        </div>
         </div>
     </div>
 

@@ -633,10 +633,24 @@ function safeDestroyChart(canvasId, instanceName) {
         }
         
         // Also check for global instances (legacy charts system)
-        if (window.charts && window.charts.salesTrend) {
-            window.charts.salesTrend.destroy();
-            window.charts.salesTrend = null;
-            console.log(`🗑️ Destroyed legacy chart instance for: ${canvasId}`);
+        if (window.charts) {
+            // Map canvas IDs to chart keys
+            const chartMappings = {
+                'channelChart': 'channel',
+                'salesTrendChart': 'salesTrend', 
+                'teamChart': 'team',
+                'spendChart': 'spend',
+                'leadQualityChart': 'leadQuality',
+                'leadsChart': 'leads',
+                'marketingChart': 'marketing'
+            };
+            
+            const chartKey = chartMappings[canvasId] || canvasId.replace('Chart', '').replace('chart', '');
+            if (window.charts[chartKey]) {
+                window.charts[chartKey].destroy();
+                window.charts[chartKey] = null;
+                console.log(`🗑️ Destroyed legacy chart instance: charts.${chartKey}`);
+            }
         }
         
         // Clean up any stored instances

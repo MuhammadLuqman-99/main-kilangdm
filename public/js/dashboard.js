@@ -20,6 +20,165 @@ let currentFilters = {
     agent: null,
     period: 30 // default 30 days
 };
+
+// Make currentFilters accessible globally for Power Metrics
+window.currentFilters = currentFilters;
+
+// Add manual refresh function for debugging
+window.debugPowerMetrics = async function() {
+    console.log('🔄 Manual Power Metrics Debug');
+    console.log('Current allData.salesteam:', allData.salesteam.length, 'records');
+    
+    // Re-fetch data
+    await fetchAllData();
+    
+    // Re-apply filters
+    applyFilters();
+    
+    console.log('After refresh - allData.salesteam:', allData.salesteam.length, 'records');
+};
+
+// Add specific debug for team wiyah
+window.debugWiyahData = function() {
+    console.log('🔍 DEBUGGING WIYAH DATA SPECIFICALLY:');
+    console.log('Current filters:', window.currentFilters);
+    
+    const allPowerMetrics = allData.salesteam.filter(item => item.type === 'power_metrics');
+    console.log(`Total power_metrics records: ${allPowerMetrics.length}`);
+    
+    // Find all records that might match "wiyah"
+    const wiyahRecords = allPowerMetrics.filter(item => {
+        const agentName = (item.agent_name || item.team || '').toLowerCase();
+        return agentName.includes('wiyah') || agentName.includes('wiya');
+    });
+    
+    console.log(`Records containing 'wiyah': ${wiyahRecords.length}`);
+    wiyahRecords.forEach((record, index) => {
+        console.log(`   [${index + 1}] Agent: "${record.agent_name || record.team}" | Sale: RM ${record.total_sale_bulan} | Date: ${record.tarikh}`);
+    });
+    
+    // Check exact agent names
+    console.log('All unique agent names in power_metrics:');
+    const uniqueAgents = [...new Set(allPowerMetrics.map(item => item.agent_name || item.team || 'Unknown'))];
+    uniqueAgents.forEach(agent => {
+        console.log(`   - "${agent}"`);
+    });
+};
+
+// Add function to manually test Power Metrics UI update
+window.testPowerMetricsUI = function(agentName = 'wiyah') {
+    console.log(`🔧 TESTING Power Metrics UI for agent: ${agentName}`);
+    
+    // Set the filter manually
+    window.currentFilters.agent = agentName;
+    console.log('Set currentFilters.agent to:', window.currentFilters.agent);
+    
+    // Get filtered data
+    const filteredSalesTeam = allData.salesteam.filter(item => {
+        if (item.type !== 'power_metrics') return true; // Keep non-power-metrics data
+        
+        // For power metrics, filter by agent
+        const itemAgent = item.agent_name || item.team || '';
+        return itemAgent.toLowerCase() === agentName.toLowerCase();
+    });
+    
+    console.log(`Filtered salesteam data: ${filteredSalesTeam.length} records`);
+    
+    // Call the update function directly
+    updateEnhancedPowerMetricsDisplay(filteredSalesTeam);
+    
+    console.log('✅ Manual UI update completed. Check Power Metrics display.');
+};
+
+// Add function to check all Power Metrics DOM elements
+window.checkPowerMetricsElements = function() {
+    console.log('🔍 CHECKING Power Metrics DOM Elements:');
+    
+    const elementIds = [
+        'kpi-harian', 'kpi-mtd', 'sale-mtd', 'balance-bulanan',
+        'balance-mtd', 'bilangan-terjual', 'total-close-rate',
+        'working-days-info', 'monthly-progress-text', 'mtd-progress-text',
+        'monthly-progress-bar', 'mtd-progress-bar'
+    ];
+    
+    elementIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            console.log(`✅ ${id}: "${element.textContent}"`);
+        } else {
+            console.log(`❌ ${id}: NOT FOUND`);
+        }
+    });
+};
+
+// Add function to test all teams in Power Metrics
+window.testAllTeams = function() {
+    console.log('🧪 TESTING ALL TEAMS in Power Metrics:');
+    
+    const allPowerMetrics = allData.salesteam.filter(item => item.type === 'power_metrics');
+    const uniqueTeams = [...new Set(allPowerMetrics.map(item => item.agent_name || item.team || 'Unknown'))];
+    
+    console.log(`Found ${uniqueTeams.length} unique teams:`, uniqueTeams);
+    
+    uniqueTeams.forEach(team => {
+        console.log(`\n🔧 Testing team: "${team}"`);
+        
+        // Set filter
+        window.currentFilters.agent = team;
+        
+        // Get filtered data
+        const filteredData = allData.salesteam.filter(item => {
+            if (item.type !== 'power_metrics') return true;
+            const itemAgent = item.agent_name || item.team || '';
+            return itemAgent.toLowerCase() === team.toLowerCase();
+        });
+        
+        const powerMetricsCount = filteredData.filter(item => item.type === 'power_metrics').length;
+        console.log(`   Power metrics records for ${team}: ${powerMetricsCount}`);
+        
+        // Test calculation
+        if (powerMetricsCount > 0) {
+            const calculator = new EnhancedPowerMetricsCalculator([0,1,2,3,4,6]);
+            const metrics = calculator.calculateAllMetrics(filteredData);
+            console.log(`   Sale MTD for ${team}: RM ${metrics.saleMTD.toLocaleString()}`);
+        }
+    });
+    
+    console.log('\n✅ All teams testing completed');
+};
+
+// Add function to force refresh and test filtering
+window.forceRefreshAndFilter = async function(teamName) {
+    console.log(`🔄 FORCE REFRESH AND FILTER for team: ${teamName}`);
+    
+    // Re-fetch all data
+    await fetchAllData();
+    
+    // Re-populate agent filter
+    populateAgentFilter();
+    
+    // Set the enhanced filter manually
+    if (window.advancedDashboardFilter) {
+        console.log('Setting enhanced filter...');
+        const agentSelect = document.getElementById('agent-filter-enhanced');
+        if (agentSelect) {
+            agentSelect.value = teamName;
+            // Trigger change event
+            agentSelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Apply the filter
+        if (window.advancedDashboardFilter.applyFilters) {
+            window.advancedDashboardFilter.applyFilters();
+        }
+    } else {
+        // Fallback - set current filters manually and apply
+        window.currentFilters.agent = teamName;
+        applyFilters();
+    }
+    
+    console.log(`✅ Force refresh and filter completed for: ${teamName}`);
+};
 // EXACT CHANGES FOR dashboard.js
 // Add these sections to your existing dashboard.js file
 
@@ -276,8 +435,8 @@ async function fetchAllData() {
     try {
         console.log('Fetching data from Firestore...');
         
-        // Fetch collections with error handling
-        const collections = ['orderData', 'marketingData', 'salesTeamData'];
+        // Fetch collections with error handling - including powerMetrics collection
+        const collections = ['orderData', 'marketingData', 'salesTeamData', 'powerMetrics'];
         const results = {};
         
         for (const collectionName of collections) {
@@ -289,6 +448,16 @@ async function fetchAllData() {
                     ...doc.data() 
                 }));
                 console.log(`${collectionName}: ${results[collectionName].length} documents`);
+                
+                // DEBUG: Log sample documents for each collection
+                if (results[collectionName].length > 0) {
+                    const sample = results[collectionName][0];
+                    console.log(`   Sample ${collectionName} document:`, {
+                        id: sample.id,
+                        type: sample.type,
+                        keys: Object.keys(sample).slice(0, 5)
+                    });
+                }
             } catch (error) {
                 console.warn(`Error fetching ${collectionName}:`, error);
                 results[collectionName] = [];
@@ -299,6 +468,26 @@ async function fetchAllData() {
         allData.orders = results.orderData || [];
         allData.marketing = results.marketingData || [];
         allData.salesteam = results.salesTeamData || [];
+        
+        // If powerMetrics collection exists, merge it into salesteam data
+        if (results.powerMetrics && results.powerMetrics.length > 0) {
+            console.log(`📊 Found ${results.powerMetrics.length} records in powerMetrics collection`);
+            // Add type: 'power_metrics' to each record if not present
+            const powerMetricsWithType = results.powerMetrics.map(item => ({
+                ...item,
+                type: item.type || 'power_metrics'
+            }));
+            allData.salesteam = [...allData.salesteam, ...powerMetricsWithType];
+        }
+        
+        // DEBUG: Log power metrics data specifically
+        const powerMetricsFromSalesTeam = allData.salesteam.filter(item => item.type === 'power_metrics');
+        console.log('🔍 POWER METRICS DEBUG:');
+        console.log(`   Total salesteam records: ${allData.salesteam.length}`);
+        console.log(`   Power metrics records: ${powerMetricsFromSalesTeam.length}`);
+        powerMetricsFromSalesTeam.forEach((item, index) => {
+            console.log(`   [${index + 1}] Agent: ${item.agent_name || item.team || 'Unknown'} | Sale: RM ${item.total_sale_bulan || 0} | Date: ${item.tarikh || item.createdAt || 'No date'}`);
+        });
         allData.ecommerce = []; // Currently not using separate ecommerce collection
 
         console.log('Final data counts:', {
@@ -322,11 +511,13 @@ async function fetchAllData() {
 
 // DENGAN INI:
 function populateAgentFilter() {
-    // Get unique agents from sales team data
+    // Get unique agents from sales team data - include all possible field names
     const agents = [...new Set(allData.salesteam
-        .map(item => item.agent || item.team)
+        .map(item => item.agent || item.team || item.agent_name)
         .filter(Boolean)
     )].sort();
+    
+    console.log('📊 Populating agent filter with agents:', agents);
     
     // Populate old agent filter if exists
     const agentSelect = document.getElementById('agent-filter');
@@ -358,6 +549,7 @@ function applyFilters() {
         endDate = enhanced.endDate || '';
         selectedAgent = enhanced.agent || '';
         console.log('📊 Enhanced filter values:', enhanced);
+        console.log(`🎯 Selected agent for filtering: "${selectedAgent}"`);
     } else {
         // Fallback to old filter inputs
         const startDateEl = document.getElementById('start-date');
@@ -382,6 +574,17 @@ function applyFilters() {
     updateKPIs(filteredData);
     updateCharts(filteredData);
     updateRecentActivity(filteredData);
+    
+    // DEBUG: Log data being passed to Power Metrics during applyFilters
+    console.log('🔄 CALLING updateEnhancedPowerMetricsDisplay from applyFilters:');
+    console.log(`   Total salesteam records: ${filteredData.salesteam.length}`);
+    const powerMetricsInFiltered = filteredData.salesteam.filter(item => item.type === 'power_metrics');
+    console.log(`   Power metrics in filtered data: ${powerMetricsInFiltered.length}`);
+    console.log(`   Current agent filter: "${currentFilters.agent}"`);
+    powerMetricsInFiltered.forEach(item => {
+        console.log(`     - ${item.agent_name || item.team}: RM ${item.total_sale_bulan} (${item.tarikh})`);
+    });
+    
     updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
     
     // Update marketing budget and lead efficiency
@@ -460,8 +663,29 @@ function filterSalesTeamData(data, startDate, endDate, agent) {
         if (start && itemDate < start) return false;
         if (end && itemDate > end) return false;
         
-        // Agent filter
-        if (agent && (item.agent !== agent && item.team !== agent)) return false;
+        // Agent filter - handle different field names for different data types
+        if (agent) {
+            // For Power Metrics (type: 'power_metrics'), check agent_name and team fields
+            if (item.type === 'power_metrics') {
+                const itemAgent = item.agent_name || item.team || '';
+                const isMatch = itemAgent.toLowerCase() === agent.toLowerCase();
+                
+                if (!isMatch) {
+                    console.log(`🔍 Filtering out Power Metrics: "${itemAgent}" !== "${agent}"`);
+                    return false;
+                }
+                console.log(`✅ Including Power Metrics: "${itemAgent}" matches "${agent}"`);
+            }
+            // For other data types, check agent and team fields with case-insensitive matching
+            else {
+                const itemAgent = item.agent || item.team || '';
+                const isMatch = itemAgent.toLowerCase() === agent.toLowerCase() || 
+                               (item.agent && item.agent.toLowerCase() === agent.toLowerCase()) ||
+                               (item.team && item.team.toLowerCase() === agent.toLowerCase());
+                
+                if (!isMatch) return false;
+            }
+        }
         
         return true;
     });
@@ -600,7 +824,7 @@ function updateCharts(data) {
     Chart.defaults.borderColor = 'rgba(75, 85, 99, 0.3)';
 
     updateSalesTrendChart(data);
-    updateChannelChart(data);
+    // updateChannelChart(data); // REMOVED: Handled by professional charts now
     
     // REPLACE this line:
     // updateEnhancedLeadsChart(data); // ← Remove this old call
@@ -655,8 +879,16 @@ function updateLeadQualityChart(data) {
     
     const sortedDates = Object.keys(qualityByDate).sort().slice(-7); // Last 7 days
     
+    // Enhanced chart destruction - handle both storage systems
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) {
+        existingChart.destroy();
+        console.log('🗑️ Destroyed existing chart on leadQualityChart canvas');
+    }
+    
     if (charts.leadQuality) {
         charts.leadQuality.destroy();
+        charts.leadQuality = null;
     }
     
     charts.leadQuality = new Chart(ctx, {
@@ -857,8 +1089,16 @@ function updateChannelChart(data) {
         channelData[platform] = (channelData[platform] || 0) + (parseFloat(item.total_rm) || 0);
     });
 
+    // Enhanced chart destruction - handle both storage systems
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) {
+        existingChart.destroy();
+        console.log('🗑️ Destroyed existing chart on channelChart canvas');
+    }
+    
     if (charts.channel) {
         charts.channel.destroy();
+        charts.channel = null;
     }
 
     const colors = ['#FF6B35', '#F7931E', '#3B82F6', '#E1306C', '#1877F2', '#10B981'];
@@ -941,8 +1181,16 @@ function updateTeamChart(data) {
         return Math.min(closeRate + (data.sales / 10000), 100);
     });
 
+    // Enhanced chart destruction - handle both storage systems
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) {
+        existingChart.destroy();
+        console.log('🗑️ Destroyed existing chart on teamChart canvas');
+    }
+    
     if (charts.team) {
         charts.team.destroy();
+        charts.team = null;
     }
 
     charts.team = new Chart(ctx, {
@@ -1014,8 +1262,16 @@ function updateSpendChart(data) {
 
     const sortedDates = Object.keys(spendByDate).sort().slice(-7); // Last 7 days
 
+    // Enhanced chart destruction - handle both storage systems
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) {
+        existingChart.destroy();
+        console.log('🗑️ Destroyed existing chart on spendChart canvas');
+    }
+    
     if (charts.spend) {
         charts.spend.destroy();
+        charts.spend = null;
     }
 
     charts.spend = new Chart(ctx, {
@@ -1365,6 +1621,19 @@ getSaleMTD(salesTeamData) {
     
     console.log(`🔍 Getting Sale MTD for ${currentMonth}/${currentYear}...`);
     
+    // Check if there's an active agent filter
+    const activeAgent = (window.currentFilters && window.currentFilters.agent) || '';
+    if (activeAgent) {
+        console.log(`🎯 Filtering for specific agent: ${activeAgent}`);
+    }
+    
+    // DEBUG: Log all power_metrics before date filtering
+    const allPowerMetrics = salesTeamData.filter(item => item.type === 'power_metrics');
+    console.log(`📊 All Power Metrics before filtering (${allPowerMetrics.length} total):`);
+    allPowerMetrics.forEach((item, index) => {
+        console.log(`   [${index + 1}] Agent: "${item.agent_name || item.team || 'Unknown'}" | Sale: RM ${item.total_sale_bulan || 0} | Date: ${item.tarikh || item.createdAt || 'No date'}`);
+    });
+    
     // Filter power_metrics data for current month
     const currentMonthData = salesTeamData.filter(item => {
         if (item.type !== 'power_metrics') return false;
@@ -1375,12 +1644,21 @@ getSaleMTD(salesTeamData) {
         } else if (item.createdAt) {
             itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
         } else {
+            console.log(`⚠️ No date found for power_metrics item:`, item);
             return false;
         }
         
-        return itemDate.getMonth() + 1 === currentMonth && 
-               itemDate.getFullYear() === currentYear;
+        const isCurrentMonth = itemDate.getMonth() + 1 === currentMonth && 
+                              itemDate.getFullYear() === currentYear;
+        
+        if (!isCurrentMonth) {
+            console.log(`📅 Excluding ${item.agent_name || item.team}: ${itemDate.toLocaleDateString()} (not ${currentMonth}/${currentYear})`);
+        }
+        
+        return isCurrentMonth;
     });
+    
+    console.log(`📅 After date filtering: ${currentMonthData.length} records for ${currentMonth}/${currentYear}`);
 
     console.log(`📊 Found ${currentMonthData.length} power metrics entries for current month`);
 
@@ -1388,7 +1666,7 @@ getSaleMTD(salesTeamData) {
     const teamLatestData = {};
     
     currentMonthData.forEach(item => {
-        const team = item.team || 'Unknown';
+        const team = item.agent_name || item.team || 'Unknown';
         let itemDate;
         
         if (item.tarikh) {
@@ -1411,14 +1689,50 @@ getSaleMTD(salesTeamData) {
     console.log(`👥 Found latest data for ${Object.keys(teamLatestData).length} teams:`, 
                Object.keys(teamLatestData));
 
-    // Sum the LATEST total_sale_bulan from each team
-    const saleMTD = Object.values(teamLatestData).reduce((total, teamData) => {
+    // If filtering by specific agent, only use that agent's latest data
+    let teamsToSum = teamLatestData;
+    if (activeAgent) {
+        console.log(`🔍 Looking for agent: "${activeAgent}" in available teams:`, Object.keys(teamLatestData));
+        
+        // Debug: Check exact string matching
+        Object.keys(teamLatestData).forEach(teamName => {
+            const isExactMatch = teamName === activeAgent;
+            const isLowerMatch = teamName.toLowerCase() === activeAgent.toLowerCase();
+            const isIncludes = teamName.includes(activeAgent) || activeAgent.includes(teamName);
+            console.log(`   Team "${teamName}": exact=${isExactMatch}, lower=${isLowerMatch}, includes=${isIncludes}`);
+        });
+        
+        teamsToSum = {};
+        
+        // Try exact match first
+        if (teamLatestData[activeAgent]) {
+            teamsToSum[activeAgent] = teamLatestData[activeAgent];
+            console.log(`🎯 Using filtered agent data (exact match): ${activeAgent}`);
+        } else {
+            // Try case-insensitive match
+            const foundTeam = Object.keys(teamLatestData).find(team => 
+                team.toLowerCase() === activeAgent.toLowerCase()
+            );
+            
+            if (foundTeam) {
+                teamsToSum[foundTeam] = teamLatestData[foundTeam];
+                console.log(`🎯 Using filtered agent data (case-insensitive match): ${foundTeam}`);
+            } else {
+                console.log(`⚠️ No data found for agent: "${activeAgent}"`);
+                console.log(`   Available agents: ${Object.keys(teamLatestData).join(', ')}`);
+            }
+        }
+    }
+
+    // Sum the LATEST total_sale_bulan from relevant teams
+    const saleMTD = Object.values(teamsToSum).reduce((total, teamData) => {
         const saleAmount = parseFloat(teamData.data.total_sale_bulan) || 0;
-        console.log(`   - ${teamData.data.team}: RM ${saleAmount.toLocaleString()} (${teamData.date.toLocaleDateString()})`);
+        console.log(`   - ${teamData.data.agent_name || teamData.data.team || 'Unknown'}: RM ${saleAmount.toLocaleString()} (${teamData.date.toLocaleDateString()})`);
         return total + saleAmount;
     }, 0);
 
-    console.log(`💰 Total Sale MTD (Latest from each team): RM ${saleMTD.toLocaleString()}`);
+    const context = activeAgent ? `for ${activeAgent}` : 'for all teams';
+    console.log(`💰 Total Sale MTD (Latest ${context}): RM ${saleMTD.toLocaleString()}`);
     return saleMTD;
 }
 
@@ -1444,6 +1758,12 @@ getTotalCloseCount(salesTeamData) {
     
     console.log(`🔍 Getting Total Close Count for ${currentMonth}/${currentYear}...`);
     
+    // Check if there's an active agent filter
+    const activeAgent = (window.currentFilters && window.currentFilters.agent) || '';
+    if (activeAgent) {
+        console.log(`🎯 Filtering close count for specific agent: ${activeAgent}`);
+    }
+    
     // Filter power_metrics data for current month
     const currentMonthData = salesTeamData.filter(item => {
         if (item.type !== 'power_metrics') return false;
@@ -1465,7 +1785,7 @@ getTotalCloseCount(salesTeamData) {
     const teamLatestData = {};
     
     currentMonthData.forEach(item => {
-        const team = item.team || 'Unknown';
+        const team = item.agent_name || item.team || 'Unknown';
         let itemDate;
         
         if (item.tarikh) {
@@ -1484,14 +1804,27 @@ getTotalCloseCount(salesTeamData) {
         }
     });
 
-    // Sum the LATEST total_close_bulan from each team
-    const totalClose = Object.values(teamLatestData).reduce((total, teamData) => {
+    // If filtering by specific agent, only use that agent's latest data
+    let teamsToSum = teamLatestData;
+    if (activeAgent) {
+        teamsToSum = {};
+        if (teamLatestData[activeAgent]) {
+            teamsToSum[activeAgent] = teamLatestData[activeAgent];
+            console.log(`🎯 Using filtered agent close data: ${activeAgent}`);
+        } else {
+            console.log(`⚠️ No close data found for agent: ${activeAgent}`);
+        }
+    }
+
+    // Sum the LATEST total_close_bulan from relevant teams
+    const totalClose = Object.values(teamsToSum).reduce((total, teamData) => {
         const closeCount = parseInt(teamData.data.total_close_bulan) || 0;
-        console.log(`   - ${teamData.data.team}: ${closeCount} closes (${teamData.date.toLocaleDateString()})`);
+        console.log(`   - ${teamData.data.agent_name || teamData.data.team || 'Unknown'}: ${closeCount} closes (${teamData.date.toLocaleDateString()})`);
         return total + closeCount;
     }, 0);
 
-    console.log(`🎯 Total Close Count (Latest from each team): ${totalClose} units`);
+    const context = activeAgent ? `for ${activeAgent}` : 'for all teams';
+    console.log(`🎯 Total Close Count (Latest ${context}): ${totalClose} units`);
     return totalClose;
 }
 
@@ -1503,6 +1836,12 @@ getTotalLeadCount(salesTeamData) {
     
     console.log(`🔍 Getting Total Lead Count for ${currentMonth}/${currentYear}...`);
     
+    // Check if there's an active agent filter
+    const activeAgent = (window.currentFilters && window.currentFilters.agent) || '';
+    if (activeAgent) {
+        console.log(`🎯 Filtering lead count for specific agent: ${activeAgent}`);
+    }
+    
     // Filter power_metrics data for current month
     const currentMonthData = salesTeamData.filter(item => {
         if (item.type !== 'power_metrics') return false;
@@ -1524,7 +1863,7 @@ getTotalLeadCount(salesTeamData) {
     const teamLatestData = {};
     
     currentMonthData.forEach(item => {
-        const team = item.team || 'Unknown';
+        const team = item.agent_name || item.team || 'Unknown';
         let itemDate;
         
         if (item.tarikh) {
@@ -1543,14 +1882,27 @@ getTotalLeadCount(salesTeamData) {
         }
     });
 
-    // Sum the LATEST total_lead_bulan from each team
-    const totalLead = Object.values(teamLatestData).reduce((total, teamData) => {
+    // If filtering by specific agent, only use that agent's latest data
+    let teamsToSum = teamLatestData;
+    if (activeAgent) {
+        teamsToSum = {};
+        if (teamLatestData[activeAgent]) {
+            teamsToSum[activeAgent] = teamLatestData[activeAgent];
+            console.log(`🎯 Using filtered agent lead data: ${activeAgent}`);
+        } else {
+            console.log(`⚠️ No lead data found for agent: ${activeAgent}`);
+        }
+    }
+
+    // Sum the LATEST total_lead_bulan from relevant teams
+    const totalLead = Object.values(teamsToSum).reduce((total, teamData) => {
         const leadCount = parseInt(teamData.data.total_lead_bulan) || 0;
-        console.log(`   - ${teamData.data.team}: ${leadCount} leads (${teamData.date.toLocaleDateString()})`);
+        console.log(`   - ${teamData.data.agent_name || teamData.data.team || 'Unknown'}: ${leadCount} leads (${teamData.date.toLocaleDateString()})`);
         return total + leadCount;
     }, 0);
 
-    console.log(`📋 Total Lead Count (Latest from each team): ${totalLead} leads`);
+    const context = activeAgent ? `for ${activeAgent}` : 'for all teams';
+    console.log(`📋 Total Lead Count (Latest ${context}): ${totalLead} leads`);
     return totalLead;
 }
 
@@ -1740,7 +2092,7 @@ debugDataProcessing(salesTeamData) {
     const teamLatestData = {};
     
     currentMonthData.forEach(item => {
-        const team = item.team || 'Unknown';
+        const team = item.agent_name || item.team || 'Unknown';
         let itemDate;
         
         if (item.tarikh) {
@@ -1865,17 +2217,71 @@ if (typeof window !== 'undefined') {
 
 // Enhanced update function for dashboard integration
 function updateEnhancedPowerMetricsDisplay(salesTeamData) {
+    console.log(`🔄 updateEnhancedPowerMetricsDisplay called with ${salesTeamData?.length || 0} records`);
+    
+    // DEBUG: Log all salesTeamData types first
+    if (salesTeamData && salesTeamData.length > 0) {
+        console.log('🔍 ALL SALESTEAM DATA TYPES:');
+        const dataTypes = {};
+        salesTeamData.forEach(item => {
+            const type = item.type || 'no-type';
+            dataTypes[type] = (dataTypes[type] || 0) + 1;
+        });
+        console.log('   Data type counts:', dataTypes);
+        
+        // Show sample of each type
+        Object.keys(dataTypes).forEach(type => {
+            const sample = salesTeamData.find(item => (item.type || 'no-type') === type);
+            console.log(`   Sample ${type}:`, {
+                agent_name: sample.agent_name,
+                team: sample.team,
+                tarikh: sample.tarikh,
+                total_sale_bulan: sample.total_sale_bulan,
+                createdAt: sample.createdAt
+            });
+        });
+        
+        // DEBUG: Check if current filter is active
+        const currentAgent = (window.currentFilters && window.currentFilters.agent) || '';
+        if (currentAgent) {
+            console.log(`🎯 CURRENT ACTIVE FILTER: "${currentAgent}"`);
+            console.log('   All agents in power_metrics data:');
+            salesTeamData.filter(item => item.type === 'power_metrics').forEach(item => {
+                const agentName = item.agent_name || item.team || 'Unknown';
+                console.log(`     - "${agentName}" (matches filter: ${agentName === currentAgent})`);
+            });
+        }
+    }
+    
+    // Debug: Log power metrics records
+    const powerMetricsRecords = salesTeamData.filter(item => item.type === 'power_metrics');
+    console.log(`📊 Power Metrics records found: ${powerMetricsRecords.length}`);
+    powerMetricsRecords.forEach(record => {
+        console.log(`   - ${record.agent_name || record.team || 'Unknown'}: RM ${record.total_sale_bulan} (${record.tarikh})`);
+    });
+
     // Create calculator with Malaysia working pattern (Friday off only)
     const calculator = new EnhancedPowerMetricsCalculator([0,1,2,3,4,6]); // Sun-Thu + Sat
     const metrics = calculator.calculateAllMetrics(salesTeamData);
+    
+    // DEBUG: Log calculated metrics before UI update
+    console.log('📊 CALCULATED METRICS for UI update:');
+    console.log(`   Sale MTD: RM ${metrics.saleMTD.toLocaleString()}`);
+    console.log(`   KPI Harian: RM ${metrics.dynamicKpiHarian.toLocaleString()}`);
+    console.log(`   KPI MTD: RM ${metrics.kpiMTD.toLocaleString()}`);
+    console.log(`   Balance Bulanan: RM ${metrics.balanceBulanan.toLocaleString()}`);
+    console.log(`   Balance MTD: RM ${metrics.balanceMTD.toLocaleString()}`);
+    console.log(`   Bilangan Terjual: ${metrics.bilanganTerjual}`);
+    console.log(`   Total Close Rate: ${metrics.totalCloseRate.toFixed(1)}%`);
 
     // Helper function to update elements safely
     const updateElement = (id, value) => {
         const element = document.getElementById(id);
         if (element) {
+            console.log(`✅ Updating element '${id}' with value: ${value}`);
             element.textContent = value;
         } else {
-            console.warn(`Element with ID '${id}' not found`);
+            console.warn(`❌ Element with ID '${id}' not found`);
         }
     };
 
