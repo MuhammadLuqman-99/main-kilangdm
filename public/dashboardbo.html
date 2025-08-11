@@ -30,57 +30,229 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="KilangDM">
     
-    <!-- Firebase SDK - Simple reliable version -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" 
-            onerror="console.log('Firebase App failed, trying fallback'); this.src='https://unpkg.com/firebase@8.10.1/firebase-app.js'"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" 
-            onerror="console.log('Firebase Firestore failed, trying fallback'); this.src='https://unpkg.com/firebase@8.10.1/firebase-firestore.js'"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" 
-            onerror="console.log('Firebase Auth failed, trying fallback'); this.src='https://unpkg.com/firebase@8.10.1/firebase-auth.js'"></script>
+    <!-- Firebase SDK - Multiple CDN fallbacks -->
+    <script>
+        // Firebase loading with multiple CDN fallbacks
+        const firebaseVersion = '8.10.1';
+        const cdnSources = [
+            'https://www.gstatic.com/firebasejs/' + firebaseVersion,
+            'https://unpkg.com/firebase@' + firebaseVersion,
+            'https://cdn.jsdelivr.net/npm/firebase@' + firebaseVersion + '/firebase',
+            'https://cdnjs.cloudflare.com/ajax/libs/firebase/' + firebaseVersion
+        ];
+        
+        let currentCdnIndex = 0;
+        let scriptsToLoad = ['firebase-app.js', 'firebase-firestore.js', 'firebase-auth.js'];
+        let loadedScripts = 0;
+        
+        function loadFirebaseScript(scriptName, cdnIndex = 0) {
+            return new Promise((resolve, reject) => {
+                if (cdnIndex >= cdnSources.length) {
+                    reject(new Error(`Failed to load ${scriptName} from all CDNs`));
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                const cdnUrl = cdnSources[cdnIndex];
+                script.src = `${cdnUrl}/${scriptName}`;
+                
+                script.onload = () => {
+                    console.log(`✅ ${scriptName} loaded from ${cdnUrl}`);
+                    resolve();
+                };
+                
+                script.onerror = () => {
+                    console.log(`❌ ${scriptName} failed from ${cdnUrl}, trying next CDN...`);
+                    // Remove failed script
+                    script.remove();
+                    // Try next CDN
+                    loadFirebaseScript(scriptName, cdnIndex + 1)
+                        .then(resolve)
+                        .catch(reject);
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Show loading progress
+        function showLoadingProgress() {
+            const progressDiv = document.createElement('div');
+            progressDiv.id = 'firebase-loading';
+            progressDiv.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; 
+                background: linear-gradient(135deg, #0f172a, #1e293b); 
+                color: white; padding: 0.75rem; text-align: center; z-index: 10000;
+                border-bottom: 2px solid #3b82f6;
+            `;
+            progressDiv.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem;">
+                    <div style="animation: spin 1s linear infinite;">🔄</div>
+                    <span id="loading-text">Loading Firebase...</span>
+                    <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 2px; min-width: 100px;">
+                        <div id="progress-bar" style="background: #3b82f6; height: 4px; border-radius: 4px; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                </style>
+            `;
+            document.body.prepend(progressDiv);
+        }
+        
+        function updateLoadingProgress(current, total, message) {
+            const progressBar = document.getElementById('progress-bar');
+            const loadingText = document.getElementById('loading-text');
+            
+            if (progressBar && loadingText) {
+                const percentage = (current / total) * 100;
+                progressBar.style.width = percentage + '%';
+                loadingText.textContent = message || `Loading... (${current}/${total})`;
+            }
+        }
+        
+        function hideLoadingProgress() {
+            const progressDiv = document.getElementById('firebase-loading');
+            if (progressDiv) {
+                progressDiv.remove();
+            }
+        }
+
+        // Load all Firebase scripts
+        async function loadAllFirebaseScripts() {
+            try {
+                showLoadingProgress();
+                console.log('🔄 Loading Firebase scripts with CDN fallback...');
+                
+                for (const scriptName of scriptsToLoad) {
+                    updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loading ${scriptName}...`);
+                    await loadFirebaseScript(scriptName);
+                    loadedScripts++;
+                    updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loaded ${scriptName}`);
+                    console.log(`📦 Progress: ${loadedScripts}/${scriptsToLoad.length} scripts loaded`);
+                }
+                
+                updateLoadingProgress(scriptsToLoad.length, scriptsToLoad.length, 'Initializing Firebase...');
+                console.log('✅ All Firebase scripts loaded successfully');
+                window.firebaseScriptsLoaded = true;
+                
+                // Initialize Firebase immediately
+                setTimeout(() => {
+                    initializeFirebaseImmediate();
+                    hideLoadingProgress();
+                }, 200);
+                
+            } catch (error) {
+                console.error('❌ Failed to load Firebase scripts:', error);
+                hideLoadingProgress();
+                window.firebaseScriptsLoadError = true;
+                showOfflineMode();
+            }
+        }
+        
+        // Start loading
+        loadAllFirebaseScripts();
+        
+        function showOfflineMode() {
+            const offlineDiv = document.createElement('div');
+            offlineDiv.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; 
+                background: linear-gradient(135deg, #1e293b, #334155); 
+                color: white; padding: 1rem; text-align: center; z-index: 10000;
+                border-bottom: 3px solid #ef4444;
+            `;
+            offlineDiv.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                    <div style="animation: pulse 2s infinite;">📡</div>
+                    <div>
+                        <h3 style="margin: 0; color: #fbbf24;">Offline Mode</h3>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
+                            Firebase CDN unavailable. Some features may be limited.
+                        </p>
+                    </div>
+                    <button onclick="window.location.reload()" 
+                            style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        🔄 Retry
+                    </button>
+                </div>
+                <style>
+                    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+                </style>
+            `;
+            document.body.prepend(offlineDiv);
+        }
+    </script>
     
     <!-- Firebase Config -->
     <script>
-    // Simple Firebase initialization 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Wait a bit for Firebase scripts to load
-        setTimeout(() => {
-            const firebaseConfig = {
-                apiKey: "AIzaSyDvqSuT4sQeJwB5Mb8wQZ4X4X4X4X4X4X",
-                authDomain: "kilangdm-v1.firebaseapp.com",
-                projectId: "kilangdm-v1",
-                storageBucket: "kilangdm-v1.appspot.com",
-                messagingSenderId: "123456789012",
-                appId: "1:123456789012:web:abcdef123456",
-                measurementId: "G-ABCDEFGHIJ"
-            };
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyDvqSuT4sQeJwB5Mb8wQZ4X4X4X4X4X4X",
+        authDomain: "kilangdm-v1.firebaseapp.com",
+        projectId: "kilangdm-v1",
+        storageBucket: "kilangdm-v1.appspot.com",
+        messagingSenderId: "123456789012",
+        appId: "1:123456789012:web:abcdef123456",
+        measurementId: "G-ABCDEFGHIJ"
+    };
 
-            try {
-                if (typeof firebase === 'undefined') {
-                    console.log('⏳ Firebase not ready yet, waiting...');
-                    // Try again after a delay
-                    setTimeout(() => {
-                        if (typeof firebase !== 'undefined') {
-                            firebase.initializeApp(firebaseConfig);
-                            window.db = firebase.firestore();
-                            window.firebase = firebase;
-                            console.log('✅ Firebase initialized successfully (delayed)');
-                            window.dispatchEvent(new Event('firebaseReady'));
-                        } else {
-                            showFirebaseError('Firebase SDK failed to load from CDN');
-                        }
-                    }, 2000);
-                } else {
-                    firebase.initializeApp(firebaseConfig);
-                    window.db = firebase.firestore();
-                    window.firebase = firebase;
-                    console.log('✅ Firebase initialized successfully');
-                    window.dispatchEvent(new Event('firebaseReady'));
-                }
-            } catch (error) {
-                console.error('❌ Firebase initialization error:', error);
-                showFirebaseError(error.message);
+    // Immediate Firebase initialization (called after scripts load)
+    function initializeFirebaseImmediate() {
+        try {
+            if (typeof firebase === 'undefined') {
+                throw new Error('Firebase object not available');
             }
-        }, 1000); // Wait 1 second for scripts to load
+            
+            console.log('🔥 Initializing Firebase...');
+            firebase.initializeApp(firebaseConfig);
+            window.db = firebase.firestore();
+            window.firebase = firebase;
+            
+            console.log('✅ Firebase initialized successfully');
+            window.dispatchEvent(new Event('firebaseReady'));
+            
+            // Remove any offline mode indicators
+            const offlineIndicator = document.querySelector('[style*="Offline Mode"]');
+            if (offlineIndicator) {
+                offlineIndicator.remove();
+            }
+            
+        } catch (error) {
+            console.error('❌ Firebase initialization error:', error);
+            showFirebaseError(error.message);
+        }
+    }
+
+    // Fallback initialization for older approach
+    document.addEventListener('DOMContentLoaded', function() {
+        // Only run if Firebase hasn't been initialized yet
+        if (!window.firebaseScriptsLoaded && !window.firebaseScriptsLoadError) {
+            console.log('⏳ Waiting for Firebase scripts to load...');
+            
+            // Check periodically if Firebase is available
+            const checkFirebase = setInterval(() => {
+                if (window.firebaseScriptsLoaded) {
+                    clearInterval(checkFirebase);
+                    // Already initialized by immediate function
+                } else if (window.firebaseScriptsLoadError) {
+                    clearInterval(checkFirebase);
+                    console.log('❌ Firebase loading failed, running in offline mode');
+                } else if (typeof firebase !== 'undefined') {
+                    // Scripts loaded but flag not set
+                    clearInterval(checkFirebase);
+                    initializeFirebaseImmediate();
+                }
+            }, 200);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                clearInterval(checkFirebase);
+                if (!window.db) {
+                    console.error('❌ Firebase initialization timeout');
+                    showFirebaseError('Firebase initialization timeout');
+                }
+            }, 10000);
+        }
     });
 
     function showFirebaseError(message) {
