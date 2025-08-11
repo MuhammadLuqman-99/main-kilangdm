@@ -1,8 +1,9 @@
 {
   "name": "KilangDM Dashboard",
   "short_name": "KilangDM",
+  "version": "3.0",
   "description": "Professional Business Intelligence & Analytics Dashboard for KilangDM",
-  "start_url": "/dashboard.html",
+  "start_url": "/dashboard.html?v=3.0",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#3b82f6",

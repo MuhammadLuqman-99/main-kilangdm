@@ -2,12 +2,43 @@
 // Shows correlation between marketing cost and lead submissions over time
 
 export function createMarketingTimelineChart(data = null) {
-    console.log('📊 Creating Marketing Cost vs Lead Timeline Chart...');
+    console.log('📊 Creating Marketing Cost vs Lead Timeline Chart (Bar Chart with Lead Breakdown)...');
+    
+    // Check localStorage for saved chart preference (ensure consistency after refresh)
+    let savedChartConfig = null;
+    try {
+        const savedConfig = localStorage.getItem('marketingTimelineChartConfig');
+        if (savedConfig) {
+            savedChartConfig = JSON.parse(savedConfig);
+            console.log('💾 Found saved chart preference:', savedChartConfig);
+        }
+    } catch (error) {
+        console.warn('⚠️ Could not read saved chart preference:', error);
+    }
     
     const ctx = document.getElementById('marketingTimelineChart');
     if (!ctx) {
         console.warn('⚠️ marketingTimelineChart canvas not found');
         return;
+    }
+
+    // Save/update chart type preference to localStorage (ensure bar chart persists on refresh)
+    try {
+        const chartConfig = {
+            type: 'bar',
+            format: 'cold_warm_hot_breakdown',
+            version: '3.0',
+            timestamp: Date.now(),
+            persistent: true,
+            datasets: ['Cold Leads', 'Warm Leads', 'Hot Leads']
+        };
+        
+        localStorage.setItem('marketingTimelineChartType', 'bar');
+        localStorage.setItem('marketingTimelineChartConfig', JSON.stringify(chartConfig));
+        localStorage.setItem('chartVersion', '3.0');
+        console.log('💾 Saved bar chart preference v3.0 to localStorage:', chartConfig);
+    } catch (error) {
+        console.warn('⚠️ Could not save chart preference:', error);
     }
 
     // Process real Firebase data only - NO MOCK DATA
@@ -63,21 +94,6 @@ export function createMarketingTimelineChart(data = null) {
                     borderColor: 'rgba(239, 68, 68, 1)',
                     borderWidth: 2,
                     borderRadius: 6
-                },
-                {
-                    label: 'Marketing Cost (RM)',
-                    data: processedData.teamCosts,
-                    type: 'line',
-                    borderColor: 'rgba(16, 185, 129, 1)', // green
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    borderWidth: 3,
-                    fill: false,
-                    tension: 0.4,
-                    pointBackgroundColor: 'rgba(16, 185, 129, 1)',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    yAxisID: 'y1'
                 }
             ]
         },
@@ -91,7 +107,7 @@ export function createMarketingTimelineChart(data = null) {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Lead Performance by Sales Team (Cold/Warm/Hot)',
+                    text: 'Lead Performance by Sales Team (Cold/Warm/Hot) - Bar Chart',
                     color: '#e2e8f0',
                     font: {
                         size: 18,
@@ -126,26 +142,21 @@ export function createMarketingTimelineChart(data = null) {
                             const datasetLabel = context.dataset.label;
                             const value = context.parsed.y;
                             
-                            if (datasetLabel.includes('Leads')) {
-                                return `${datasetLabel}: ${value} leads`;
-                            } else {
-                                return `${datasetLabel}: RM ${value.toFixed(2)}`;
-                            }
+                            return `${datasetLabel}: ${value} leads`;
                         },
                         afterBody: function(tooltipItems) {
                             const teamIndex = tooltipItems[0].dataIndex;
                             const cold = processedData.coldLeads[teamIndex] || 0;
                             const warm = processedData.warmLeads[teamIndex] || 0;
                             const hot = processedData.hotLeads[teamIndex] || 0;
-                            const cost = processedData.teamCosts[teamIndex] || 0;
                             const totalLeads = cold + warm + hot;
-                            const efficiency = totalLeads > 0 ? (cost / totalLeads).toFixed(2) : 'N/A';
                             
                             return [
                                 '',
                                 `📊 Total Leads: ${totalLeads}`,
-                                `💰 Cost per Lead: RM ${efficiency}`,
-                                `🔥 Hot Rate: ${totalLeads > 0 ? ((hot / totalLeads) * 100).toFixed(1) : 0}%`
+                                `❄️ Cold: ${cold} leads (${totalLeads > 0 ? ((cold / totalLeads) * 100).toFixed(1) : 0}%)`,
+                                `🔥 Hot Rate: ${totalLeads > 0 ? ((hot / totalLeads) * 100).toFixed(1) : 0}%`,
+                                `📈 Conversion: Cold → Warm → Hot`
                             ];
                         }
                     }
@@ -199,33 +210,6 @@ export function createMarketingTimelineChart(data = null) {
                             weight: 'bold'
                         }
                     }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    beginAtZero: true,
-                    grid: {
-                        drawOnChartArea: false,
-                    },
-                    ticks: {
-                        color: '#10b981',
-                        font: {
-                            size: 11
-                        },
-                        callback: function(value) {
-                            return 'RM ' + value.toFixed(0);
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Marketing Cost (RM)',
-                        color: '#10b981',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        }
-                    }
                 }
             },
             animation: {
@@ -235,7 +219,14 @@ export function createMarketingTimelineChart(data = null) {
         }
     });
 
-    console.log('✅ Marketing Timeline chart created successfully');
+    console.log('✅ Marketing Timeline chart created successfully as BAR CHART');
+    console.log('📊 Chart Configuration:', {
+        type: 'bar',
+        datasets: chart.data.datasets.length,
+        datasetTypes: chart.data.datasets.map(d => d.label),
+        teams: processedData.teams.length,
+        persistent: true
+    });
     
     // Store for global access
     window.marketingTimelineChart = chart;

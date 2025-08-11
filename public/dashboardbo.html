@@ -75,29 +75,73 @@
             });
         }
         
-        // Show loading progress
+        // Show loading progress (DOM safe with multiple fallbacks)
         function showLoadingProgress() {
-            const progressDiv = document.createElement('div');
-            progressDiv.id = 'firebase-loading';
-            progressDiv.style.cssText = `
-                position: fixed; top: 0; left: 0; right: 0; 
-                background: linear-gradient(135deg, #0f172a, #1e293b); 
-                color: white; padding: 0.75rem; text-align: center; z-index: 10000;
-                border-bottom: 2px solid #3b82f6;
-            `;
-            progressDiv.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem;">
-                    <div style="animation: spin 1s linear infinite;">🔄</div>
-                    <span id="loading-text">Loading Firebase...</span>
-                    <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 2px; min-width: 100px;">
-                        <div id="progress-bar" style="background: #3b82f6; height: 4px; border-radius: 4px; width: 0%; transition: width 0.3s ease;"></div>
+            // Wait for DOM to be ready
+            function addProgressDiv() {
+                // Multiple fallback strategies
+                let targetElement = document.body;
+                
+                if (!targetElement) {
+                    targetElement = document.documentElement;
+                }
+                
+                if (!targetElement) {
+                    targetElement = document.head;
+                }
+                
+                if (!targetElement) {
+                    console.log('⚠️ No DOM element available - retrying in 50ms...');
+                    setTimeout(addProgressDiv, 50);
+                    return;
+                }
+                
+                // Avoid duplicate progress indicators
+                const existingProgress = document.getElementById('firebase-loading');
+                if (existingProgress) {
+                    console.log('📊 Progress indicator already exists');
+                    return;
+                }
+                
+                const progressDiv = document.createElement('div');
+                progressDiv.id = 'firebase-loading';
+                progressDiv.style.cssText = `
+                    position: fixed; top: 0; left: 0; right: 0; 
+                    background: linear-gradient(135deg, #0f172a, #1e293b); 
+                    color: white; padding: 0.75rem; text-align: center; z-index: 10000;
+                    border-bottom: 2px solid #3b82f6;
+                `;
+                progressDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <div style="animation: spin 1s linear infinite;">🔄</div>
+                        <span id="loading-text">Loading Firebase...</span>
+                        <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 2px; min-width: 100px;">
+                            <div id="progress-bar" style="background: #3b82f6; height: 4px; border-radius: 4px; width: 0%; transition: width 0.3s ease;"></div>
+                        </div>
                     </div>
-                </div>
-                <style>
-                    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                </style>
-            `;
-            document.body.prepend(progressDiv);
+                    <style>
+                        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                    </style>
+                `;
+                
+                // Safe insertion with multiple methods
+                try {
+                    if (targetElement.prepend) {
+                        targetElement.prepend(progressDiv);
+                    } else if (targetElement.insertBefore) {
+                        targetElement.insertBefore(progressDiv, targetElement.firstChild);
+                    } else if (targetElement.appendChild) {
+                        targetElement.appendChild(progressDiv);
+                    } else {
+                        targetElement.innerHTML = progressDiv.outerHTML + targetElement.innerHTML;
+                    }
+                    console.log('📊 Firebase loading progress displayed');
+                } catch (error) {
+                    console.warn('⚠️ Failed to display progress indicator:', error);
+                }
+            }
+            
+            addProgressDiv();
         }
         
         function updateLoadingProgress(current, total, message) {
@@ -150,36 +194,105 @@
             }
         }
         
-        // Start loading
-        loadAllFirebaseScripts();
+        // Enhanced DOM ready check with multiple fallbacks
+        function domReady(callback) {
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                // DOM is already ready
+                setTimeout(callback, 1);
+                return;
+            }
+            
+            if (document.readyState === 'loading') {
+                // Wait for DOM content loaded
+                document.addEventListener('DOMContentLoaded', callback);
+                // Also add a fallback timeout
+                setTimeout(() => {
+                    if (document.readyState !== 'loading') {
+                        callback();
+                    }
+                }, 5000); // 5 second fallback
+                return;
+            }
+            
+            // Fallback - try immediately
+            callback();
+        }
+        
+        // Start loading when DOM is ready with enhanced safety
+        domReady(loadAllFirebaseScripts);
         
         function showOfflineMode() {
-            const offlineDiv = document.createElement('div');
-            offlineDiv.style.cssText = `
-                position: fixed; top: 0; left: 0; right: 0; 
-                background: linear-gradient(135deg, #1e293b, #334155); 
-                color: white; padding: 1rem; text-align: center; z-index: 10000;
-                border-bottom: 3px solid #ef4444;
-            `;
-            offlineDiv.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
-                    <div style="animation: pulse 2s infinite;">📡</div>
-                    <div>
-                        <h3 style="margin: 0; color: #fbbf24;">Offline Mode</h3>
-                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
-                            Firebase CDN unavailable. Some features may be limited.
-                        </p>
+            // Wait for DOM to be available with better safety
+            function addOfflineDiv() {
+                // Multiple fallback strategies for DOM elements
+                let targetElement = document.body;
+                
+                if (!targetElement) {
+                    targetElement = document.documentElement;
+                }
+                
+                if (!targetElement) {
+                    targetElement = document.head;
+                }
+                
+                if (!targetElement) {
+                    console.log('⚠️ No DOM element available for offline mode - retrying in 50ms...');
+                    setTimeout(addOfflineDiv, 50);
+                    return;
+                }
+                
+                // Avoid duplicate offline indicators
+                const existingOffline = document.querySelector('[data-offline-mode="true"]');
+                if (existingOffline) {
+                    console.log('📡 Offline mode indicator already exists');
+                    return;
+                }
+                
+                const offlineDiv = document.createElement('div');
+                offlineDiv.setAttribute('data-offline-mode', 'true');
+                offlineDiv.style.cssText = `
+                    position: fixed; top: 0; left: 0; right: 0; 
+                    background: linear-gradient(135deg, #1e293b, #334155); 
+                    color: white; padding: 1rem; text-align: center; z-index: 10000;
+                    border-bottom: 3px solid #ef4444;
+                `;
+                offlineDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                        <div style="animation: pulse 2s infinite;">📡</div>
+                        <div>
+                            <h3 style="margin: 0; color: #fbbf24;">Offline Mode</h3>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
+                                Firebase CDN unavailable. Some features may be limited.
+                            </p>
+                        </div>
+                        <button onclick="window.location.reload()" 
+                                style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            🔄 Retry
+                        </button>
                     </div>
-                    <button onclick="window.location.reload()" 
-                            style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        🔄 Retry
-                    </button>
-                </div>
-                <style>
-                    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-                </style>
-            `;
-            document.body.prepend(offlineDiv);
+                    <style>
+                        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+                    </style>
+                `;
+                
+                // Safe insertion with multiple methods
+                try {
+                    if (targetElement.prepend) {
+                        targetElement.prepend(offlineDiv);
+                    } else if (targetElement.insertBefore) {
+                        targetElement.insertBefore(offlineDiv, targetElement.firstChild);
+                    } else if (targetElement.appendChild) {
+                        targetElement.appendChild(offlineDiv);
+                    } else {
+                        targetElement.innerHTML = offlineDiv.outerHTML + targetElement.innerHTML;
+                    }
+                    console.log('📡 Offline mode indicator displayed');
+                } catch (error) {
+                    console.warn('⚠️ Failed to display offline mode indicator:', error);
+                }
+            }
+            
+            addOfflineDiv();
         }
     </script>
     
@@ -260,37 +373,83 @@
         const isOffline = !navigator.onLine;
         const offlineMessage = isOffline ? ' (You are currently offline)' : '';
         
-        const errorContainer = document.createElement('div');
-        errorContainer.style.cssText = 'padding: 1rem; background: #fee2e2; color: #b91c1c; margin: 1rem; border-radius: 0.5rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);';
-        errorContainer.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h3 style="margin: 0; font-size: 1.1rem;">${isOffline ? '📡' : '🔥'} ${isOffline ? 'Offline Mode' : 'Firebase Connection Issue'}</h3>
-                    <p style="margin: 0.5rem 0; font-size: 0.9rem;"><strong>Status:</strong> ${message}${offlineMessage}</p>
-                    <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">
-                        ${isOffline ? 'Check your internet connection' : 'Pastikan internet connection stable'}
-                    </p>
-                </div>
-                <div>
-                    <button onclick="window.location.reload()" 
-                            style="padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; font-size: 0.9rem;">
-                        🔄 Reload
-                    </button>
-                    <button onclick="this.parentElement.parentElement.remove()" 
-                            style="padding: 0.5rem; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
-                        ✕
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.prepend(errorContainer);
-        
-        // Auto-remove after 15 seconds (longer for offline)
-        setTimeout(() => {
-            if (errorContainer.parentElement) {
-                errorContainer.remove();
+        // Wait for DOM to be available with better safety
+        function addErrorDiv() {
+            // Multiple fallback strategies for DOM elements
+            let targetElement = document.body;
+            
+            if (!targetElement) {
+                targetElement = document.documentElement;
             }
-        }, isOffline ? 15000 : 10000);
+            
+            if (!targetElement) {
+                targetElement = document.head;
+            }
+            
+            if (!targetElement) {
+                console.log('⚠️ No DOM element available for error display - retrying in 100ms...');
+                setTimeout(addErrorDiv, 100);
+                return;
+            }
+            
+            // Avoid duplicate error indicators
+            const existingError = document.querySelector('[data-firebase-error="true"]');
+            if (existingError) {
+                console.log('🔥 Firebase error indicator already exists');
+                return;
+            }
+            
+            const errorContainer = document.createElement('div');
+            errorContainer.setAttribute('data-firebase-error', 'true');
+            errorContainer.style.cssText = 'padding: 1rem; background: #fee2e2; color: #b91c1c; margin: 1rem; border-radius: 0.5rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);';
+            errorContainer.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem;">${isOffline ? '📡' : '🔥'} ${isOffline ? 'Offline Mode' : 'Firebase Connection Issue'}</h3>
+                        <p style="margin: 0.5rem 0; font-size: 0.9rem;"><strong>Status:</strong> ${message}${offlineMessage}</p>
+                        <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">
+                            ${isOffline ? 'Check your internet connection' : 'Pastikan internet connection stable'}
+                        </p>
+                    </div>
+                    <div>
+                        <button onclick="window.location.reload()" 
+                                style="padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; font-size: 0.9rem;">
+                            🔄 Reload
+                        </button>
+                        <button onclick="this.parentElement.parentElement.remove()" 
+                                style="padding: 0.5rem; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Safe insertion with multiple methods
+            try {
+                if (targetElement.prepend) {
+                    targetElement.prepend(errorContainer);
+                } else if (targetElement.insertBefore) {
+                    targetElement.insertBefore(errorContainer, targetElement.firstChild);
+                } else if (targetElement.appendChild) {
+                    targetElement.appendChild(errorContainer);
+                } else {
+                    targetElement.innerHTML = errorContainer.outerHTML + targetElement.innerHTML;
+                }
+                console.log('🔥 Firebase error indicator displayed');
+                
+                // Auto-remove after 15 seconds (longer for offline)
+                setTimeout(() => {
+                    if (errorContainer.parentElement) {
+                        errorContainer.remove();
+                    }
+                }, isOffline ? 15000 : 10000);
+                
+            } catch (error) {
+                console.warn('⚠️ Failed to display Firebase error indicator:', error);
+            }
+        }
+        
+        addErrorDiv();
     }
 
     // Listen for online/offline events

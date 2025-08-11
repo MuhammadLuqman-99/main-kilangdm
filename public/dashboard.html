@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Enhanced Dashboard - KilangDM</title>
     
+    <!-- Force browser to not cache JavaScript files -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <!-- Existing CSS -->
     <link rel="stylesheet" href="style/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -843,10 +848,10 @@
                 <div class="chart-header">
                     <div class="header-left">
                         <h4 class="chart-title">
-                            <i class="fas fa-clock"></i>
-                            Marketing Cost vs Lead Timeline
+                            <i class="fas fa-chart-bar"></i>
+                            Lead Performance by Sales Team
                         </h4>
-                        <p class="chart-subtitle">Kos marketing per tarikh vs lead masuk pada masa yang sama</p>
+                        <p class="chart-subtitle">Bar chart showing Cold/Warm/Hot lead breakdown by team</p>
                     </div>
                     <div class="chart-controls">
                         <!-- Team Sales Filter -->
@@ -965,8 +970,8 @@
     </main>
 
     <!-- Load Dashboard JavaScript -->
-    <script src="js/professional-charts-config.js"></script>
-    <script type="module" src="js/dashboard.js"></script>
+    <script src="js/professional-charts-config.js?v=2.1"></script>
+    <script type="module" src="js/dashboard.js?v=3.0"></script>
     <script src="js/ready-sync.js"></script>
     <script src="js/enhanced-filter.js"></script>
     <!-- Dashboard UI Scripts -->
@@ -977,10 +982,10 @@
     <script src="js/responsive-enhancements.js"></script>
     <script src="js/improvements.js"></script>
     <script src="js/dashboard-enhancements.js"></script>
-    <script type="module" src="js/marketing-cost-per-team-chart.js"></script>
-    <script type="module" src="js/marketing-roi-chart.js"></script>
-    <script type="module" src="js/marketing-timeline-chart.js"></script>
-    <script src="js/chart-filters.js"></script>
+    <script type="module" src="js/marketing-cost-per-team-chart.js?v=2.1"></script>
+    <script type="module" src="js/marketing-roi-chart.js?v=2.1"></script>
+    <script type="module" src="js/marketing-timeline-chart.js?v=3.0"></script>
+    <script src="js/chart-filters.js?v=2.1"></script>
     
     <!-- Advanced Features -->
     <script src="js/export-manager.js"></script>

@@ -16,6 +16,38 @@ let allData = {
     orders: []
 };
 
+// Check chart preferences on page load
+function checkChartPreferences() {
+    try {
+        const timelineConfig = localStorage.getItem('marketingTimelineChartConfig');
+        const currentVersion = localStorage.getItem('chartVersion');
+        
+        if (timelineConfig) {
+            const config = JSON.parse(timelineConfig);
+            console.log('🔧 Page Load - Found Marketing Timeline Chart Preference:', config);
+            
+            // Check version compatibility
+            if (config.version !== '3.0') {
+                console.log('⚠️ Old chart version detected, will be updated to v3.0');
+            } else {
+                console.log('✅ Chart version v3.0 is current');
+            }
+            
+            if (config.type === 'bar' && config.format === 'cold_warm_hot_breakdown') {
+                console.log('✅ Marketing Timeline will load as BAR CHART with lead breakdown');
+            }
+        } else {
+            console.log('⚠️ No saved chart preferences found - will create default bar chart v3.0');
+        }
+        
+        // Force chart update to latest version
+        console.log('📊 Dashboard v3.0 - Charts will use latest configuration');
+        
+    } catch (error) {
+        console.warn('⚠️ Error checking chart preferences:', error);
+    }
+}
+
 let currentFilters = {
     startDate: null,
     endDate: null,
@@ -390,7 +422,26 @@ window.forceRefreshAndFilter = async function(teamName) {
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing dashboard...');
+    console.log('DOM loaded, initializing dashboard v3.0...');
+    
+    // Clear any old chart cache and force new version
+    try {
+        if (window.caches) {
+            window.caches.keys().then(cacheNames => {
+                cacheNames.forEach(cacheName => {
+                    if (cacheName.includes('v1.') || cacheName.includes('v2.')) {
+                        console.log('🗑️ Clearing old cache:', cacheName);
+                        window.caches.delete(cacheName);
+                    }
+                });
+            });
+        }
+    } catch (error) {
+        console.warn('⚠️ Cache clearing failed:', error);
+    }
+    
+    // Check chart preferences immediately on page load
+    checkChartPreferences();
     
     // Setup mobile menu
     setupMobileMenu();
