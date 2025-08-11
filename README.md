@@ -1,66 +1,40 @@
-# KilangDM - Sistem Pengurusan Data Perniagaan
+# 🚀 KilangDM Dashboard
 
-Platform lengkap untuk memantau prestasi eCommerce, Marketing, dan Sales Team dengan dashboard yang powerful dan mudah digunakan.
+A comprehensive analytics dashboard for KilangDM with Firebase integration, featuring real-time data visualization, order management, and marketing analytics.
 
-## 🚀 Ciri-ciri Utama
+## ✨ Features
 
-- **Dashboard Komprehensif** - Pantau semua metrik penting dalam satu tempat
-- **Pengurusan eCommerce** - Jejak jualan, pesanan, dan AOV dari semua saluran
-- **Analitik Marketing** - Monitor ROAS, spend, impressions dan klik untuk optimasi kempen
-- **Prestasi Sales Team** - Jejak leads, close rate, dan prestasi individual
-- **Data Masa Nyata** - Sinkronisasi automatik dengan Firebase
-- **Penapisan Lanjutan** - Filter data mengikut tarikh, agent, atau jenis data
+- 📊 **Real-time Analytics Dashboard** - Comprehensive business intelligence
+- 🛒 **Order Management System** - PDF invoice parsing and order tracking
+- 📈 **Marketing Analytics** - Cost analysis, ROI tracking, and performance metrics
+- 👥 **Sales Team Management** - Performance tracking and team analytics
+- 📱 **Responsive Design** - Mobile-first approach with PWA support
+- 🔥 **Firebase Integration** - Real-time database and authentication
+- 📊 **Interactive Charts** - Chart.js powered visualizations
+- 🎨 **Modern UI/UX** - Professional design with dark theme
 
-## 📁 Struktur Projek
-
-```
-dashboard/
-├── public/
-│   ├── index.html          # Halaman utama/landing page
-│   ├── dashboard.html      # Dashboard utama
-│   ├── dashboardbo.html    # Dashboard untuk back office
-│   ├── ecommerce.html      # Pengurusan data eCommerce
-│   ├── marketing.html      # Pengurusan data marketing
-│   ├── salesteam.html      # Pengurusan data sales team
-│   ├── followup.html       # Sistem follow-up
-│   ├── test.html          # Halaman ujian
-│   ├── js/                # JavaScript files
-│   │   ├── dashboard.js
-│   │   ├── ecommerce.js
-│   │   ├── marketing.js
-│   │   ├── salesteam.js
-│   │   ├── followup.js
-│   │   ├── enhanced-filter.js
-│   │   ├── enhanced-order-detection.js
-│   │   ├── improvements.js
-│   │   ├── marketing-cost-chart.js
-│   │   ├── ready-sync.js
-│   │   └── ...
-│   └── style/             # CSS files
-│       ├── style.css
-│       ├── enhanced-dashboard.css
-│       ├── improvements.css
-│       └── marketing.css
-├── dash.css               # CSS utama
-├── dash.js               # JavaScript utama
-├── firebase.json         # Konfigurasi Firebase
-├── package.json          # Dependencies
-└── README.md             # Dokumentasi ini
-```
-
-## 🛠️ Teknologi
+## 🛠️ Tech Stack
 
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Framework CSS**: Tailwind CSS
+- **Charts**: Chart.js
 - **Database**: Firebase Firestore
 - **Hosting**: Firebase Hosting
-- **Font**: Inter (Google Fonts)
+- **Build Tool**: Custom Node.js build script
+- **PWA**: Service Worker, Manifest
 
-## ⚡ Quick Start
+## 🚀 Quick Start
 
-1. **Clone repository**
+### Prerequisites
+
+- Node.js 16+ and npm 8+
+- Firebase CLI (`npm install -g firebase-tools`)
+- Firebase project with Firestore enabled
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/kilangdm/dashboard.git
    cd dashboard
    ```
 
@@ -69,124 +43,199 @@ dashboard/
    npm install
    ```
 
-3. **Konfigurasi Firebase**
-   - Setup Firebase project
-   - Update konfigurasi Firebase dalam kod JavaScript
-   - Deploy menggunakan Firebase CLI
+3. **Configure Firebase**
+   - Update `public/js/config.js` with your Firebase credentials
+   - Or set environment variables
 
-4. **Buka aplikasi**
-   - Development: Buka `public/index.html` dalam browser
-   - Production: Access via Firebase hosting URL
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
 
-## 📱 Halaman-halaman Utama
+5. **Open in browser**
+   ```
+   http://localhost:5000
+   ```
 
-### 🏠 Landing Page (`index.html`)
-- Paparan utama KilangDM
-- Navigasi ke dashboard dan ciri-ciri
-- Akses pantas ke semua modul
+## 📦 Build & Deploy
 
-### 📊 Dashboard (`dashboard.html`)
-- Overview prestasi keseluruhan
-- Chart dan graf real-time
-- Ringkasan metrik penting
-
-### 🛒 eCommerce (`ecommerce.html`)
-- Input data jualan
-- Pengurusan pesanan
-- Analisis AOV dan conversion
-
-### 📈 Marketing (`marketing.html`)
-- Input data iklan dan kempen
-- Monitoring ROAS dan spend
-- Analisis impressions dan clicks
-
-### 👥 Sales Team (`salesteam.html`)
-- Input data agent dan leads
-- Tracking close rate
-- Prestasi individual team
-
-### 📋 Follow-up (`followup.html`)
-- Sistem follow-up pelanggan
-- Task management
-- Status tracking
-
-## 🔧 Development
-
-### Prerequisites
-- Node.js (v14 atau lebih tinggi)
-- npm atau yarn
-- Firebase CLI
-- Browser moden (Chrome, Firefox, Safari, Edge)
-
-### Setup Development Environment
+### Development Build
 ```bash
-# Install Tailwind CSS (sudah included via CDN)
-npm install -D tailwindcss
+npm run build
+```
 
-# Start development server (optional)
-npx serve public
+### Production Build
+```bash
+npm run build:prod
+```
+
+### Deploy to Firebase
+```bash
+# Development deployment
+npm run deploy
+
+# Production deployment
+npm run deploy:prod
+```
+
+### Clean Build Directory
+```bash
+npm run clean
+```
+
+## 🔧 Configuration
+
+### Environment Configuration
+
+The app automatically detects the environment and applies appropriate settings:
+
+- **Development** (`localhost`, `127.0.0.1`): Full debugging, verbose logging
+- **Staging** (`*.firebaseapp.com`): Limited logging, performance monitoring
+- **Production** (custom domain): Error-only logging, optimized performance
+
+### Manual Debug Toggle
+
+Enable debug mode in production:
+```javascript
+// In browser console
+toggleDebug();
 ```
 
 ### Firebase Configuration
-Pastikan konfigurasi Firebase dalam fail JavaScript adalah betul:
+
+Update `public/js/config.js` with your Firebase project settings:
 
 ```javascript
-const firebaseConfig = {
-  // Your Firebase config
-};
+firebase: {
+    apiKey: "your-api-key",
+    authDomain: "your-project.firebaseapp.com",
+    projectId: "your-project-id",
+    // ... other config
+}
 ```
 
-## 📈 Data Structure
+## 📁 Project Structure
 
-Sistem menggunakan Firebase Firestore dengan koleksi:
-- `ecommerce` - Data jualan dan pesanan
-- `marketing` - Data iklan dan kempen
-- `salesteam` - Data agent dan leads
-- `followups` - Data follow-up pelanggan
-
-## 🎨 Styling
-
-Projek menggunakan:
-- **Tailwind CSS** untuk utility-first styling
-- **Custom CSS** untuk komponen khusus
-- **Inter Font** dari Google Fonts
-- **Gradient backgrounds** untuk visual appeal
-
-## 🚀 Deployment
-
-### Firebase Hosting
-```bash
-# Login ke Firebase
-firebase login
-
-# Initialize project
-firebase init hosting
-
-# Deploy
-firebase deploy
+```
+dashboard/
+├── public/                 # Web assets
+│   ├── js/                # JavaScript modules
+│   ├── style/             # CSS stylesheets
+│   ├── dashboard.html     # Main dashboard
+│   ├── ecommerce.html     # Order management
+│   └── marketing.html     # Marketing analytics
+├── build.js               # Build script
+├── package.json           # Dependencies and scripts
+├── firebase.json          # Firebase configuration
+└── README.md             # This file
 ```
 
-### Manual Hosting
-Upload semua fail dalam folder `public/` ke web server anda.
+## 🔍 Key JavaScript Modules
+
+- **`config.js`** - Environment configuration and settings
+- **`logger.js`** - Centralized logging with production controls
+- **`firebase-config.js`** - Firebase initialization and management
+- **`dashboard.js`** - Main dashboard functionality
+- **`marketing-cost-chart.js`** - Marketing analytics charts
+- **`export-manager.js`** - Data export functionality
+
+## 🎯 Usage
+
+### Dashboard Navigation
+
+1. **Home** - Overview and key metrics
+2. **Order Dashboard** - Order management and tracking
+3. **Borang Order** - PDF invoice processing
+4. **Marketing** - Marketing analytics and ROI
+5. **Sales Team** - Team performance metrics
+6. **Follow Up** - Customer follow-up management
+
+### Key Features
+
+- **PDF Invoice Processing**: Drag & drop PDF files for automatic order extraction
+- **Real-time Updates**: Live data synchronization with Firebase
+- **Responsive Design**: Optimized for all device sizes
+- **Export Functionality**: CSV, Excel, and PDF export options
+- **Advanced Filtering**: Date ranges, team filters, and custom criteria
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+1. **Firebase Connection Failed**
+   - Check internet connection
+   - Verify Firebase configuration
+   - Check browser console for errors
+
+2. **Charts Not Loading**
+   - Ensure Chart.js is loaded
+   - Check data availability
+   - Verify DOM elements exist
+
+3. **Mobile Menu Issues**
+   - Clear browser cache
+   - Check mobile-optimization.js
+   - Verify CSS media queries
+
+### Debug Mode
+
+Enable debug mode for troubleshooting:
+```javascript
+// In browser console
+toggleDebug();
+```
+
+## 📊 Performance Optimization
+
+### Production Build
+
+The production build automatically:
+- Removes console.log statements
+- Minifies CSS and JavaScript
+- Optimizes HTML structure
+- Generates build manifest
+
+### Environment-Specific Features
+
+- **Development**: Full debugging, performance monitoring
+- **Staging**: Limited logging, performance monitoring
+- **Production**: Minimal logging, optimized performance
+
+## 🔒 Security
+
+- Firebase security rules for data access
+- Environment-based configuration
+- No sensitive data in client-side code
+- Secure API key management
 
 ## 🤝 Contributing
 
-1. Fork repository
-2. Buat feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push ke branch (`git push origin feature/amazing-feature`)
-5. Buka Pull Request
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-## 📝 License
+## 📄 License
 
-Projek ini menggunakan ISC License.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 📞 Support
+## 🆘 Support
 
-Untuk support atau pertanyaan:
-- Buka issue dalam repository
-- Hubungi development team
+For support and questions:
+- Create an issue on GitHub
+- Contact the development team
+- Check the troubleshooting section
+
+## 🗺️ Roadmap
+
+- [ ] User authentication and roles
+- [ ] Advanced reporting features
+- [ ] API rate limiting
+- [ ] Performance monitoring
+- [ ] Automated testing
+- [ ] CI/CD pipeline
 
 ---
 
-**KilangDM** - Sistem Pengurusan Data Perniagaan © 2024
+**Built with ❤️ by the KilangDM Team**

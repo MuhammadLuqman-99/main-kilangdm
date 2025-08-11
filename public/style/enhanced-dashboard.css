@@ -448,6 +448,140 @@ body {
     border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+/* PRODUCT ITEM STYLING */
+.product-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.375rem;
+    background: rgba(55, 65, 81, 0.3);
+    border-radius: 6px;
+    border: 1px solid rgba(75, 85, 99, 0.4);
+    margin-bottom: 0.25rem;
+}
+
+.product-name {
+    color: #e2e8f0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.product-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+}
+
+/* PRODUCTS GRID STYLING */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.product-card {
+    background: rgba(31, 41, 55, 0.6);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.product-header {
+    color: #3b82f6;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.product-details {
+    color: #d1d5db;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.product-info {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.size-badge {
+    background: rgba(16, 185, 129, 0.1);
+    color: #6ee7b7;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.no-size {
+    background: rgba(107, 114, 128, 0.1);
+    color: #9ca3af;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.qty-badge {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.no-products {
+    color: #9ca3af;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+    background: rgba(55, 65, 81, 0.3);
+    border-radius: 6px;
+    border: 1px solid rgba(75, 85, 99, 0.4);
+}
+
+/* NO DATA STYLING */
+.no-data-text {
+    color: #9ca3af;
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+.no-data-icon {
+    color: #9ca3af;
+}
+
+/* SOURCE ICON STYLING */
+.pdf-icon {
+    color: #ef4444;
+}
+
+.manual-icon {
+    color: #3b82f6;
+}
+
+.csv-icon {
+    color: #22c55e;
+}
+
+.web-icon {
+    color: #a855f7;
+}
+
 .more-products {
     background: rgba(156, 163, 175, 0.2);
     color: #9ca3af;

@@ -805,27 +805,29 @@ function updateEnhancedOrderDetails(orders) {
                         </button>
                     </div>
                 </div>
+            </div>
+        `;
     }).join('');
 }
 
 function generateProductDetailsHtml(products) {
     if (products.length === 0) {
-        return '<span class="text-gray-400">Tiada data produk</span>';
+        return '<span class="no-data-text">Tiada data produk</span>';
     }
     
     // Show first 2 products only
     return products.slice(0, 2).map(product => {
         const sizeLabel = product.size ? 
-            `<span class="product-tag">${product.size}</span>` : '';
+            '<span class="product-tag">' + product.size + '</span>' : '';
         
         const progressBar = generateQuantityProgressBar(product.quantity);
         
         return `
-            <div class="product-item">
-                <div class="product-name">
+            <div class='product-item'>
+                <div class='product-name'>
                     ${product.code} - ${product.name}
                 </div>
-                <div class="product-meta">
+                <div class='product-meta'>
                     ${sizeLabel}
                     ${progressBar}
                 </div>
@@ -840,24 +842,24 @@ function generateFullProductDetailsHtml(products) {
     }
     
     return `
-        <div class="products-grid">
+        <div class='products-grid'>
             ${products.map(product => `
-                <div class="product-card">
-                    <div class="product-header">
+                <div class='product-card'>
+                    <div class='product-header'>
                         📦 ${product.code}
                     </div>
-                    <div class="product-details">
+                    <div class='product-details'>
                         ${product.name}
                     </div>
-                    <div class="product-info">
+                    <div class='product-info'>
                         ${product.size ? 
-                            `<span class="size-badge">Size ${product.size}</span>` : 
+                            '<span class="size-badge">Size ' + product.size + '</span>' : 
                             '<span class="no-size">No size</span>'
                         }
-                        <span class="qty-badge">${product.quantity} pcs</span>
+                        <span class='qty-badge'>${product.quantity} pcs</span>
                     </div>
                     ${generateQuantityProgressBar(product.quantity, true)}
-                    ${product.price > 0 ? `<div class="product-price">${formatCurrency(product.price)}</div>` : ''}
+                    ${product.price > 0 ? '<div class="product-price">' + formatCurrency(product.price) + '</div>' : ''}
                 </div>
             `).join('')}
         </div>
@@ -880,16 +882,16 @@ function generateQuantityProgressBar(quantity, showLabel = false) {
 }
 
 function getSourceIcon(source) {
-    if (!source) return '<i class="fas fa-question-circle text-gray-400"></i>';
+    if (!source) return '<i class="fas fa-question-circle no-data-icon"></i>';
     
     if (source.includes('pdf') || source === 'pdf_desa_murni_enhanced') {
-        return '<i class="fas fa-file-pdf text-red-500"></i>';
+        return '<i class="fas fa-file-pdf pdf-icon"></i>';
     } else if (source === 'manual_form') {
-        return '<i class="fas fa-edit text-blue-500"></i>';
+        return '<i class="fas fa-edit manual-icon"></i>';
     } else if (source.includes('csv')) {
-        return '<i class="fas fa-file-csv text-green-500"></i>';
+        return '<i class="fas fa-file-csv csv-icon"></i>';
     } else {
-        return '<i class="fas fa-globe text-purple-500"></i>';
+        return '<i class="fas fa-globe web-icon"></i>';
     }
 }
 

@@ -25,8 +25,10 @@
     <link rel="stylesheet" href="style/chart-filters.css">
     
     <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="alternate icon" href="favicon-fallback.png">
+    <link rel="apple-touch-icon" href="favicon-fallback.png">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -36,9 +38,134 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="KilangDM">
     
-   <!-- Core Scripts -->
+    <!-- Polyfill for older browsers -->
+    <script>
+        // Ensure basic ES6 support
+        if (typeof window !== 'undefined') {
+            // Polyfill for older browsers
+            if (!window.Promise) {
+                window.Promise = function(executor) {
+                    // Simple Promise polyfill
+                    var self = this;
+                    self.state = 'pending';
+                    self.value = undefined;
+                    self.reason = undefined;
+                    self.onFulfilledCallbacks = [];
+                    self.onRejectedCallbacks = [];
+                    
+                    function resolve(value) {
+                        if (self.state === 'pending') {
+                            self.state = 'fulfilled';
+                            self.value = value;
+                            self.onFulfilledCallbacks.forEach(function(callback) {
+                                callback(value);
+                            });
+                        }
+                    }
+                    
+                    function reject(reason) {
+                        if (self.state === 'pending') {
+                            self.state = 'rejected';
+                            self.reason = reason;
+                            self.onRejectedCallbacks.forEach(function(callback) {
+                                callback(reason);
+                            });
+                        }
+                    }
+                    
+                    try {
+                        executor(resolve, reject);
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+                
+                window.Promise.prototype.then = function(onFulfilled, onRejected) {
+                    var self = this;
+                    var promise2 = new window.Promise(function(resolve, reject) {
+                        if (self.state === 'fulfilled') {
+                            setTimeout(function() {
+                                try {
+                                    var x = onFulfilled ? onFulfilled(self.value) : self.value;
+                                    resolve(x);
+                                } catch (e) {
+                                    reject(e);
+                                }
+                            });
+                        } else if (self.state === 'rejected') {
+                            setTimeout(function() {
+                                try {
+                                    var x = onRejected ? onRejected(self.reason) : self.reason;
+                                    resolve(x);
+                                } catch (e) {
+                                    reject(e);
+                                }
+                            });
+                        } else {
+                            self.onFulfilledCallbacks.push(function(value) {
+                                setTimeout(function() {
+                                    try {
+                                        var x = onFulfilled ? onFulfilled(value) : value;
+                                        resolve(x);
+                                    } catch (e) {
+                                        reject(e);
+                                    }
+                                });
+                            });
+                            self.onRejectedCallbacks.push(function(reason) {
+                                setTimeout(function() {
+                                    try {
+                                        var x = onRejected ? onRejected(reason) : reason;
+                                        resolve(x);
+                                    } catch (e) {
+                                        reject(e);
+                                    }
+                                });
+                            });
+                        }
+                    });
+                    return promise2;
+                };
+            }
+        }
+    </script>
+    
+    <!-- Error Handler for JavaScript Issues -->
+    <script>
+        // Catch any JavaScript errors and show user-friendly messages
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript Error:', e.error);
+            
+            // Create a user-friendly error message
+            var errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#ef4444;color:white;padding:16px;border-radius:8px;z-index:10000;max-width:400px;font-family:Arial,sans-serif;';
+            errorDiv.innerHTML = '<strong>⚠️ Technical Issue</strong><br>Please refresh the page or contact support if the problem persists.';
+            
+            document.body.appendChild(errorDiv);
+            
+            // Remove after 10 seconds
+            setTimeout(function() {
+                if (errorDiv.parentNode) {
+                    errorDiv.parentNode.removeChild(errorDiv);
+                }
+            }, 10000);
+        });
+        
+        // Catch unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled Promise Rejection:', e.reason);
+            e.preventDefault(); // Prevent the default error
+        });
+    </script>
+    
+       <!-- Core Scripts -->
     <script src="js/logger.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/error-handler.js"></script>
+    <!-- PERFORMANCE & SECURITY - Must load early -->
+    <script src="js/performance-manager.js"></script>
+    <script src="js/error-boundary.js"></script>
+    <script src="js/security-manager.js"></script>
     <!-- MOBILE OPTIMIZATION - Must load early -->
     <script src="js/mobile-optimization.js"></script>
     <!-- Firebase SDK - Secure Implementation -->

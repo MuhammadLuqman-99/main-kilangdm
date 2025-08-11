@@ -30,13 +30,62 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="KilangDM">
     
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <!-- Firebase Analytics -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script>
+    // Initialize Firebase with error handling
+    document.addEventListener('DOMContentLoaded', function() {
+        const firebaseConfig = {
+            apiKey: "AIzaSyDvqSuT4sQeJwB5Mb8wQZ4X4X4X4X4X4X",
+            authDomain: "kilangdm-v1.firebaseapp.com",
+            projectId: "kilangdm-v1",
+            storageBucket: "kilangdm-v1.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456",
+            measurementId: "G-ABCDEFGHIJ"
+        };
+
+        try {
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            console.log('Firebase initialized successfully');
+            
+            // Make db globally available
+            window.db = firebase.firestore();
+            
+            // Dispatch event when Firebase is ready
+            window.dispatchEvent(new Event('firebaseReady'));
+            
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            const errorContainer = document.createElement('div');
+            errorContainer.style.padding = '1rem';
+            errorContainer.style.background = '#fee2e2';
+            errorContainer.style.color = '#b91c1c';
+            errorContainer.style.margin = '1rem';
+            errorContainer.style.borderRadius = '0.5rem';
+            errorContainer.innerHTML = `
+                <h3>Error Initializing Firebase</h3>
+                <p>${error.message}</p>
+                <button onclick="window.location.reload()">Reload Page</button>
+            `;
+            document.body.prepend(errorContainer);
+        }
+    });
+    </script>
     <!-- Core Scripts -->
     <script src="js/logger.js"></script>
     <script src="js/error-handler.js"></script>
     <!-- MOBILE OPTIMIZATION - Must load early -->
     <script src="js/mobile-optimization.js"></script>
-    <!-- Firebase SDK - Secure Implementation -->
-    <script src="js/firebase-config.js"></script>
 </head>
 
 <body>
@@ -489,12 +538,53 @@
     </div>
     
     <!-- Professional Order Dashboard Scripts -->
+    <script>
+        // Error handling global
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            const errorContainer = document.getElementById('error-container');
+            if (errorContainer) {
+                errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Error:</strong> ${e.message}
+                        <br><small>${e.filename} (line ${e.lineno})</small>
+                    </div>
+                `;
+                errorContainer.style.display = 'block';
+            }
+        });
+
+        // Check Firebase initialization
+        function checkFirebaseInitialized() {
+            if (!window.db) {
+                console.error('Firebase not initialized!');
+                const container = document.getElementById('enhanced-orders-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="error-state">
+                            <i class="fas fa-exclamation-triangle fa-3x"></i>
+                            <h3>Gagal memuat data</h3>
+                            <p>Terjadi kesalahan saat menghubungkan ke database.</p>
+                            <button onclick="window.location.reload()" class="retry-btn">
+                                <i class="fas fa-sync-alt"></i> Muat Ulang
+                            </button>
+                        </div>
+                    `;
+                }
+                return false;
+            }
+            return true;
+        }
+    </script>
+
+    <!-- Load scripts with error handling -->
     <script src="js/professional-order-dashboard.js"></script>
     <script src="js/dashboard-ui.js"></script>
     <script src="js/responsive-enhancements.js"></script>
     
-    <!-- Firebase Data Creation Script -->
-    <script type="module" src="js/create-firebase-data.js"></script>
+    <!-- Add error container -->
+    <div id="error-container" style="display: none; padding: 1rem; background: #fee2e2; color: #b91c1c; margin: 1rem; border-radius: 0.5rem;"></div>
     
     <!-- Advanced Features -->
     <script src="js/export-manager.js"></script>
