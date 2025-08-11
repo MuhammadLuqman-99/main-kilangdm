@@ -15,6 +15,10 @@
     <link rel="stylesheet" href="style/style.css">
     <link rel="stylesheet" href="style/marketing.css">   
     <link rel="stylesheet" href="style/improvements.css">
+    <!-- OVERRIDE - Must be last for consistency -->
+    <link rel="stylesheet" href="style/unified-override.css">
+    <!-- MOBILE MENU FIX - Critical fix for mobile menu -->
+    <link rel="stylesheet" href="style/mobile-menu-fix.css">
 
  <style>
         body { font-family: 'Inter', sans-serif; }
@@ -62,8 +66,8 @@
             <!-- Navigation Links -->
             <div class="nav-links" id="navLinks">
                 <a href="dashboard.html" class="nav-link">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
                 </a>
                 <a href="dashboardbo.html" class="nav-link">
                     <i class="fas fa-clipboard-list"></i>
@@ -316,8 +320,8 @@
                 <!-- Row 5: Performance Metrics -->
                 <div class="grid md:grid-cols-3 gap-4">
                     <div>
-                        <label for="ctr" class="block mb-2 font-medium">CTR (%)</label>
-                        <input type="number" id="ctr" name="ctr" step="0.01" class="form-input" placeholder="e.g., 1.25" required>
+                        <label for="ctr-section2" class="block mb-2 font-medium">CTR (%)</label>
+                        <input type="number" id="ctr-section2" name="ctr" step="0.01" class="form-input" placeholder="e.g., 1.25" required>
                     </div>
                     <div>
                         <label for="cpc" class="block mb-2 font-medium">CPC (RM)</label>

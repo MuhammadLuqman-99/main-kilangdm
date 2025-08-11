@@ -140,8 +140,10 @@ class KilangDMEnhancements {
     }
 
     positionTooltip(element, tooltip, position) {
-        const rect = element.getBoundingClientRect();
-        const tooltipRect = tooltip.getBoundingClientRect();
+        // Use requestAnimationFrame to prevent forced reflow
+        requestAnimationFrame(() => {
+            const rect = element.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
         
         let top, left;
         
@@ -168,8 +170,9 @@ class KilangDMEnhancements {
         top = Math.max(10, Math.min(top, window.innerHeight - tooltipRect.height - 10));
         left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
         
-        tooltip.style.top = `${top}px`;
-        tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+            tooltip.style.left = `${left}px`;
+        });
     }
 
     // ==========================================

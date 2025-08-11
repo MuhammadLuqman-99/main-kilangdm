@@ -1,0 +1,200 @@
+/* ===================================================
+   KILANGDM UNIFIED OVERRIDE
+   Standardize ALL containers across ALL pages
+   ================================================= */
+
+/* Force consistent container sizing EVERYWHERE */
+.main-container,
+.container,
+.order-main-container,
+.dashboard-container {
+    max-width: 95% !important;
+    padding: 0.5rem !important;
+    margin: 0 auto !important;
+}
+
+/* Mobile responsiveness - consistent across all breakpoints */
+@media (max-width: 480px) {
+    .main-container,
+    .container,
+    .order-main-container,
+    .dashboard-container {
+        max-width: 100% !important;
+        padding: 0.5rem !important;
+        margin: 0 auto !important;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .main-container,
+    .container,
+    .order-main-container,
+    .dashboard-container {
+        max-width: 95% !important;
+        padding: 0.5rem !important;
+        margin: 0 auto !important;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .main-container,
+    .container,
+    .order-main-container,
+    .dashboard-container {
+        max-width: 95% !important;
+        padding: 0.5rem !important;
+        margin: 0 auto !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    .main-container,
+    .container,
+    .order-main-container,
+    .dashboard-container {
+        max-width: 95% !important;
+        padding: 0.5rem !important;
+        margin: 0 auto !important;
+    }
+}
+
+/* Override any conflicting styles */
+* {
+    box-sizing: border-box;
+}
+
+/* Consistent font family */
+body, html,
+.main-container,
+.container,
+h1, h2, h3, h4, h5, h6,
+p, span, div, 
+.kpi-title, .section-title, .chart-title,
+.nav-link, button, input, select, textarea {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+/* Consistent color scheme using CSS variables */
+:root {
+    --primary-color: #3b82f6;
+    --secondary-color: #1e293b;
+    --success-color: #22c55e;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: rgba(30, 41, 59, 0.8);
+    --border-color: rgba(59, 130, 246, 0.3);
+    --radius-standard: 8px;
+}
+
+/* Ensure all cards use consistent styling */
+.kpi-card,
+.chart-card,
+.order-data-card,
+.enhanced-order-card,
+.analytics-card,
+.form-card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-standard) !important;
+    backdrop-filter: blur(15px) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Consistent button styling */
+button,
+.btn,
+.filter-btn,
+.quick-btn,
+.nav-link,
+.reset-btn {
+    font-family: 'Inter', sans-serif !important;
+    border-radius: var(--radius-standard) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Consistent input styling */
+input,
+select,
+textarea,
+.filter-select,
+.search-input {
+    font-family: 'Inter', sans-serif !important;
+    border-radius: var(--radius-standard) !important;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    padding: 0.5rem 0.75rem !important;
+}
+
+/* Consistent spacing */
+.section-header,
+.chart-header,
+.kpi-header,
+.filter-controls {
+    margin-bottom: 1.5rem !important;
+}
+
+.dashboard-section,
+.order-data-section,
+.kpi-section,
+.charts-section {
+    margin-bottom: 2rem !important;
+}
+
+/* Remove any hardcoded max-widths that conflict */
+.enhanced-headers,
+.enhanced-order-row {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+/* Force consistent grid gaps */
+.kpi-grid,
+.order-kpi-grid,
+.power-grid,
+.secondary-charts {
+    gap: 1rem !important;
+}
+
+/* Ensure responsive behavior */
+@media (max-width: 768px) {
+    .enhanced-headers,
+    .enhanced-order-row {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    
+    .kpi-grid,
+    .order-kpi-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .secondary-charts {
+        flex-direction: column !important;
+    }
+}
+
+/* Remove any padding from wrapper elements */
+.mx-auto,
+.container.mx-auto {
+    padding: 0 !important;
+    margin: 0 auto !important;
+}
+
+/* Consistent text colors */
+.kpi-title, .section-title, .chart-title {
+    color: var(--text-primary) !important;
+}
+
+.kpi-meta, .section-subtitle, .chart-subtitle {
+    color: var(--text-secondary) !important;
+}
+
+.text-muted, .period-range, .filter-label {
+    color: var(--text-muted) !important;
+}

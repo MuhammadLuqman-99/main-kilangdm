@@ -12,37 +12,31 @@
     <link rel="stylesheet" href="style/professional-order-dashboard.css">
     <link rel="stylesheet" href="style/style.css">
     <link rel="stylesheet" href="style/enhanced-dashboard.css">
+    <!-- OVERRIDE - Must be last for consistency -->
+    <link rel="stylesheet" href="style/unified-override.css">
+    <!-- MOBILE MENU FIX - Critical fix for mobile menu -->
+    <link rel="stylesheet" href="style/mobile-menu-fix.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="KilangDM">
     
-    <!-- Firebase SDK -->
-    <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
-        authDomain: "kilangdm-v1.firebaseapp.com",
-        projectId: "kilangdm-v1",
-        storageBucket: "kilangdm-v1.firebasestorage.app",
-        messagingSenderId: "264191193800",
-        appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
-        measurementId: "G-C02S0CPE63"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    window.db = getFirestore(app);
-    
-    console.log('Firebase initialized successfully');
-    </script>
+    <!-- Core Scripts -->
+    <script src="js/logger.js"></script>
+    <script src="js/error-handler.js"></script>
+    <!-- MOBILE OPTIMIZATION - Must load early -->
+    <script src="js/mobile-optimization.js"></script>
+    <!-- Firebase SDK - Secure Implementation -->
+    <script src="js/firebase-config.js"></script>
 </head>
 
 <body>
@@ -79,8 +73,8 @@
             <!-- Navigation Links -->
             <div class="nav-links" id="navLinks">
                 <a href="dashboard.html" class="nav-link">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
                 </a>
                 <a href="dashboardbo.html" class="nav-link active">
                     <i class="fas fa-clipboard-list"></i>
@@ -118,7 +112,6 @@
     </nav>
 
     <!-- Main Container -->
-    <div class="container mx-auto p-4 md:p-8">
     <div class="order-main-container">
         
         <!-- Dashboard Header -->
@@ -379,36 +372,120 @@
                     <p class="enhanced-order-subtitle">Detailed breakdown dengan saiz dan kuantiti produk</p>
                 </div>
 
-                <!-- Orange Notice Bar -->
-                <div class="enhanced-notice-bar">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Ini adalah contoh display untuk data order dengan detail produk dan saiz. Data sebenar akan diambil dari Firebase.</span>
+                <!-- Agent/Platform Tabs -->
+                <div class="agent-tabs-container">
+                    <div class="agent-tabs">
+                        <button class="agent-tab active" data-agent="all" onclick="filterOrdersByAgent('all')">
+                            <span class="tab-shortcut">1</span>
+                            <i class="fas fa-globe"></i>
+                            <span>Semua</span>
+                            <span class="tab-count" id="count-all">0</span>
+                        </button>
+                        <button class="agent-tab" data-agent="tiktok" onclick="filterOrdersByAgent('tiktok')">
+                            <span class="tab-shortcut">2</span>
+                            <i class="fab fa-tiktok"></i>
+                            <span>TikTok</span>
+                            <span class="tab-count" id="count-tiktok">0</span>
+                        </button>
+                        <button class="agent-tab" data-agent="shopee" onclick="filterOrdersByAgent('shopee')">
+                            <span class="tab-shortcut">3</span>
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>Shopee</span>
+                            <span class="tab-count" id="count-shopee">0</span>
+                        </button>
+                        <button class="agent-tab" data-agent="wiyah" onclick="filterOrdersByAgent('wiyah')">
+                            <span class="tab-shortcut">4</span>
+                            <i class="fas fa-user-tie"></i>
+                            <span>Wiyah</span>
+                            <span class="tab-count" id="count-wiyah">0</span>
+                        </button>
+                        <button class="agent-tab" data-agent="nisya" onclick="filterOrdersByAgent('nisya')">
+                            <span class="tab-shortcut">5</span>
+                            <i class="fas fa-user-check"></i>
+                            <span>Nisya</span>
+                            <span class="tab-count" id="count-nisya">0</span>
+                        </button>
+                        <button class="agent-tab" data-agent="qilah" onclick="filterOrdersByAgent('qilah')">
+                            <span class="tab-shortcut">6</span>
+                            <i class="fas fa-user-star"></i>
+                            <span>Qilah</span>
+                            <span class="tab-count" id="count-qilah">0</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Active Filter Indicator -->
+                    <div class="active-filter-indicator" id="active-filter">
+                        <i class="fas fa-filter"></i>
+                        <span>Showing: <strong id="filter-text">Semua Order</strong></span>
+                        <div class="filter-shortcuts">
+                            <small>Shortcuts: 1-6 keys atau klik tab</small>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Column Headers -->
-                <div class="enhanced-headers">
-                    <div class="header-item">INVOICE/PO</div>
-                    <div class="header-item">TARIKH</div>
-                    <div class="header-item">CUSTOMER</div>
-                    <div class="header-item">TEAM</div>
-                    <div class="header-item">PLATFORM</div>
-                    <div class="header-item">DETAIL PRODUK & SAIZ</div>
-                    <div class="header-item">TOTAL QTY</div>
-                    <div class="header-item">AMOUNT</div>
-                </div>
+                <!-- Beautiful Order Details Table -->
+                <div class="beautiful-order-table">
+                    <!-- Table Header -->
+                    <div class="table-header">
+                        <div class="header-row">
+                            <div class="header-cell header-invoice">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Invoice/PO</span>
+                            </div>
+                            <div class="header-cell header-date">
+                                <i class="fas fa-calendar"></i>
+                                <span>Tarikh</span>
+                            </div>
+                            <div class="header-cell header-customer">
+                                <i class="fas fa-user"></i>
+                                <span>Customer</span>
+                            </div>
+                            <div class="header-cell header-team">
+                                <i class="fas fa-users"></i>
+                                <span>Team</span>
+                            </div>
+                            <div class="header-cell header-platform">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span>Platform</span>
+                            </div>
+                            <div class="header-cell header-products">
+                                <i class="fas fa-box"></i>
+                                <span>Produk & Size</span>
+                            </div>
+                            <div class="header-cell header-qty">
+                                <i class="fas fa-sort-numeric-up"></i>
+                                <span>Qty</span>
+                            </div>
+                            <div class="header-cell header-amount">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>Amount</span>
+                            </div>
+                            <div class="header-cell header-actions">
+                                <i class="fas fa-cog"></i>
+                                <span>Action</span>
+                            </div>
+                        </div>
+                    </div>
 
-                <!-- Order Rows Container -->
-                <div class="enhanced-rows-container" id="enhanced-orders-container">
-                    <!-- Loading State -->
-                    <div class="enhanced-loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading enhanced order details...</p>
+                    <!-- Table Body -->
+                    <div class="table-body" id="enhanced-orders-container">
+                        <!-- Loading State -->
+                        <div class="beautiful-loading">
+                            <div class="loading-animation">
+                                <div class="loading-dots">
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                </div>
+                            </div>
+                            <p class="loading-text">Memuat data order...</p>
+                            <small class="loading-hint">Data akan diambil dari Firebase secara real-time</small>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-    </div>
     </div>
     
     <!-- Professional Order Dashboard Scripts -->

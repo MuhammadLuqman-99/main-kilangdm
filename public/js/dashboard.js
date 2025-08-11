@@ -1,8 +1,10 @@
 // dashboard.js - COMPLETE FIXED VERSION
 import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 // Import the marketing cost chart functions
-// KEPADA:
 import { createMarketingCostChart } from './marketing-cost-chart.js';
+import { createMarketingCostPerTeamChart, updateMarketingCostChart } from './marketing-cost-per-team-chart.js';
+import { createMarketingROIChart, updateMarketingROIChart } from './marketing-roi-chart.js';
+import { createMarketingTimelineChart, updateMarketingTimelineChart } from './marketing-timeline-chart.js';
 
 // Global variables
 let charts = {};
@@ -88,6 +90,205 @@ window.testPowerMetricsUI = function(agentName = 'wiyah') {
     updateEnhancedPowerMetricsDisplay(filteredSalesTeam);
     
     console.log('✅ Manual UI update completed. Check Power Metrics display.');
+};
+
+// Setup page visibility handlers to maintain progress bars on navigation
+function setupPageVisibilityHandlers() {
+    console.log('🔄 Setting up page visibility handlers...');
+    
+    // Handle page visibility changes (tab switching, back/forward)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && window.allData) {
+            console.log('📊 Page became visible, refreshing Power Metrics...');
+            // Re-apply current filters to refresh all data including progress bars
+            setTimeout(() => {
+                if (window.currentFilters && window.allData) {
+                    const filteredData = getFilteredData();
+                    updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
+                }
+            }, 100);
+        }
+    });
+    
+    // Handle page show event (back/forward navigation)
+    window.addEventListener('pageshow', (event) => {
+        console.log('📊 Page show event, refreshing Power Metrics...', event.persisted);
+        if (window.allData) {
+            setTimeout(() => {
+                if (window.currentFilters && window.allData) {
+                    const filteredData = getFilteredData();
+                    updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
+                }
+            }, 200);
+        }
+    });
+    
+    // Handle focus event when returning to the page
+    window.addEventListener('focus', () => {
+        if (window.allData) {
+            console.log('📊 Window focused, refreshing Power Metrics...');
+            setTimeout(() => {
+                if (window.currentFilters && window.allData) {
+                    const filteredData = getFilteredData();
+                    updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
+                }
+            }, 150);
+        }
+    });
+    
+    // Handle popstate event (browser back/forward navigation)
+    window.addEventListener('popstate', () => {
+        if (window.allData) {
+            console.log('📊 Popstate event (browser navigation), refreshing Power Metrics...');
+            setTimeout(() => {
+                if (window.currentFilters && window.allData) {
+                    const filteredData = getFilteredData();
+                    updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
+                }
+            }, 300);
+        }
+    });
+    
+    console.log('✅ Page visibility handlers setup complete');
+}
+
+// Setup periodic refresh for Power Metrics to prevent disappearing progress bars
+function setupPeriodicPowerMetricsRefresh() {
+    console.log('⏰ Setting up periodic Power Metrics refresh...');
+    
+    // Refresh Power Metrics every 30 seconds to maintain progress bars
+    const refreshInterval = setInterval(() => {
+        // Only refresh if the page is visible and data is available
+        if (!document.hidden && window.allData && document.getElementById('monthly-progress-bar')) {
+            const monthlyBar = document.getElementById('monthly-progress-bar');
+            const mtdBar = document.getElementById('mtd-progress-bar');
+            
+            // Check if progress bars are visible (have width)
+            const monthlyWidth = monthlyBar.style.width;
+            const mtdWidth = mtdBar.style.width;
+            
+            // If progress bars are missing their width, refresh them
+            if (!monthlyWidth || monthlyWidth === '0%' || !mtdWidth || mtdWidth === '0%') {
+                console.log('📊 Progress bars missing, refreshing Power Metrics...');
+                
+                const filteredData = getFilteredData();
+                updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
+            }
+        }
+    }, 30000); // Every 30 seconds
+    
+    // Store interval ID for cleanup if needed
+    window.powerMetricsRefreshInterval = refreshInterval;
+    
+    console.log('✅ Periodic Power Metrics refresh setup complete');
+}
+
+// Helper function to get filtered data based on current filters
+function getFilteredData() {
+    if (!window.allData || !window.currentFilters) {
+        return { salesteam: [] };
+    }
+    
+    const filtered = { salesteam: [] };
+    
+    // Apply current agent filter if set
+    if (window.currentFilters.agent) {
+        filtered.salesteam = window.allData.salesteam.filter(item => {
+            if (item.type === 'power_metrics') {
+                const itemAgent = item.agent_name || item.team || '';
+                return itemAgent.toLowerCase().includes(window.currentFilters.agent.toLowerCase());
+            }
+            return true; // Keep non-power-metrics data
+        });
+    } else {
+        filtered.salesteam = [...window.allData.salesteam];
+    }
+    
+    return filtered;
+}
+
+// Add function to test progress bars specifically
+window.testProgressBars = function() {
+    console.log('🔧 TESTING Progress Bars...');
+    
+    // Get progress bar elements
+    const monthlyBar = document.getElementById('monthly-progress-bar');
+    const mtdBar = document.getElementById('mtd-progress-bar');
+    const monthlyText = document.getElementById('monthly-progress-text');
+    const mtdText = document.getElementById('mtd-progress-text');
+    
+    console.log('Progress bar elements:');
+    console.log(`   monthly-progress-bar: ${!!monthlyBar}`);
+    console.log(`   mtd-progress-bar: ${!!mtdBar}`);
+    console.log(`   monthly-progress-text: ${!!monthlyText}`);
+    console.log(`   mtd-progress-text: ${!!mtdText}`);
+    
+    if (monthlyBar && mtdBar) {
+        // Test with sample values
+        const testMonthly = 65.5; // 65.5%
+        const testMTD = 78.2; // 78.2%
+        
+        monthlyBar.style.width = `${testMonthly}%`;
+        monthlyBar.style.background = 'linear-gradient(90deg, #f59e0b, #3b82f6)';
+        monthlyBar.className = 'progress-fill monthly-progress';
+        
+        mtdBar.style.width = `${testMTD}%`;
+        mtdBar.style.background = 'linear-gradient(90deg, #10b981, #8b5cf6)';
+        mtdBar.className = 'progress-fill mtd-progress';
+        
+        if (monthlyText) monthlyText.textContent = `${testMonthly}% (RM 32,750 / RM 50,000)`;
+        if (mtdText) mtdText.textContent = `${testMTD}% (RM 15,640 / RM 20,000)`;
+        
+        console.log('✅ Progress bars updated with test values');
+        console.log(`   Monthly: ${testMonthly}% width`);
+        console.log(`   MTD: ${testMTD}% width`);
+    } else {
+        console.error('❌ Progress bar elements not found');
+    }
+};
+
+// Add function to force refresh Power Metrics (for debugging)
+window.forceRefreshPowerMetrics = function() {
+    console.log('🔄 FORCE REFRESH Power Metrics...');
+    
+    if (!window.allData) {
+        console.error('❌ allData not available');
+        return;
+    }
+    
+    const filteredData = getFilteredData();
+    updateEnhancedPowerMetricsDisplay(filteredData.salesteam);
+    
+    console.log('✅ Power Metrics force refreshed');
+};
+
+// Add function to check and fix missing progress bars
+window.checkAndFixProgressBars = function() {
+    console.log('🔍 CHECKING Progress Bars Status...');
+    
+    const monthlyBar = document.getElementById('monthly-progress-bar');
+    const mtdBar = document.getElementById('mtd-progress-bar');
+    
+    if (!monthlyBar || !mtdBar) {
+        console.error('❌ Progress bar elements not found in DOM');
+        return;
+    }
+    
+    console.log('Progress bar status:');
+    console.log(`   Monthly bar width: "${monthlyBar.style.width}"`);
+    console.log(`   MTD bar width: "${mtdBar.style.width}"`);
+    console.log(`   Monthly bar class: "${monthlyBar.className}"`);
+    console.log(`   MTD bar class: "${mtdBar.className}"`);
+    
+    const monthlyWidth = monthlyBar.style.width;
+    const mtdWidth = mtdBar.style.width;
+    
+    if (!monthlyWidth || monthlyWidth === '0%' || !mtdWidth || mtdWidth === '0%') {
+        console.log('⚠️ Progress bars missing width, attempting fix...');
+        window.forceRefreshPowerMetrics();
+    } else {
+        console.log('✅ Progress bars appear to be working correctly');
+    }
 };
 
 // Add function to check all Power Metrics DOM elements
@@ -194,6 +395,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup mobile menu
     setupMobileMenu();
     
+    // Add page visibility event listeners to handle back/forward navigation
+    setupPageVisibilityHandlers();
+    
     // Wait for Firebase to be ready with better error handling
     let attempts = 0;
     const maxAttempts = 50; // 5 seconds max wait
@@ -259,6 +463,15 @@ async function initializeDashboard() {
             salesteamLeads: allData.salesteam.filter(item => item.type === 'lead').length
         });
         
+        // Make allData available globally for chart functions
+        window.allData = allData;
+        console.log('📊 allData made available globally for charts');
+        
+        // Initialize chart filters with the data
+        if (window.initChartFilters) {
+            window.initChartFilters(allData);
+        }
+        
         // Populate agent filter
         populateAgentFilter();
         
@@ -272,16 +485,24 @@ async function initializeDashboard() {
         updateCurrentTime();
         setInterval(updateCurrentTime, 60000); // Update every minute
         
+        // Setup periodic refresh for Power Metrics to prevent disappearing progress bars
+        setupPeriodicPowerMetricsRefresh();
+        
         // Initialize professional charts with allData
         if (window.ProfessionalCharts) {
-            window.ProfessionalCharts.updateSalesTrendChart(allData);
+            // Main charts
+            createMarketingCostPerTeamChart(allData);
+            createMarketingROIChart(allData);
+            createMarketingTimelineChart(allData);
+            // Secondary charts
             window.ProfessionalCharts.updateLeadSourcesChart(allData);
             window.ProfessionalCharts.updateChannelChart(allData);
             window.ProfessionalCharts.updateTeamChart(allData);
-            window.ProfessionalCharts.updateMarketingROIChart(allData);
         } else {
             // Fallback to original charts if professional charts not loaded
-            updateSalesTrendChart(allData);
+            createMarketingCostPerTeamChart(allData);
+            createMarketingROIChart(allData);
+            createMarketingTimelineChart(allData);
             updateLeadsOnlyChart(allData);
             updateChannelChart(allData);
             updateTeamChart(allData);
@@ -424,7 +645,7 @@ function setupPeriodButtons() {
             
             // Update period and refresh chart
             currentFilters.period = parseInt(btn.dataset.period);
-            updateSalesTrendChart();
+            updateMarketingCostChart(currentFilters.period);
         });
     });
 }
@@ -599,13 +820,19 @@ function applyFilters() {
     
     // Update professional charts with filtered data
     if (window.ProfessionalCharts) {
-        window.ProfessionalCharts.updateSalesTrendChart(filteredData);
+        // Main charts
+        createMarketingCostPerTeamChart(filteredData);
+        createMarketingROIChart(filteredData);
+        createMarketingTimelineChart(filteredData);
+        // Secondary charts
         window.ProfessionalCharts.updateLeadSourcesChart(filteredData);
         window.ProfessionalCharts.updateChannelChart(filteredData);
         window.ProfessionalCharts.updateTeamChart(filteredData);
-        window.ProfessionalCharts.updateMarketingROIChart(filteredData);
     } else {
         // Fallback to original chart function
+        createMarketingCostPerTeamChart(filteredData);
+        createMarketingROIChart(filteredData);
+        createMarketingTimelineChart(filteredData);
         updateLeadsOnlyChart(filteredData);
     }
     
@@ -823,7 +1050,7 @@ function updateCharts(data) {
     Chart.defaults.color = '#D1D5DB';
     Chart.defaults.borderColor = 'rgba(75, 85, 99, 0.3)';
 
-    updateSalesTrendChart(data);
+    createMarketingCostPerTeamChart(data);
     // updateChannelChart(data); // REMOVED: Handled by professional charts now
     
     // REPLACE this line:
@@ -836,22 +1063,35 @@ function updateCharts(data) {
     // ADD new chart for lead quality trends
     updateLeadQualityChart(data);
 
-     // ADD THIS LINE: Update marketing cost chart with filtered data
-    updateMarketingCostChart(data);
+     // Update main marketing charts with filtered data
+    updateMarketingCostPerTeamDisplay(data);
+    
+    // Update Marketing ROI chart
+    if (window.createMarketingROIChart) {
+        window.createMarketingROIChart(data);
+    }
+    
+    // Update Marketing Timeline chart
+    if (window.createMarketingTimelineChart) {
+        window.createMarketingTimelineChart(data);
+    }
 }
 
-// 2. ADD this new function to handle marketing cost chart updates
-async function updateMarketingCostChart(data) {
+// Updated function to handle marketing cost per team chart updates
+async function updateMarketingCostPerTeamDisplay(data) {
     try {
-        // Check if marketing cost chart function is available
-        if (typeof createMarketingCostChart === 'function') {
-            console.log('🔄 Updating marketing cost chart with filtered data...');
-            await createMarketingCostChart(data);
+        // Use the new marketing cost per team chart function
+        if (typeof createMarketingCostPerTeamChart === 'function') {
+            console.log('🔄 Updating marketing cost per team chart with real Firebase data...');
+            await createMarketingCostPerTeamChart(data);
+        } else if (window.createMarketingCostPerTeamChart) {
+            console.log('🔄 Updating marketing cost per team chart with real Firebase data (global)...');
+            await window.createMarketingCostPerTeamChart(data);
         } else {
-            console.warn('⚠️ createMarketingCostChart function not found - check if marketing-cost-chart.js is loaded');
+            console.warn('⚠️ createMarketingCostPerTeamChart function not found');
         }
     } catch (error) {
-        console.error('❌ Error updating marketing cost chart:', error);
+        console.error('❌ Error updating marketing cost per team chart:', error);
     }
 }
 
@@ -949,129 +1189,18 @@ function updateLeadQualityChart(data) {
 }
 
 
-function updateSalesTrendChart(data = null) {
-    const ctx = document.getElementById('salesTrendChart');
-    if (!ctx) {
-        console.log('salesTrendChart element not found');
-        return;
-    }
-
-    const filteredData = data || {
-        orders: filterByDate(allData.orders, currentFilters.startDate, currentFilters.endDate),
-        salesteam: filterSalesTeamData(allData.salesteam, currentFilters.startDate, currentFilters.endDate, currentFilters.agent)
-    };
-
-    // Group sales by date
-    const salesByDate = {};
+// REPLACED: updateSalesTrendChart is now replaced with Marketing Cost per Team Chart
+// The main chart now shows marketing cost per sales team member instead of sales trend
+function updateMarketingCostPerTeamChart(data = null) {
+    console.log('📊 Updating Marketing Cost per Team Chart...');
     
-    // Process orders data
-    filteredData.orders.forEach(item => {
-        let date;
-        if (item.tarikh) {
-            date = item.tarikh;
-        } else if (item.createdAt) {
-            date = (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt)).toISOString().split('T')[0];
-        } else {
-            return;
-        }
-        
-        if (!salesByDate[date]) salesByDate[date] = { direct: 0, team: 0 };
-        salesByDate[date].direct += parseFloat(item.total_rm) || 0;
-    });
-
-    // Process sales team data
-    filteredData.salesteam
-        .filter(item => item.type === 'power_metrics')
-        .forEach(item => {
-            let date;
-            if (item.tarikh) {
-                date = item.tarikh;
-            } else if (item.createdAt) {
-                date = (item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt)).toISOString().split('T')[0];
-            } else {
-                return;
-            }
-            
-            if (!salesByDate[date]) salesByDate[date] = { direct: 0, team: 0 };
-            salesByDate[date].team += parseFloat(item.total_sale_bulan) || 0;
-        });
-
-    // Get dates within period
-    const sortedDates = Object.keys(salesByDate)
-        .sort((a, b) => new Date(a) - new Date(b))
-        .slice(-currentFilters.period);
-
-    // Enhanced chart destruction - handle both storage systems
-    const existingChart = Chart.getChart(ctx);
-    if (existingChart) {
-        existingChart.destroy();
-        console.log('🗑️ Destroyed existing chart on salesTrendChart canvas');
+    // Use the imported function from marketing-cost-per-team-chart.js
+    if (window.createMarketingCostPerTeamChart) {
+        return window.createMarketingCostPerTeamChart(data);
+    } else {
+        // Fallback if module not loaded
+        return createMarketingCostPerTeamChart(data);
     }
-    
-    if (charts.salesTrend) {
-        charts.salesTrend.destroy();
-        charts.salesTrend = null;
-    }
-
-    charts.salesTrend = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: sortedDates.map(date => formatDate(date)),
-            datasets: [
-                {
-                    label: 'Direct Orders',
-                    data: sortedDates.map(date => salesByDate[date]?.direct || 0),
-                    borderColor: '#10B981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 3
-                },
-                {
-                    label: 'Sales Team',
-                    data: sortedDates.map(date => salesByDate[date]?.team || 0),
-                    borderColor: '#F59E0B',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 3
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
-            plugins: {
-                legend: { 
-                    labels: { 
-                        color: '#D1D5DB',
-                        usePointStyle: true,
-                        padding: 20
-                    }
-                }
-            },
-            scales: {
-                y: { 
-                    beginAtZero: true,
-                    ticks: { 
-                        color: '#9CA3AF',
-                        callback: function(value) {
-                            return 'RM ' + value.toLocaleString();
-                        }
-                    },
-                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
-                },
-                x: { 
-                    ticks: { color: '#9CA3AF' },
-                    grid: { color: 'rgba(75, 85, 99, 0.3)' }
-                }
-            }
-        }
-    });
 }
 
 function updateChannelChart(data) {
@@ -2307,36 +2436,56 @@ function updateEnhancedPowerMetricsDisplay(salesTeamData) {
     const mtdProgressBar = document.getElementById('mtd-progress-bar');
     
     if (monthlyProgressBar && mtdProgressBar) {
+        console.log('📊 Updating progress bars...');
+        console.log(`   Monthly Progress: ${metrics.monthlyProgress.toFixed(1)}%`);
+        console.log(`   MTD Progress: ${metrics.mtdProgress.toFixed(1)}%`);
+        
         // Monthly progress with performance-based colors
         const monthlyProgressPercent = Math.min(Math.max(metrics.monthlyProgress, 0), 100);
         monthlyProgressBar.style.width = `${monthlyProgressPercent}%`;
         
-        // Color based on urgency level
-        const colorClasses = {
-            'ACHIEVED': 'bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300',
-            'LOW': 'bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300',
-            'MODERATE': 'bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300',
-            'HIGH': 'bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-300',
-            'URGENT': 'bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all duration-300',
-            'CRITICAL': 'bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300'
+        // Use existing CSS classes instead of Tailwind
+        monthlyProgressBar.className = 'progress-fill monthly-progress';
+        
+        // Set color based on urgency level using CSS custom properties
+        const urgencyColors = {
+            'ACHIEVED': '#10b981', // green
+            'LOW': '#3b82f6',      // blue  
+            'MODERATE': '#8b5cf6', // purple
+            'HIGH': '#f59e0b',     // orange
+            'URGENT': '#ef4444',   // red
+            'CRITICAL': '#ec4899'  // pink
         };
         
-        monthlyProgressBar.className = colorClasses[metrics.urgencyLevel] || colorClasses['MODERATE'];
-        updateElement('monthly-progress-text', `${monthlyProgressPercent.toFixed(1)}% (${metrics.urgencyLevel})`);
+        const urgencyColor = urgencyColors[metrics.urgencyLevel] || urgencyColors['MODERATE'];
+        monthlyProgressBar.style.background = `linear-gradient(90deg, ${urgencyColor}, #3b82f6)`;
+        
+        updateElement('monthly-progress-text', `${monthlyProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${metrics.monthlyKPI.toLocaleString('ms-MY')})`);
 
         // MTD progress
         const mtdProgressPercent = Math.min(Math.max(metrics.mtdProgress, 0), 100);
         mtdProgressBar.style.width = `${mtdProgressPercent}%`;
         
+        // Use existing CSS class
+        mtdProgressBar.className = 'progress-fill mtd-progress';
+        
+        // Set color based on performance
+        let mtdColor = '#ef4444'; // red by default
         if (metrics.isOnTrack) {
-            mtdProgressBar.className = 'bg-gradient-to-r from-green-500 to-teal-500 h-2 rounded-full transition-all duration-300';
+            mtdColor = '#10b981'; // green
         } else if (mtdProgressPercent >= 70) {
-            mtdProgressBar.className = 'bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-300';
-        } else {
-            mtdProgressBar.className = 'bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300';
+            mtdColor = '#f59e0b'; // orange
         }
         
+        mtdProgressBar.style.background = `linear-gradient(90deg, ${mtdColor}, #8b5cf6)`;
+        
         updateElement('mtd-progress-text', `${mtdProgressPercent.toFixed(1)}% (RM ${metrics.saleMTD.toLocaleString('ms-MY')} / RM ${metrics.kpiMTD.toLocaleString('ms-MY')})`);
+        
+        console.log('✅ Progress bars updated successfully');
+    } else {
+        console.warn('⚠️ Progress bar elements not found!');
+        console.log(`   monthlyProgressBar: ${!!monthlyProgressBar}`);
+        console.log(`   mtdProgressBar: ${!!mtdProgressBar}`);
     }
 
     // Update status indicators with enhanced logic

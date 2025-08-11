@@ -30,9 +30,9 @@
    ================================================= */
 
 .order-main-container {
-    max-width: 1600px;
+    max-width: 95%;
     margin: 6rem auto 2rem;
-    padding: 2rem;
+    padding: 0.5rem;
     min-height: calc(100vh - 8rem);
 }
 
@@ -896,7 +896,7 @@
 }
 
 .enhanced-order-header {
-    padding: 1.5rem 2rem;
+    padding: 1.5rem 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -915,7 +915,7 @@
 
 .enhanced-notice-bar {
     background: linear-gradient(90deg, #f97316, #ea580c);
-    padding: 0.875rem 2rem;
+    padding: 0.875rem 1rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -930,9 +930,9 @@
 
 .enhanced-headers {
     display: grid;
-    grid-template-columns: 150px 100px 180px 120px 120px 1fr 100px 120px;
+    grid-template-columns: 160px 110px 200px 130px 130px 2fr 110px 130px;
     gap: 1rem;
-    padding: 1rem 2rem;
+    padding: 1rem;
     background: rgba(15, 23, 42, 0.8);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -976,9 +976,9 @@
 
 .enhanced-order-row {
     display: grid;
-    grid-template-columns: 150px 100px 180px 120px 120px 1fr 100px 120px;
+    grid-template-columns: 160px 110px 200px 130px 130px 2fr 110px 130px;
     gap: 1rem;
-    padding: 1.5rem 2rem;
+    padding: 1.5rem 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     transition: all 0.2s ease;
     cursor: pointer;

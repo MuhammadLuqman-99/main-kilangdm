@@ -1,13 +1,17 @@
 import { collection, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// ENHANCED VERSION: Marketing Cost Chart with Date Filtering
+// ENHANCED VERSION: Marketing Cost Chart with Date Filtering v2.1 - Fixed Canvas ID
 export async function createMarketingCostChart(filteredData = null) {
-    console.log('🚀 Starting Marketing Cost Chart with Date Filtering...');
+    console.log('🚀 [MARKETING-COST-CHART.JS] Starting Marketing Cost Chart with Date Filtering v2.1...');
+    console.log('🔍 [MARKETING-COST-CHART.JS] Function called from:', new Error().stack?.split('\n')[2]);
     
-    const ctx = document.getElementById('costPerLeadChart');
+    console.log('🔍 Looking for canvas with ID: marketingCostChart');
+    const ctx = document.getElementById('marketingCostChart');
     if (!ctx) {
-        console.warn('⚠️ Chart canvas element "costPerLeadChart" not found - skipping chart creation');
-        return;
+        console.error('⚠️ Chart canvas element "marketingCostChart" not found - skipping chart creation');
+        console.log('🔍 Available canvas elements:', Array.from(document.querySelectorAll('canvas')).map(c => ({ id: c.id, tagName: c.tagName })));
+        console.log('🔍 All elements with "marketing" in ID:', Array.from(document.querySelectorAll('[id*="marketing"]')).map(e => ({ id: e.id, tagName: e.tagName })));
+        return null;
     }
 
     const chartContainer = ctx.parentElement;
@@ -265,7 +269,7 @@ export async function createMarketingCostChart(filteredData = null) {
 
         // Restore canvas
         restoreCanvasSafe(chartContainer);
-        const newCtx = document.getElementById('costPerLeadChart');
+        const newCtx = document.getElementById('marketingCostChart');
         if (!newCtx) {
             console.error('❌ Failed to restore canvas element');
             return;
@@ -642,7 +646,7 @@ function restoreCanvasSafe(container) {
     if (!container) return;
     
     try {
-        container.innerHTML = '<canvas id="costPerLeadChart" style="width: 100%; height: 300px;"></canvas>';
+        container.innerHTML = '<canvas id="marketingCostChart" style="width: 100%; height: 300px;"></canvas>';
     } catch (error) {
         console.warn('⚠️ Failed to restore canvas:', error);
     }
@@ -695,7 +699,7 @@ async function debugMarketingCostChartSafe() {
     console.log('🔍 === MARKETING COST CHART DEBUG (WITH FILTERS) ===');
     
     try {
-        const chartElement = document.getElementById('costPerLeadChart');
+        const chartElement = document.getElementById('marketingCostChart');
         console.log('Chart element found:', !!chartElement);
         
         if (chartElement) {

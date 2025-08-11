@@ -697,6 +697,11 @@ function updateEnhancedOrderDetails(orders) {
         return;
     }
     
+    // Update agent tab counts if this is the first load (not a filter)
+    if (currentAgentFilter === 'all') {
+        updateAgentTabCounts(orders);
+    }
+    
     // Use ONLY real Firebase data - NO MOCK DATA
     if (orders.length === 0) {
         console.log('📋 No Firebase orders found');
@@ -723,60 +728,83 @@ function updateEnhancedOrderDetails(orders) {
     container.innerHTML = sortedOrders.map((order, index) => {
         const products = getAllProductsFromOrder(order);
         const totalQuantity = products.reduce((sum, p) => sum + (parseInt(p.quantity) || 0), 0);
+        const totalAmount = parseFloat(order.jumlah_bayar || order.total_amount || order.amount || 0);
         
         return `
-            <div class="enhanced-order-row">
+            <div class="order-row" id="order-row-${index}">
                 <!-- Invoice/PO -->
-                <div class="row-cell">
-                    <a href="#" class="cell-primary">
-                        ${order.nombor_po_invoice || order.invoice || `ORDER-${index + 1}`}
-                    </a>
+                <div class="order-cell">
+                    <strong style="color: #3b82f6;">
+                        ${order.nombor_po_invoice || order.invoice || `ORD-${String(index + 1).padStart(3, '0')}`}
+                    </strong>
                 </div>
                 
                 <!-- Tarikh -->
-                <div class="row-cell">
-                    <span class="cell-secondary">
-                        ${formatDateForEnhanced(order.timestamp || order.createdAt || order.tarikh)}
-                    </span>
+                <div class="order-cell">
+                    <i class="fas fa-calendar-alt" style="color: #8b5cf6; margin-right: 0.25rem;"></i>
+                    ${formatDateForEnhanced(order.timestamp || order.createdAt || order.tarikh)}
                 </div>
                 
                 <!-- Customer -->
-                <div class="row-cell">
-                    <span class="cell-secondary">
-                        ${order.nama_customer || order.customer_name || 'Customer'}
-                    </span>
+                <div class="order-cell">
+                    <i class="fas fa-user" style="color: #10b981; margin-right: 0.25rem;"></i>
+                    ${order.nama_customer || order.customer_name || order.customer || 'N/A'}
                 </div>
                 
                 <!-- Team -->
-                <div class="row-cell">
-                    <span class="team-badge">
-                        ${order.team_sale || order.agent_name || 'Nisya'}
-                    </span>
+                <div class="order-cell">
+                    <i class="fas fa-users" style="color: #f59e0b; margin-right: 0.25rem;"></i>
+                    ${order.sales_agent || order.agent || order.team || 'N/A'}
                 </div>
                 
                 <!-- Platform -->
-                <div class="row-cell">
-                    ${generatePlatformBadge(order.source, order.platform)}
+                <div class="order-cell cell-platform">
+                    <i class="fas fa-shopping-cart" style="color: #ec4899; margin-right: 0.25rem;"></i>
+                    ${order.platform || 'Manual'}
                 </div>
                 
-                <!-- Detail Produk & Saiz -->
-                <div class="row-cell">
-                    ${generateEnhancedProductDetails(products)}
+                <!-- Produk & Size -->
+                <div class="order-cell">
+                    <div class="products-summary">
+                        ${products.length > 0 ? 
+                            `<div class="product-count">
+                                <i class="fas fa-box" style="color: #6366f1; margin-right: 0.25rem;"></i>
+                                ${products.length} item${products.length > 1 ? 's' : ''}
+                            </div>
+                            <div class="product-preview">
+                                ${products.slice(0, 2).map(p => 
+                                    `<span class="product-tag">${p.name}${p.size ? ` (${p.size})` : ''}</span>`
+                                ).join('')}
+                                ${products.length > 2 ? `<span class="more-products">+${products.length - 2} lagi</span>` : ''}
+                            </div>` : 
+                            '<span class="no-products">Tiada produk</span>'
+                        }
+                    </div>
                 </div>
                 
-                <!-- Total Qty -->
-                <div class="row-cell total-qty">
-                    <div class="qty-number">${totalQuantity}</div>
+                <!-- Quantity -->
+                <div class="order-cell cell-qty">
+                    <i class="fas fa-sort-numeric-up" style="margin-right: 0.25rem;"></i>
+                    <strong>${totalQuantity}</strong>
                 </div>
                 
                 <!-- Amount -->
-                <div class="row-cell amount-cell">
-                    <div class="amount-value">
-                        ${formatCurrency(parseFloat(order.total_rm || order.amount) || 0)}
+                <div class="order-cell cell-amount">
+                    <i class="fas fa-money-bill-wave" style="margin-right: 0.25rem;"></i>
+                    <strong>RM ${totalAmount.toLocaleString('ms-MY', {minimumFractionDigits: 2})}</strong>
+                </div>
+                
+                <!-- Actions -->
+                <div class="order-cell">
+                    <div class="action-buttons">
+                        <button class="action-btn btn-view" onclick="viewOrderDetails('${order.id || index}')" title="Lihat Detail">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn btn-expand" onclick="toggleOrderDetails(${index})" title="Expand/Collapse">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
                     </div>
                 </div>
-            </div>
-        `;
     }).join('');
 }
 
@@ -788,16 +816,16 @@ function generateProductDetailsHtml(products) {
     // Show first 2 products only
     return products.slice(0, 2).map(product => {
         const sizeLabel = product.size ? 
-            `<span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full mr-1">${product.size}</span>` : '';
+            `<span class="product-tag">${product.size}</span>` : '';
         
         const progressBar = generateQuantityProgressBar(product.quantity);
         
         return `
-            <div class="mb-2 last:mb-0">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
+            <div class="product-item">
+                <div class="product-name">
                     ${product.code} - ${product.name}
                 </div>
-                <div class="flex items-center mt-1">
+                <div class="product-meta">
                     ${sizeLabel}
                     ${progressBar}
                 </div>
@@ -808,28 +836,28 @@ function generateProductDetailsHtml(products) {
 
 function generateFullProductDetailsHtml(products) {
     if (products.length === 0) {
-        return '<p class="text-gray-500">Tiada data produk dijumpai</p>';
+        return '<p class="no-products">Tiada data produk dijumpai</p>';
     }
     
     return `
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="products-grid">
             ${products.map(product => `
-                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700">
-                    <div class="font-semibold text-gray-900 dark:text-white text-sm mb-2">
+                <div class="product-card">
+                    <div class="product-header">
                         📦 ${product.code}
                     </div>
-                    <div class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    <div class="product-details">
                         ${product.name}
                     </div>
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="product-info">
                         ${product.size ? 
-                            `<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Size ${product.size}</span>` : 
-                            '<span class="text-xs text-gray-400">No size</span>'
+                            `<span class="size-badge">Size ${product.size}</span>` : 
+                            '<span class="no-size">No size</span>'
                         }
-                        <span class="font-bold text-sm text-gray-900 dark:text-white">${product.quantity} pcs</span>
+                        <span class="qty-badge">${product.quantity} pcs</span>
                     </div>
                     ${generateQuantityProgressBar(product.quantity, true)}
-                    ${product.price > 0 ? `<div class="text-right mt-2 text-sm text-green-600 font-semibold">${formatCurrency(product.price)}</div>` : ''}
+                    ${product.price > 0 ? `<div class="product-price">${formatCurrency(product.price)}</div>` : ''}
                 </div>
             `).join('')}
         </div>
@@ -842,11 +870,11 @@ function generateQuantityProgressBar(quantity, showLabel = false) {
     const percentage = Math.min((qty / maxQty) * 100, 100);
     
     return `
-        <div class="flex items-center ${showLabel ? 'w-full' : 'flex-1 ml-2'}">
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+        <div class="progress-container ${showLabel ? 'full-width' : 'compact'}">
+            <div class="progress-track">
+                <div class="progress-fill" style="width: ${percentage}%"></div>
             </div>
-            ${showLabel ? `<span class="ml-2 text-xs text-gray-600 dark:text-gray-400">${qty}</span>` : ''}
+            ${showLabel ? `<span class="progress-label">${qty}</span>` : ''}
         </div>
     `;
 }
@@ -1279,6 +1307,136 @@ function updateTopPerformers(orders) {
         `;
     }).join('');
 }
+
+// ===================================================
+// AGENT FILTER FUNCTIONS
+// ===================================================
+
+// Global variable to store all orders for filtering
+let allOrdersForFiltering = [];
+let currentAgentFilter = 'all';
+
+function filterOrdersByAgent(agent) {
+    console.log(`🔍 Filtering orders by agent: ${agent}`);
+    
+    currentAgentFilter = agent;
+    
+    // Update active tab
+    document.querySelectorAll('.agent-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`[data-agent="${agent}"]`).classList.add('active');
+    
+    // Filter orders
+    let filteredOrders = allOrdersForFiltering;
+    
+    if (agent !== 'all') {
+        filteredOrders = allOrdersForFiltering.filter(order => {
+            const agentName = (order.sales_agent || order.agent || order.team || '').toLowerCase();
+            const platform = (order.platform || '').toLowerCase();
+            
+            // Check both agent name and platform
+            return agentName.includes(agent.toLowerCase()) || 
+                   platform.includes(agent.toLowerCase());
+        });
+    }
+    
+    // Update filter indicator
+    const filterNames = {
+        'all': 'Semua Order',
+        'tiktok': 'TikTok Orders',
+        'shopee': 'Shopee Orders', 
+        'wiyah': 'Wiyah Orders',
+        'nisya': 'Nisya Orders',
+        'qilah': 'Qilah Orders'
+    };
+    
+    document.getElementById('filter-text').textContent = filterNames[agent] || `${agent} Orders`;
+    
+    // Update the enhanced order details display
+    updateEnhancedOrderDetails(filteredOrders);
+    
+    console.log(`✅ Filtered to ${filteredOrders.length} orders for agent: ${agent}`);
+}
+
+function updateAgentTabCounts(allOrders) {
+    console.log('📊 Updating agent tab counts...');
+    
+    // Store orders for filtering
+    allOrdersForFiltering = allOrders;
+    
+    const counts = {
+        all: allOrders.length,
+        tiktok: 0,
+        shopee: 0, 
+        wiyah: 0,
+        nisya: 0,
+        qilah: 0
+    };
+    
+    // Count orders per agent/platform
+    allOrders.forEach(order => {
+        const agentName = (order.sales_agent || order.agent || order.team || '').toLowerCase();
+        const platform = (order.platform || '').toLowerCase();
+        
+        if (agentName.includes('wiyah') || platform.includes('wiyah')) counts.wiyah++;
+        if (agentName.includes('nisya') || platform.includes('nisya')) counts.nisya++;
+        if (agentName.includes('qilah') || platform.includes('qilah')) counts.qilah++;
+        if (platform.includes('tiktok') || agentName.includes('tiktok')) counts.tiktok++;
+        if (platform.includes('shopee') || agentName.includes('shopee')) counts.shopee++;
+    });
+    
+    // Update tab counts
+    Object.keys(counts).forEach(agent => {
+        const countElement = document.getElementById(`count-${agent}`);
+        if (countElement) {
+            countElement.textContent = counts[agent];
+        }
+    });
+    
+    console.log('📊 Agent counts updated:', counts);
+}
+
+// Setup keyboard shortcuts for agent filtering
+function setupAgentKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Only activate if user is not typing in an input field
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        const keyMap = {
+            '1': 'all',
+            '2': 'tiktok', 
+            '3': 'shopee',
+            '4': 'wiyah',
+            '5': 'nisya',
+            '6': 'qilah'
+        };
+        
+        if (keyMap[e.key]) {
+            e.preventDefault();
+            filterOrdersByAgent(keyMap[e.key]);
+            
+            // Show visual feedback
+            const tab = document.querySelector(`[data-agent="${keyMap[e.key]}"]`);
+            if (tab) {
+                tab.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    tab.style.transform = 'scale(1)';
+                }, 150);
+            }
+        }
+    });
+    
+    console.log('⌨️ Agent keyboard shortcuts activated (1-6 keys)');
+}
+
+// Initialize keyboard shortcuts when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setupAgentKeyboardShortcuts();
+});
+
+// Make function globally available
+window.filterOrdersByAgent = filterOrdersByAgent;
 
 // ===================================================
 // ORDER DETAILS FUNCTIONS

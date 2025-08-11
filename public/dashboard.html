@@ -17,36 +17,32 @@
     <link rel="stylesheet" href="style/professional-charts.css">
     <link rel="stylesheet" href="style/improvements.css">
     <link rel="stylesheet" href="style/dashboard-advanced-filter.css">
+    <!-- OVERRIDE - Must be last for consistency -->
+    <link rel="stylesheet" href="style/unified-override.css">
+    <!-- MOBILE MENU FIX - Critical fix for mobile menu -->
+    <link rel="stylesheet" href="style/mobile-menu-fix.css">
+    <!-- CHART FILTERS - Styling for chart filters -->
+    <link rel="stylesheet" href="style/chart-filters.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" href="favicon-fallback.png">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="KilangDM">
     
-   <!-- Firebase SDK -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
-        authDomain: "kilangdm-v1.firebaseapp.com",
-        projectId: "kilangdm-v1",
-        storageBucket: "kilangdm-v1.firebasestorage.app",
-        messagingSenderId: "264191193800",
-        appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
-        measurementId: "G-C02S0CPE63"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    window.db = getFirestore(app);
-    
-    console.log('Firebase initialized successfully');
-</script>
+   <!-- Core Scripts -->
+    <script src="js/logger.js"></script>
+    <script src="js/error-handler.js"></script>
+    <!-- MOBILE OPTIMIZATION - Must load early -->
+    <script src="js/mobile-optimization.js"></script>
+    <!-- Firebase SDK - Secure Implementation -->
+    <script src="js/firebase-config.js"></script>
 </head>
 <body>
     <!-- Floating Action Button for Home -->
@@ -73,8 +69,8 @@
             <!-- Navigation Links -->
             <div class="nav-links" id="navLinks">
                 <a href="dashboard.html" class="nav-link active">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
                 </a>
                 <a href="dashboardbo.html" class="nav-link">
                     <i class="fas fa-clipboard-list"></i>
@@ -636,19 +632,126 @@
                 <div class="chart-header">
                     <div class="header-left">
                         <h4 class="chart-title">
-                            <i class="fas fa-chart-line"></i>
-                            Sales Performance Overview
+                            <i class="fas fa-dollar-sign"></i>
+                            Marketing Cost per Sales Team
                         </h4>
-                        <p class="chart-subtitle">30-day revenue trend with targets and actual performance</p>
+                        <p class="chart-subtitle">Kos marketing untuk setiap ahli sales team (RM)</p>
                     </div>
                     <div class="chart-controls">
-                        <button class="period-btn active" data-period="7">7 Hari</button>
-                        <button class="period-btn" data-period="30">30 Hari</button>
-                        <button class="period-btn" data-period="90">90 Hari</button>
+                        <!-- Team Sales Filter -->
+                        <div class="chart-filter-group">
+                            <label for="cost-team-filter">Team:</label>
+                            <select id="cost-team-filter" class="chart-filter-select">
+                                <option value="">Semua Team</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Date Range Filter -->
+                        <div class="chart-filter-group">
+                            <label for="cost-date-from">Dari:</label>
+                            <input type="date" id="cost-date-from" class="chart-filter-date">
+                        </div>
+                        <div class="chart-filter-group">
+                            <label for="cost-date-to">Hingga:</label>
+                            <input type="date" id="cost-date-to" class="chart-filter-date">
+                        </div>
+                        
+                        <!-- Period Buttons -->
+                        <div class="chart-period-buttons">
+                            <button class="period-btn active" data-period="7">7 Hari</button>
+                            <button class="period-btn" data-period="30">30 Hari</button>
+                            <button class="period-btn" data-period="90">90 Hari</button>
+                        </div>
                     </div>
                 </div>
                 <div class="chart-container">
-                    <canvas id="salesTrendChart"></canvas>
+                    <canvas id="marketingCostChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Marketing ROI Main Chart -->
+            <div class="chart-card main-chart">
+                <div class="chart-header">
+                    <div class="header-left">
+                        <h4 class="chart-title">
+                            <i class="fas fa-chart-bar"></i>
+                            Marketing ROI Performance
+                        </h4>
+                        <p class="chart-subtitle">Spend vs Revenue comparison untuk setiap sales team</p>
+                    </div>
+                    <div class="chart-controls">
+                        <!-- Team Sales Filter -->
+                        <div class="chart-filter-group">
+                            <label for="roi-team-filter">Team:</label>
+                            <select id="roi-team-filter" class="chart-filter-select">
+                                <option value="">Semua Team</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Date Range Filter -->
+                        <div class="chart-filter-group">
+                            <label for="roi-date-from">Dari:</label>
+                            <input type="date" id="roi-date-from" class="chart-filter-date">
+                        </div>
+                        <div class="chart-filter-group">
+                            <label for="roi-date-to">Hingga:</label>
+                            <input type="date" id="roi-date-to" class="chart-filter-date">
+                        </div>
+                        
+                        <!-- Period Buttons -->
+                        <div class="chart-period-buttons">
+                            <button class="roi-period-btn active" data-period="7">7 Hari</button>
+                            <button class="roi-period-btn" data-period="30">30 Hari</button>
+                            <button class="roi-period-btn" data-period="90">90 Hari</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="marketingROIChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Marketing Cost vs Lead Timeline Chart -->
+            <div class="chart-card main-chart">
+                <div class="chart-header">
+                    <div class="header-left">
+                        <h4 class="chart-title">
+                            <i class="fas fa-clock"></i>
+                            Marketing Cost vs Lead Timeline
+                        </h4>
+                        <p class="chart-subtitle">Kos marketing per tarikh vs lead masuk pada masa yang sama</p>
+                    </div>
+                    <div class="chart-controls">
+                        <!-- Team Sales Filter -->
+                        <div class="chart-filter-group">
+                            <label for="timeline-team-filter">Team:</label>
+                            <select id="timeline-team-filter" class="chart-filter-select">
+                                <option value="">Semua Team</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Date Range Filter -->
+                        <div class="chart-filter-group">
+                            <label for="timeline-date-from">Dari:</label>
+                            <input type="date" id="timeline-date-from" class="chart-filter-date">
+                        </div>
+                        <div class="chart-filter-group">
+                            <label for="timeline-date-to">Hingga:</label>
+                            <input type="date" id="timeline-date-to" class="chart-filter-date">
+                        </div>
+                        
+                        <!-- Period Buttons - Based on Sales Team Update Times -->
+                        <div class="chart-period-buttons">
+                            <button class="timeline-period-btn" data-time="9.00am">9.00am</button>
+                            <button class="timeline-period-btn active" data-time="2.30pm">2.30pm</button>
+                            <button class="timeline-period-btn" data-time="4.00pm">4.00pm</button>
+                            <button class="timeline-period-btn" data-time="8.30pm">8.30pm</button>
+                            <button class="timeline-period-btn" data-period="today">Hari Ini</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="marketingTimelineChart"></canvas>
                 </div>
             </div>
 
@@ -708,21 +811,6 @@
                     </div>
                 </div>
 
-                <!-- Marketing ROI -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="header-left">
-                            <h4 class="chart-title">
-                                <i class="fas fa-dollar-sign"></i>
-                                Marketing ROI
-                            </h4>
-                            <p class="chart-subtitle">Spend vs revenue performance</p>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="costPerLeadChart"></canvas>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -762,10 +850,14 @@
     <script src="js/responsive-enhancements.js"></script>
     <script src="js/improvements.js"></script>
     <script src="js/dashboard-enhancements.js"></script>
+    <script type="module" src="js/marketing-cost-per-team-chart.js"></script>
+    <script type="module" src="js/marketing-roi-chart.js"></script>
+    <script type="module" src="js/marketing-timeline-chart.js"></script>
+    <script src="js/chart-filters.js"></script>
     
     <!-- Advanced Features -->
     <script src="js/export-manager.js"></script>
-    <script src="js/notification-system.js"></script>
+    <!-- DISABLED ON MOBILE: <script src="js/notification-system.js"></script> -->
     <script src="js/pwa-manager.js"></script>
     <script src="js/advanced-search.js"></script>
 </body>

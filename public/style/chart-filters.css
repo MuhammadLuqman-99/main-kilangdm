@@ -1,0 +1,266 @@
+/* Chart Filters Styling */
+/* Enhanced filters for main marketing charts */
+
+.chart-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    background: rgba(15, 23, 42, 0.8);
+    border-radius: 8px;
+    border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.chart-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 120px;
+}
+
+.chart-filter-group label {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.chart-filter-select,
+.chart-filter-date {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    border-radius: 6px;
+    color: #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    min-height: 36px;
+}
+
+.chart-filter-select:focus,
+.chart-filter-date:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.chart-filter-select:hover,
+.chart-filter-date:hover {
+    border-color: #475569;
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.chart-filter-select option {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 0.5rem;
+}
+
+.chart-filter-date::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.7;
+}
+
+.chart-filter-date::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+.chart-period-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto; /* Push to right */
+}
+
+.period-btn,
+.roi-period-btn,
+.timeline-period-btn {
+    background: rgba(51, 65, 85, 0.6);
+    color: #94a3b8;
+    border: 1px solid rgba(51, 65, 85, 0.8);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.period-btn:hover,
+.roi-period-btn:hover,
+.timeline-period-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    color: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.period-btn.active,
+.roi-period-btn.active,
+.timeline-period-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .chart-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .chart-filter-group {
+        min-width: 100px;
+    }
+    
+    .chart-period-buttons {
+        margin-left: 0;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .chart-controls {
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .chart-filter-group {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .chart-filter-select,
+    .chart-filter-date {
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 0.75rem;
+        min-height: 44px;
+    }
+    
+    .chart-period-buttons {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .period-btn,
+    .roi-period-btn,
+    .timeline-period-btn {
+        flex: 1;
+        min-width: 80px;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .chart-filter-group {
+        width: 100%;
+    }
+    
+    .chart-period-buttons {
+        width: 100%;
+    }
+    
+    .period-btn,
+    .roi-period-btn,
+    .timeline-period-btn {
+        flex: 1;
+        text-align: center;
+    }
+}
+
+/* Chart Header Layout Enhancement */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-left {
+    flex: 1;
+    min-width: 250px;
+}
+
+.chart-controls {
+    flex: 2;
+    min-width: 400px;
+    justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+    .chart-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .header-left,
+    .chart-controls {
+        flex: none;
+        min-width: 0;
+        width: 100%;
+    }
+    
+    .chart-controls {
+        justify-content: stretch;
+    }
+}
+
+/* Filter Reset Button */
+.filter-reset-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filter-reset-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #fecaca;
+    transform: translateY(-1px);
+}
+
+/* Loading State */
+.chart-controls.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.chart-controls.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(59, 130, 246, 0.3);
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -8,9 +8,9 @@
    ================================================= */
 
 .main-container {
-    max-width: 1600px;
+    max-width: 95%;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 0.5rem;
     gap: 3rem;
 }
 
@@ -392,7 +392,7 @@
 
 @media (max-width: 768px) {
     .main-container {
-        padding: 1rem;
+        padding: 0.5rem;
         gap: 2rem;
     }
     

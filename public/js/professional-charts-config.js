@@ -534,11 +534,11 @@ function updateTeamChart(data) {
 }
 
 function updateMarketingROIChart(data) {
-    const ctx = document.getElementById('costPerLeadChart');
+    const ctx = document.getElementById('marketingCostChart');
     if (!ctx || !data) return;
 
     // Use safe chart destruction
-    safeDestroyChart('costPerLeadChart', 'marketingROIChartInstance');
+    safeDestroyChart('marketingCostChart', 'marketingROIChartInstance');
 
     const last7Days = getLast7Days();
     const spendData = [];
@@ -677,7 +677,7 @@ function destroyAllCharts() {
         ['leadsChart', 'leadsChartInstance'],
         ['channelChart', 'channelChartInstance'],
         ['teamChart', 'teamChartInstance'],
-        ['costPerLeadChart', 'marketingROIChartInstance']
+        ['marketingCostChart', 'marketingROIChartInstance']
     ];
     
     charts.forEach(([canvasId, instanceName]) => {

@@ -1,9 +1,9 @@
 // Service Worker for KilangDM Dashboard PWA
 // Provides offline functionality and caching
 
-const CACHE_NAME = 'kilangdm-dashboard-v1.2';
-const STATIC_CACHE = 'kilangdm-static-v1.2';
-const DYNAMIC_CACHE = 'kilangdm-dynamic-v1.2';
+const CACHE_NAME = 'kilangdm-dashboard-v1.3';
+const STATIC_CACHE = 'kilangdm-static-v1.3';
+const DYNAMIC_CACHE = 'kilangdm-dynamic-v1.3';
 
 // Files to cache for offline use
 const STATIC_FILES = [

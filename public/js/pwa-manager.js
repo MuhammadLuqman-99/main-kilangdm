@@ -388,8 +388,8 @@ class PWAManager {
 }
 
 // Add CSS animations
-const style = document.createElement('style');
-style.textContent = `
+const pwaStyleElement = document.createElement('style');
+pwaStyleElement.textContent = `
     @keyframes slideInLeft {
         from { transform: translateX(-100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
@@ -460,7 +460,7 @@ style.textContent = `
         color: #f59e0b;
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(pwaStyleElement);
 
 // Auto-initialize
 document.addEventListener('DOMContentLoaded', () => {
