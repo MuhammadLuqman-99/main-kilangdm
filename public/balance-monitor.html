@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance MTD Monitor - KilangDM</title>
+    
+    <!-- Force no cache for real-time data -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .monitor-header {
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 2px solid #3b82f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-title h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #3b82f6;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+        
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        .current-time {
+            background: rgba(59, 130, 246, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #3b82f6;
+        }
+        
+        .current-date {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        
+        /* Main Content */
+        .balance-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            height: calc(100vh - 80px);
+        }
+        
+        /* Team Cards */
+        .team-card {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            border-radius: 20px;
+            border: 2px solid transparent;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 3rem 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .team-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        
+        .team-card:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .team-card.nisya {
+            border-color: #22c55e;
+            box-shadow: 0 0 40px rgba(34, 197, 94, 0.3);
+        }
+        
+        .team-card.qilah {
+            border-color: #f59e0b;
+            box-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
+        }
+        
+        .team-card.wiyah {
+            border-color: #ef4444;
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Team Header */
+        .team-header {
+            margin-bottom: 2rem;
+        }
+        
+        .team-name {
+            font-size: 3rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px currentColor;
+        }
+        
+        .team-card.nisya .team-name {
+            color: #22c55e;
+        }
+        
+        .team-card.qilah .team-name {
+            color: #f59e0b;
+        }
+        
+        .team-card.wiyah .team-name {
+            color: #ef4444;
+        }
+        
+        .team-role {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        
+        /* Balance Display */
+        .balance-section {
+            margin-bottom: 2rem;
+        }
+        
+        .balance-label {
+            font-size: 1.4rem;
+            color: #e2e8f0;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .balance-amount {
+            font-size: 4.5rem;
+            font-weight: 900;
+            font-family: 'Inter', monospace;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 30px currentColor;
+            line-height: 1;
+        }
+        
+        .balance-currency {
+            font-size: 2rem;
+            opacity: 0.8;
+            margin-right: 0.5rem;
+        }
+        
+        /* Stats */
+        .team-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+            margin-top: auto;
+        }
+        
+        .stat-item {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+        
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(59, 130, 246, 0.3);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Pulsing effect for real-time updates */
+        .updating {
+            animation: pulse 1s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.8; }
+        }
+        
+        /* Status Indicator */
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+            animation: blink 2s ease-in-out infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* Responsive for smaller screens */
+        @media (max-width: 1200px) {
+            .balance-container {
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .team-name {
+                font-size: 2.5rem;
+            }
+            
+            .balance-amount {
+                font-size: 3.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .balance-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .team-card {
+                padding: 2rem 1rem;
+            }
+        }
+        
+        /* Full screen optimization */
+        @media (min-width: 1920px) {
+            .team-name {
+                font-size: 4rem;
+            }
+            
+            .balance-amount {
+                font-size: 6rem;
+            }
+            
+            .team-card {
+                padding: 4rem 3rem;
+            }
+        }
+        
+        /* Error state */
+        .error-state {
+            color: #ef4444;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .error-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="monitor-header">
+        <div class="header-title">
+            <i class="fas fa-chart-line" style="font-size: 2rem; color: #3b82f6;"></i>
+            <h1>Balance MTD Monitor</h1>
+        </div>
+        <div class="header-info">
+            <div class="current-date" id="current-date">-</div>
+            <div class="current-time" id="current-time">
+                <i class="fas fa-clock"></i>
+                <span id="time-display">--:--:--</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="balance-container">
+        <!-- Nisya Team -->
+        <div class="team-card nisya">
+            <div class="status-indicator"></div>
+            <div class="team-header">
+                <div class="team-name">Nisya</div>
+                <div class="team-role">Sales Team Lead</div>
+            </div>
+            <div class="balance-section">
+                <div class="balance-label">Balance MTD</div>
+                <div class="balance-amount" id="nisya-balance">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="team-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Today's Sales</div>
+                    <div class="stat-value" id="nisya-today">RM 0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">MTD Target</div>
+                    <div class="stat-value" id="nisya-target">RM 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Qilah Team -->
+        <div class="team-card qilah">
+            <div class="status-indicator"></div>
+            <div class="team-header">
+                <div class="team-name">Qilah</div>
+                <div class="team-role">Sales Team Lead</div>
+            </div>
+            <div class="balance-section">
+                <div class="balance-label">Balance MTD</div>
+                <div class="balance-amount" id="qilah-balance">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="team-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Today's Sales</div>
+                    <div class="stat-value" id="qilah-today">RM 0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">MTD Target</div>
+                    <div class="stat-value" id="qilah-target">RM 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wiyah Team -->
+        <div class="team-card wiyah">
+            <div class="status-indicator"></div>
+            <div class="team-header">
+                <div class="team-name">Wiyah</div>
+                <div class="team-role">Sales Team Lead</div>
+            </div>
+            <div class="balance-section">
+                <div class="balance-label">Balance MTD</div>
+                <div class="balance-amount" id="wiyah-balance">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="team-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Today's Sales</div>
+                    <div class="stat-value" id="wiyah-today">RM 0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">MTD Target</div>
+                    <div class="stat-value" id="wiyah-target">RM 0</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK - Multiple CDN fallbacks -->
+    <script>
+        // Firebase loading with multiple CDN fallbacks
+        const firebaseVersion = '8.10.1';
+        const cdnSources = [
+            'https://www.gstatic.com/firebasejs/' + firebaseVersion,
+            'https://unpkg.com/firebase@' + firebaseVersion,
+            'https://cdn.jsdelivr.net/npm/firebase@' + firebaseVersion + '/firebase',
+            'https://cdnjs.cloudflare.com/ajax/libs/firebase/' + firebaseVersion
+        ];
+        
+        let currentCdnIndex = 0;
+        let scriptsToLoad = ['firebase-app.js', 'firebase-firestore.js'];
+        let loadedScripts = 0;
+        
+        function loadFirebaseScript(scriptName, cdnIndex = 0) {
+            return new Promise((resolve, reject) => {
+                if (cdnIndex >= cdnSources.length) {
+                    reject(new Error(`Failed to load ${scriptName} from all CDNs`));
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                const cdnUrl = cdnSources[cdnIndex];
+                script.src = `${cdnUrl}/${scriptName}`;
+                
+                script.onload = () => {
+                    console.log(`✅ ${scriptName} loaded from ${cdnUrl}`);
+                    resolve();
+                };
+                
+                script.onerror = () => {
+                    console.log(`❌ ${scriptName} failed from ${cdnUrl}, trying next CDN...`);
+                    // Remove failed script
+                    script.remove();
+                    // Try next CDN
+                    loadFirebaseScript(scriptName, cdnIndex + 1)
+                        .then(resolve)
+                        .catch(reject);
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Show loading progress
+        function showLoadingProgress() {
+            const progressDiv = document.createElement('div');
+            progressDiv.id = 'firebase-loading';
+            progressDiv.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; 
+                background: linear-gradient(135deg, #0f172a, #1e293b); 
+                color: white; padding: 0.75rem; text-align: center; z-index: 10000;
+                border-bottom: 2px solid #3b82f6;
+            `;
+            progressDiv.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem;">
+                    <div style="animation: spin 1s linear infinite;">🔄</div>
+                    <span id="loading-text">Loading Firebase for Balance Monitor...</span>
+                    <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 2px; min-width: 100px;">
+                        <div id="progress-bar" style="background: #3b82f6; height: 4px; border-radius: 4px; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                </style>
+            `;
+            
+            if (document.body) {
+                document.body.prepend(progressDiv);
+            } else {
+                document.documentElement.appendChild(progressDiv);
+            }
+        }
+        
+        function updateLoadingProgress(current, total, message) {
+            const progressBar = document.getElementById('progress-bar');
+            const loadingText = document.getElementById('loading-text');
+            
+            if (progressBar && loadingText) {
+                const percentage = (current / total) * 100;
+                progressBar.style.width = percentage + '%';
+                loadingText.textContent = message || `Loading... (${current}/${total})`;
+            }
+        }
+        
+        function hideLoadingProgress() {
+            const progressDiv = document.getElementById('firebase-loading');
+            if (progressDiv) {
+                progressDiv.remove();
+            }
+        }
+
+        // Load all Firebase scripts
+        async function loadAllFirebaseScripts() {
+            try {
+                showLoadingProgress();
+                console.log('🔄 Loading Firebase scripts for Balance Monitor...');
+                
+                for (const scriptName of scriptsToLoad) {
+                    updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loading ${scriptName}...`);
+                    await loadFirebaseScript(scriptName);
+                    loadedScripts++;
+                    updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loaded ${scriptName}`);
+                    console.log(`📦 Progress: ${loadedScripts}/${scriptsToLoad.length} scripts loaded`);
+                }
+                
+                updateLoadingProgress(scriptsToLoad.length, scriptsToLoad.length, 'Initializing Firebase...');
+                console.log('✅ All Firebase scripts loaded successfully');
+                
+                // Initialize Firebase immediately
+                setTimeout(() => {
+                    initializeFirebaseImmediate();
+                    hideLoadingProgress();
+                }, 200);
+                
+            } catch (error) {
+                console.error('❌ Failed to load Firebase scripts:', error);
+                hideLoadingProgress();
+                showOfflineMode();
+            }
+        }
+        
+        // Start loading when ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadAllFirebaseScripts);
+        } else {
+            loadAllFirebaseScripts();
+        }
+        
+        function showOfflineMode() {
+            const offlineDiv = document.createElement('div');
+            offlineDiv.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; 
+                background: linear-gradient(135deg, #1e293b, #334155); 
+                color: white; padding: 1rem; text-align: center; z-index: 10000;
+                border-bottom: 3px solid #ef4444;
+            `;
+            offlineDiv.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                    <div style="animation: pulse 2s infinite;">📡</div>
+                    <div>
+                        <h3 style="margin: 0; color: #fbbf24;">Offline Mode - Balance Monitor</h3>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
+                            Firebase CDN unavailable. Balance data will not be available.
+                        </p>
+                    </div>
+                    <button onclick="window.location.reload()" 
+                            style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        🔄 Retry
+                    </button>
+                </div>
+                <style>
+                    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+                </style>
+            `;
+            document.body.prepend(offlineDiv);
+        }
+    </script>
+    
+    <!-- Firebase Config -->
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDvqSuT4sQeJwB5Mb8wQZ4X4X4X4X4X4X",
+            authDomain: "kilangdm-v1.firebaseapp.com",
+            projectId: "kilangdm-v1",
+            storageBucket: "kilangdm-v1.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456"
+        };
+
+        // Immediate Firebase initialization (called after scripts load)
+        function initializeFirebaseImmediate() {
+            try {
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase object not available');
+                }
+                
+                console.log('🔥 Initializing Firebase for Balance Monitor...');
+                firebase.initializeApp(firebaseConfig);
+                window.db = firebase.firestore();
+                window.firebase = firebase;
+                
+                console.log('✅ Firebase initialized successfully for Balance Monitor');
+                window.dispatchEvent(new Event('firebaseReady'));
+                
+            } catch (error) {
+                console.error('❌ Firebase initialization error:', error);
+                showFirebaseError(error.message);
+            }
+        }
+
+        function showFirebaseError(message) {
+            const errorContainer = document.createElement('div');
+            errorContainer.style.cssText = 'padding: 1rem; background: #fee2e2; color: #b91c1c; margin: 1rem; border-radius: 0.5rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000;';
+            errorContainer.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0;">🔥 Firebase Error - Balance Monitor</h3>
+                        <p style="margin: 0.5rem 0;"><strong>Status:</strong> ${message}</p>
+                    </div>
+                    <button onclick="window.location.reload()" style="padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        🔄 Reload
+                    </button>
+                </div>
+            `;
+            document.body.prepend(errorContainer);
+        }
+    </script>
+
+    <!-- Main JavaScript -->
+    <script>
+        console.log('🖥️ Balance MTD Monitor v1.0 starting...');
+        
+        // Global variables
+        let isLoading = false;
+        let lastUpdate = null;
+        
+        // Update current time and date
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Update time
+            const timeString = now.toLocaleTimeString('ms-MY', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('time-display').textContent = timeString;
+            
+            // Update date
+            const dateString = now.toLocaleDateString('ms-MY', { 
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('current-date').textContent = dateString;
+        }
+        
+        // Format currency
+        function formatCurrency(amount) {
+            if (typeof amount !== 'number' || isNaN(amount)) {
+                return '<span class="balance-currency">RM</span>0.00';
+            }
+            
+            const formatted = amount.toLocaleString('ms-MY', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            return `<span class="balance-currency">RM</span>${formatted}`;
+        }
+        
+        // Calculate MTD (Month-to-Date) balance
+        function calculateMTDBalance(orders, teamName) {
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            let mtdTotal = 0;
+            let todayTotal = 0;
+            
+            orders.forEach(order => {
+                // Handle different team name formats
+                const orderTeam = (order.team || order.agent || order.agent_name || '').toLowerCase();
+                if (orderTeam !== teamName.toLowerCase()) {
+                    return;
+                }
+                
+                // Parse order date
+                let orderDate = null;
+                if (order.tarikh) {
+                    if (order.tarikh.toDate) {
+                        orderDate = order.tarikh.toDate();
+                    } else {
+                        orderDate = new Date(order.tarikh);
+                    }
+                }
+                
+                if (!orderDate || isNaN(orderDate.getTime())) {
+                    return;
+                }
+                
+                // Parse amount
+                const amount = parseFloat(order.amount || order.total || order.revenue || 0);
+                
+                // Check if order is in current month (MTD)
+                if (orderDate >= startOfMonth && orderDate <= now) {
+                    mtdTotal += amount;
+                    
+                    // Check if order is today
+                    if (orderDate >= startOfDay) {
+                        todayTotal += amount;
+                    }
+                }
+            });
+            
+            return {
+                mtd: mtdTotal,
+                today: todayTotal,
+                target: calculateMTDTarget() // You can implement target logic
+            };
+        }
+        
+        // Calculate MTD target (example: RM 50,000 per month)
+        function calculateMTDTarget() {
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const daysPassed = now.getDate();
+            const monthlyTarget = 50000; // RM 50K per team per month
+            
+            return (monthlyTarget / daysInMonth) * daysPassed;
+        }
+        
+        // Update team balance display
+        function updateTeamBalance(teamName, data) {
+            const teamKey = teamName.toLowerCase();
+            const balanceElement = document.getElementById(`${teamKey}-balance`);
+            const todayElement = document.getElementById(`${teamKey}-today`);
+            const targetElement = document.getElementById(`${teamKey}-target`);
+            
+            if (balanceElement) {
+                balanceElement.innerHTML = formatCurrency(data.mtd);
+                balanceElement.classList.add('updating');
+                setTimeout(() => balanceElement.classList.remove('updating'), 1000);
+            }
+            
+            if (todayElement) {
+                todayElement.textContent = formatCurrency(data.today).replace(/<[^>]*>/g, '');
+            }
+            
+            if (targetElement) {
+                targetElement.textContent = formatCurrency(data.target).replace(/<[^>]*>/g, '');
+            }
+        }
+        
+        // Show error state
+        function showError(teamName, message) {
+            const teamKey = teamName.toLowerCase();
+            const balanceElement = document.getElementById(`${teamKey}-balance`);
+            
+            if (balanceElement) {
+                balanceElement.innerHTML = `
+                    <div class="error-state">
+                        <div class="error-icon">⚠️</div>
+                        <div>Error loading data</div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Fetch balance data from Firebase
+        async function fetchBalanceData() {
+            if (isLoading) return;
+            
+            // Check if Firebase is ready
+            if (!window.db) {
+                console.warn('⚠️ Firebase not ready yet, waiting...');
+                setTimeout(fetchBalanceData, 1000);
+                return;
+            }
+            
+            console.log('📊 Fetching balance data...');
+            isLoading = true;
+            
+            try {
+                // Fetch order data from Firebase
+                const ordersSnapshot = await window.db.collection('orders').get();
+                const ecommerceSnapshot = await window.db.collection('ecommerceData').get();
+                
+                let allOrders = [];
+                
+                // Process orders collection
+                ordersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    allOrders.push({ ...data, id: doc.id, source: 'orders' });
+                });
+                
+                // Process ecommerce collection
+                ecommerceSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    allOrders.push({ ...data, id: doc.id, source: 'ecommerce' });
+                });
+                
+                console.log(`📊 Loaded ${allOrders.length} orders`);
+                
+                // Calculate and update balances for each team
+                const teams = ['Nisya', 'Qilah', 'Wiyah'];
+                
+                teams.forEach(teamName => {
+                    try {
+                        const balanceData = calculateMTDBalance(allOrders, teamName);
+                        updateTeamBalance(teamName, balanceData);
+                        console.log(`💰 ${teamName} MTD: RM ${balanceData.mtd.toFixed(2)}, Today: RM ${balanceData.today.toFixed(2)}`);
+                    } catch (error) {
+                        console.error(`❌ Error calculating balance for ${teamName}:`, error);
+                        showError(teamName, error.message);
+                    }
+                });
+                
+                lastUpdate = new Date();
+                console.log('✅ Balance data updated successfully');
+                
+            } catch (error) {
+                console.error('❌ Error fetching balance data:', error);
+                
+                // Show error for all teams
+                ['Nisya', 'Qilah', 'Wiyah'].forEach(teamName => {
+                    showError(teamName, error.message);
+                });
+            } finally {
+                isLoading = false;
+            }
+        }
+        
+        // Initialize the monitor
+        function initializeMonitor() {
+            console.log('🚀 Initializing Balance MTD Monitor...');
+            
+            // Update date/time immediately and every second
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // Wait for Firebase to be ready before fetching data
+            if (window.db) {
+                fetchBalanceData();
+            } else {
+                console.log('⏳ Waiting for Firebase to initialize...');
+                window.addEventListener('firebaseReady', () => {
+                    console.log('🔥 Firebase ready, fetching data...');
+                    fetchBalanceData();
+                });
+            }
+            
+            // Refresh data every 30 seconds
+            setInterval(fetchBalanceData, 30000);
+            
+            // Handle window focus (refresh when user returns to tab)
+            window.addEventListener('focus', () => {
+                console.log('👁️ Window focused, refreshing data...');
+                fetchBalanceData();
+            });
+            
+            // Handle page visibility change
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    console.log('👁️ Page visible, refreshing data...');
+                    fetchBalanceData();
+                }
+            });
+            
+            console.log('✅ Monitor initialized successfully');
+        }
+        
+        // Error handling
+        window.addEventListener('error', (e) => {
+            console.error('💥 Global error:', e.error);
+        });
+        
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeMonitor);
+        } else {
+            initializeMonitor();
+        }
+        
+        // Keyboard shortcuts for full screen
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F11' || (e.key === 'f' && e.ctrlKey)) {
+                e.preventDefault();
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    document.documentElement.requestFullscreen();
+                }
+            }
+        });
+        
+        console.log('🖥️ Balance MTD Monitor loaded successfully');
+    </script>
+</body>
+</html>

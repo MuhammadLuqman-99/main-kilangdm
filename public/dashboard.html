@@ -224,6 +224,10 @@
                     <i class="fas fa-phone"></i>
                     <span>Follow Up</span>
                 </a>
+                <a href="balance-monitor.html" class="nav-link" title="Full Screen Balance Monitor">
+                    <i class="fas fa-tv"></i>
+                    <span>Balance Monitor</span>
+                </a>
             </div>
 
             <!-- Time Display -->
@@ -723,6 +727,35 @@
                     <h4 class="metric-title">Hari Kerja</h4>
                     <p class="metric-value" id="working-days-info">0 / 0</p>
                     <p class="metric-desc" id="working-days-desc">hari ini / total</p>
+                </div>
+
+                <!-- Balance MTD Monitor Widget -->
+                <div class="metric-card balance-mtd-widget" onclick="openBalanceMonitor()" style="cursor: pointer;">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fas fa-tv"></i>
+                        </div>
+                        <span class="metric-status">Monitor</span>
+                    </div>
+                    <h4 class="metric-title">Balance MTD Teams</h4>
+                    <div class="balance-preview" id="balance-preview">
+                        <div class="team-balance">
+                            <span class="team-name">Nisya:</span>
+                            <span class="team-amount" id="nisya-mtd-preview">RM 0</span>
+                        </div>
+                        <div class="team-balance">
+                            <span class="team-name">Qilah:</span>
+                            <span class="team-amount" id="qilah-mtd-preview">RM 0</span>
+                        </div>
+                        <div class="team-balance">
+                            <span class="team-name">Wiyah:</span>
+                            <span class="team-amount" id="wiyah-mtd-preview">RM 0</span>
+                        </div>
+                    </div>
+                    <p class="metric-desc">
+                        <i class="fas fa-external-link-alt"></i>
+                        Click untuk full screen monitor
+                    </p>
                 </div>
             </div>
 
