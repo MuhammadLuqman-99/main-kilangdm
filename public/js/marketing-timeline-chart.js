@@ -17,9 +17,9 @@ export function createMarketingTimelineChart(data = null) {
         console.log('📈 Processing ONLY real Firebase timeline data...');
         processedData = processTimelineData(data);
         
-        if (!processedData.dates || processedData.dates.length === 0) {
-            console.warn('⚠️ No timeline data found in Firebase. Chart will show "No Data" message.');
-            showNoDataMessage(ctx, 'No Timeline Data Available', 'Please ensure marketing cost and lead data with dates exist in Firebase.');
+        if (!processedData.teams || processedData.teams.length === 0) {
+            console.warn('⚠️ No team lead data found in Firebase. Chart will show "No Data" message.');
+            showNoDataMessage(ctx, 'No Team Lead Data Available', 'Please ensure sales team lead data (cold/warm/hot) exists in Firebase.');
             return null;
         }
     } else {
@@ -34,49 +34,50 @@ export function createMarketingTimelineChart(data = null) {
         existingChart.destroy();
     }
 
-    // Create dual-axis timeline chart
+    // Create simple bar chart with lead type breakdown
     const chart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
-            labels: processedData.dates,
+            labels: processedData.teams,
             datasets: [
                 {
-                    label: 'Marketing Cost (RM)',
-                    data: processedData.marketingCosts,
-                    borderColor: 'rgba(239, 68, 68, 1)', // red
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: 'rgba(239, 68, 68, 1)',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    yAxisID: 'y'
+                    label: 'Cold Leads',
+                    data: processedData.coldLeads,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)', // blue
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6
                 },
                 {
-                    label: 'Leads Masuk',
-                    data: processedData.leadCounts,
+                    label: 'Warm Leads',
+                    data: processedData.warmLeads,
+                    backgroundColor: 'rgba(251, 191, 36, 0.8)', // yellow/orange
+                    borderColor: 'rgba(251, 191, 36, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6
+                },
+                {
+                    label: 'Hot Leads',
+                    data: processedData.hotLeads,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)', // red
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6
+                },
+                {
+                    label: 'Marketing Cost (RM)',
+                    data: processedData.teamCosts,
+                    type: 'line',
                     borderColor: 'rgba(16, 185, 129, 1)', // green
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     borderWidth: 3,
-                    fill: true,
+                    fill: false,
                     tension: 0.4,
                     pointBackgroundColor: 'rgba(16, 185, 129, 1)',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
-                    pointRadius: 5,
+                    pointRadius: 6,
                     yAxisID: 'y1'
-                },
-                {
-                    label: 'Cost per Lead (RM)',
-                    data: processedData.costPerLead,
-                    type: 'bar',
-                    backgroundColor: 'rgba(59, 130, 246, 0.6)', // blue
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    yAxisID: 'y'
                 }
             ]
         },
@@ -90,7 +91,7 @@ export function createMarketingTimelineChart(data = null) {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Marketing Cost vs Lead Timeline Analysis',
+                    text: 'Lead Performance by Sales Team (Cold/Warm/Hot)',
                     color: '#e2e8f0',
                     font: {
                         size: 18,
@@ -116,6 +117,11 @@ export function createMarketingTimelineChart(data = null) {
                     borderColor: '#475569',
                     borderWidth: 1,
                     callbacks: {
+                        title: function(tooltipItems) {
+                            const teamIndex = tooltipItems[0].dataIndex;
+                            const team = processedData.teams[teamIndex];
+                            return `👤 Team: ${team}`;
+                        },
                         label: function(context) {
                             const datasetLabel = context.dataset.label;
                             const value = context.parsed.y;
@@ -127,16 +133,19 @@ export function createMarketingTimelineChart(data = null) {
                             }
                         },
                         afterBody: function(tooltipItems) {
-                            const dataIndex = tooltipItems[0].dataIndex;
-                            const date = processedData.dates[dataIndex];
-                            const cost = processedData.marketingCosts[dataIndex];
-                            const leads = processedData.leadCounts[dataIndex];
-                            const efficiency = leads > 0 ? (cost / leads).toFixed(2) : 'N/A';
+                            const teamIndex = tooltipItems[0].dataIndex;
+                            const cold = processedData.coldLeads[teamIndex] || 0;
+                            const warm = processedData.warmLeads[teamIndex] || 0;
+                            const hot = processedData.hotLeads[teamIndex] || 0;
+                            const cost = processedData.teamCosts[teamIndex] || 0;
+                            const totalLeads = cold + warm + hot;
+                            const efficiency = totalLeads > 0 ? (cost / totalLeads).toFixed(2) : 'N/A';
                             
                             return [
                                 '',
-                                `Date: ${date}`,
-                                `Efficiency: RM ${efficiency} per lead`
+                                `📊 Total Leads: ${totalLeads}`,
+                                `💰 Cost per Lead: RM ${efficiency}`,
+                                `🔥 Hot Rate: ${totalLeads > 0 ? ((hot / totalLeads) * 100).toFixed(1) : 0}%`
                             ];
                         }
                     }
@@ -152,7 +161,16 @@ export function createMarketingTimelineChart(data = null) {
                         font: {
                             size: 11
                         },
-                        maxRotation: 45
+                        maxRotation: 0
+                    },
+                    title: {
+                        display: true,
+                        text: 'Sales Team',
+                        color: '#94a3b8',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
                     }
                 },
                 y: {
@@ -164,18 +182,18 @@ export function createMarketingTimelineChart(data = null) {
                         color: 'rgba(51, 65, 85, 0.5)'
                     },
                     ticks: {
-                        color: '#ef4444',
+                        color: '#94a3b8',
                         font: {
                             size: 11
                         },
                         callback: function(value) {
-                            return 'RM ' + value.toFixed(0);
+                            return Math.round(value) + ' leads';
                         }
                     },
                     title: {
                         display: true,
-                        text: 'Marketing Cost (RM)',
-                        color: '#ef4444',
+                        text: 'Number of Leads',
+                        color: '#94a3b8',
                         font: {
                             size: 12,
                             weight: 'bold'
@@ -196,12 +214,12 @@ export function createMarketingTimelineChart(data = null) {
                             size: 11
                         },
                         callback: function(value) {
-                            return Math.round(value) + ' leads';
+                            return 'RM ' + value.toFixed(0);
                         }
                     },
                     title: {
                         display: true,
-                        text: 'Leads Count',
+                        text: 'Marketing Cost (RM)',
                         color: '#10b981',
                         font: {
                             size: 12,
@@ -226,126 +244,103 @@ export function createMarketingTimelineChart(data = null) {
 }
 
 function processTimelineData(data) {
-    console.log('🔄 Processing ONLY real Firebase timeline data...');
+    console.log('🔄 Processing real Firebase data for team lead breakdown...');
     console.log('📊 Available data:', {
         marketing: data.marketing?.length || 0,
         salesteam: data.salesteam?.length || 0
     });
     
-    const timelineData = {};
+    const teamData = {};
     
-    // 1. Process marketing cost data by date
-    if (data.marketing && data.marketing.length > 0) {
-        console.log('📈 Processing marketing cost by date...');
-        
-        data.marketing.forEach((item) => {
-            const date = item.tarikh || item.date;
-            const time = item.masa || item.time;
-            
-            if (!date) return; // Skip items without date
-            
-            // Parse date consistently
-            const dateKey = formatDateKey(date);
-            if (!dateKey) return;
-            
-            // Get spend amount
-            let spend = 0;
-            if (item.spend) spend = parseFloat(item.spend);
-            else if (item.budget) spend = parseFloat(item.budget);
-            else if (item.cost) spend = parseFloat(item.cost);
-            else if (item.amount) spend = parseFloat(item.amount);
-            
-            if (spend > 0) {
-                if (!timelineData[dateKey]) {
-                    timelineData[dateKey] = {
-                        date: dateKey,
-                        marketingCost: 0,
-                        leadCount: 0,
-                        submissions: []
-                    };
-                }
-                
-                timelineData[dateKey].marketingCost += spend;
-                timelineData[dateKey].submissions.push({
-                    type: 'marketing',
-                    amount: spend,
-                    time: time,
-                    team: item.team_sale || item.team || 'Unknown'
-                });
-                
-                console.log(`💰 Marketing: ${dateKey} = RM ${spend} (total: RM ${timelineData[dateKey].marketingCost})`);
-            }
-        });
-    }
-    
-    // 2. Process lead submissions by date from salesteam
+    // 1. Process salesteam lead data with cold/warm/hot breakdown
     if (data.salesteam && data.salesteam.length > 0) {
-        console.log('📊 Processing lead submissions by date...');
+        console.log('📊 Processing lead data by team...');
         
         data.salesteam
             .filter(item => item.type === 'lead' || item.type === 'lead_semasa')
             .forEach((item) => {
-                const date = item.tarikh || item.date;
-                const time = item.masa || item.time;
+                const team = item.team || item.agent || item.agent_name || 'Unknown Team';
                 
-                if (!date) return; // Skip items without date
-                
-                // Parse date consistently  
-                const dateKey = formatDateKey(date);
-                if (!dateKey) return;
-                
-                // Count leads
-                const leadCount = parseInt(item.total_lead) || 1; // Default to 1 lead if not specified
-                
-                if (!timelineData[dateKey]) {
-                    timelineData[dateKey] = {
-                        date: dateKey,
+                if (!teamData[team]) {
+                    teamData[team] = {
+                        coldLeads: 0,
+                        warmLeads: 0,
+                        hotLeads: 0,
                         marketingCost: 0,
-                        leadCount: 0,
-                        submissions: []
+                        entries: 0
                     };
                 }
                 
-                timelineData[dateKey].leadCount += leadCount;
-                timelineData[dateKey].submissions.push({
-                    type: 'lead',
-                    count: leadCount,
-                    time: time,
-                    team: item.team || item.agent || item.agent_name || 'Unknown'
-                });
+                // Get lead counts
+                const coldCount = parseInt(item.cold) || 0;
+                const warmCount = parseInt(item.warm) || 0;
+                const hotCount = parseInt(item.hot) || 0;
                 
-                console.log(`🎯 Leads: ${dateKey} = ${leadCount} leads (total: ${timelineData[dateKey].leadCount})`);
+                teamData[team].coldLeads += coldCount;
+                teamData[team].warmLeads += warmCount;
+                teamData[team].hotLeads += hotCount;
+                teamData[team].entries++;
+                
+                console.log(`👤 ${team}: Cold=${coldCount}, Warm=${warmCount}, Hot=${hotCount}`);
             });
     }
     
-    // 3. Sort dates and prepare chart data
-    const sortedDates = Object.keys(timelineData)
-        .sort((a, b) => new Date(a) - new Date(b))
-        .slice(-30); // Keep last 30 days
+    // 2. Process marketing cost data by team
+    if (data.marketing && data.marketing.length > 0) {
+        console.log('💰 Processing marketing cost by team...');
+        
+        data.marketing
+            .filter(item => item.type === 'lead_semasa' || item.spend > 0)
+            .forEach((item) => {
+                const team = item.team_sale || item.team || 'Unknown Team';
+                
+                // Get spend amount
+                let spend = 0;
+                if (item.spend) spend = parseFloat(item.spend);
+                else if (item.budget) spend = parseFloat(item.budget);
+                else if (item.cost) spend = parseFloat(item.cost);
+                else if (item.amount) spend = parseFloat(item.amount);
+                
+                if (spend > 0) {
+                    if (!teamData[team]) {
+                        teamData[team] = {
+                            coldLeads: 0,
+                            warmLeads: 0,
+                            hotLeads: 0,
+                            marketingCost: 0,
+                            entries: 0
+                        };
+                    }
+                    
+                    teamData[team].marketingCost += spend;
+                    console.log(`💰 ${team}: Cost += RM ${spend} (total: RM ${teamData[team].marketingCost})`);
+                }
+            });
+    }
     
-    console.log(`📅 Found timeline data for ${sortedDates.length} dates:`, sortedDates);
+    // 3. Prepare chart data arrays
+    const teams = Object.keys(teamData);
+    console.log(`👥 Found ${teams.length} teams:`, teams);
     
-    if (sortedDates.length === 0) {
-        console.warn('⚠️ No dates found in timeline data!');
-        return { dates: [] };
+    if (teams.length === 0) {
+        console.warn('⚠️ No team data found!');
+        return { teams: [] };
     }
     
     const chartData = {
-        dates: sortedDates.map(date => formatDisplayDate(date)),
-        marketingCosts: sortedDates.map(date => timelineData[date]?.marketingCost || 0),
-        leadCounts: sortedDates.map(date => timelineData[date]?.leadCount || 0),
-        costPerLead: sortedDates.map(date => {
-            const cost = timelineData[date]?.marketingCost || 0;
-            const leads = timelineData[date]?.leadCount || 0;
-            return leads > 0 ? cost / leads : 0;
-        })
+        teams: teams,
+        coldLeads: teams.map(team => teamData[team].coldLeads),
+        warmLeads: teams.map(team => teamData[team].warmLeads),
+        hotLeads: teams.map(team => teamData[team].hotLeads),
+        teamCosts: teams.map(team => teamData[team].marketingCost)
     };
     
-    console.log('📊 Processed timeline data:', {
-        dates: chartData.dates.length,
-        totalCost: chartData.marketingCosts.reduce((a, b) => a + b, 0),
-        totalLeads: chartData.leadCounts.reduce((a, b) => a + b, 0),
-        avgCostPerLead: chartData.costPerLead.reduce((a, b) => a + b, 0) / chartData.costPerLead.filter(x => x > 0).length
+    console.log('📊 Processed team lead breakdown:', {
+        teams: chartData.teams.length,
+        totalCold: chartData.coldLeads.reduce((a, b) => a + b, 0),
+        totalWarm: chartData.warmLeads.reduce((a, b) => a + b, 0),
+        totalHot: chartData.hotLeads.reduce((a, b) => a + b, 0),
+        totalCost: chartData.teamCosts.reduce((a, b) => a + b, 0)
     });
     
     return chartData;

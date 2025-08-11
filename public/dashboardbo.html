@@ -30,55 +30,106 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="KilangDM">
     
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <!-- Firebase Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <!-- Firebase Auth -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <!-- Firebase Analytics -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js"></script>
+    <!-- Firebase SDK - Simple reliable version -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" 
+            onerror="console.log('Firebase App failed, trying fallback'); this.src='https://unpkg.com/firebase@8.10.1/firebase-app.js'"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" 
+            onerror="console.log('Firebase Firestore failed, trying fallback'); this.src='https://unpkg.com/firebase@8.10.1/firebase-firestore.js'"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" 
+            onerror="console.log('Firebase Auth failed, trying fallback'); this.src='https://unpkg.com/firebase@8.10.1/firebase-auth.js'"></script>
     
     <!-- Firebase Config -->
     <script>
-    // Initialize Firebase with error handling
+    // Simple Firebase initialization 
     document.addEventListener('DOMContentLoaded', function() {
-        const firebaseConfig = {
-            apiKey: "AIzaSyDvqSuT4sQeJwB5Mb8wQZ4X4X4X4X4X4X",
-            authDomain: "kilangdm-v1.firebaseapp.com",
-            projectId: "kilangdm-v1",
-            storageBucket: "kilangdm-v1.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef123456",
-            measurementId: "G-ABCDEFGHIJ"
-        };
+        // Wait a bit for Firebase scripts to load
+        setTimeout(() => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyDvqSuT4sQeJwB5Mb8wQZ4X4X4X4X4X4X",
+                authDomain: "kilangdm-v1.firebaseapp.com",
+                projectId: "kilangdm-v1",
+                storageBucket: "kilangdm-v1.appspot.com",
+                messagingSenderId: "123456789012",
+                appId: "1:123456789012:web:abcdef123456",
+                measurementId: "G-ABCDEFGHIJ"
+            };
 
-        try {
-            // Initialize Firebase
-            firebase.initializeApp(firebaseConfig);
-            console.log('Firebase initialized successfully');
-            
-            // Make db globally available
-            window.db = firebase.firestore();
-            
-            // Dispatch event when Firebase is ready
-            window.dispatchEvent(new Event('firebaseReady'));
-            
-        } catch (error) {
-            console.error('Firebase initialization error:', error);
-            const errorContainer = document.createElement('div');
-            errorContainer.style.padding = '1rem';
-            errorContainer.style.background = '#fee2e2';
-            errorContainer.style.color = '#b91c1c';
-            errorContainer.style.margin = '1rem';
-            errorContainer.style.borderRadius = '0.5rem';
-            errorContainer.innerHTML = `
-                <h3>Error Initializing Firebase</h3>
-                <p>${error.message}</p>
-                <button onclick="window.location.reload()">Reload Page</button>
-            `;
-            document.body.prepend(errorContainer);
-        }
+            try {
+                if (typeof firebase === 'undefined') {
+                    console.log('⏳ Firebase not ready yet, waiting...');
+                    // Try again after a delay
+                    setTimeout(() => {
+                        if (typeof firebase !== 'undefined') {
+                            firebase.initializeApp(firebaseConfig);
+                            window.db = firebase.firestore();
+                            window.firebase = firebase;
+                            console.log('✅ Firebase initialized successfully (delayed)');
+                            window.dispatchEvent(new Event('firebaseReady'));
+                        } else {
+                            showFirebaseError('Firebase SDK failed to load from CDN');
+                        }
+                    }, 2000);
+                } else {
+                    firebase.initializeApp(firebaseConfig);
+                    window.db = firebase.firestore();
+                    window.firebase = firebase;
+                    console.log('✅ Firebase initialized successfully');
+                    window.dispatchEvent(new Event('firebaseReady'));
+                }
+            } catch (error) {
+                console.error('❌ Firebase initialization error:', error);
+                showFirebaseError(error.message);
+            }
+        }, 1000); // Wait 1 second for scripts to load
+    });
+
+    function showFirebaseError(message) {
+        // Check if user is offline
+        const isOffline = !navigator.onLine;
+        const offlineMessage = isOffline ? ' (You are currently offline)' : '';
+        
+        const errorContainer = document.createElement('div');
+        errorContainer.style.cssText = 'padding: 1rem; background: #fee2e2; color: #b91c1c; margin: 1rem; border-radius: 0.5rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);';
+        errorContainer.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">${isOffline ? '📡' : '🔥'} ${isOffline ? 'Offline Mode' : 'Firebase Connection Issue'}</h3>
+                    <p style="margin: 0.5rem 0; font-size: 0.9rem;"><strong>Status:</strong> ${message}${offlineMessage}</p>
+                    <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">
+                        ${isOffline ? 'Check your internet connection' : 'Pastikan internet connection stable'}
+                    </p>
+                </div>
+                <div>
+                    <button onclick="window.location.reload()" 
+                            style="padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; font-size: 0.9rem;">
+                        🔄 Reload
+                    </button>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="padding: 0.5rem; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                        ✕
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.prepend(errorContainer);
+        
+        // Auto-remove after 15 seconds (longer for offline)
+        setTimeout(() => {
+            if (errorContainer.parentElement) {
+                errorContainer.remove();
+            }
+        }, isOffline ? 15000 : 10000);
+    }
+
+    // Listen for online/offline events
+    window.addEventListener('online', function() {
+        console.log('✅ Back online, attempting to reload Firebase...');
+        setTimeout(() => window.location.reload(), 1000);
+    });
+
+    window.addEventListener('offline', function() {
+        console.log('📡 Gone offline');
+        showFirebaseError('No internet connection detected');
     });
     </script>
     <!-- Core Scripts -->

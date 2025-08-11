@@ -11,24 +11,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkFirebase = setInterval(() => {
         attempts++;
         console.log(`🔄 Checking Firebase for orders... Attempt ${attempts}/${maxAttempts}`);
+        console.log('🔍 Firebase status:', {
+            firebase: !!window.firebase,
+            db: !!window.db,
+            firebaseType: typeof window.firebase,
+            dbType: typeof window.db
+        });
         
-        if (window.db) {
+        if (window.db && window.firebase) {
             console.log('✅ Firebase ready, loading order data...');
             clearInterval(checkFirebase);
             initializeOrderDashboard();
         } else if (attempts >= maxAttempts) {
-            console.error('❌ Firebase initialization timeout after', maxAttempts * 100 / 1000, 'seconds');
+            console.error('❌ Firebase initialization timeout after', maxAttempts * 200 / 1000, 'seconds');
             clearInterval(checkFirebase);
             showErrorState();
             
             // Show user-friendly retry option
             setTimeout(() => {
-                if (confirm('Connection timeout. Reload page to retry?')) {
+                if (confirm('Firebase connection timeout. Reload page to retry?')) {
                     window.location.reload();
                 }
             }, 2000);
         }
-    }, 200); // Increased interval from 100ms to 200ms for stability
+    }, 200);
 });
 
 // ===================================================
@@ -38,18 +44,33 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeOrderDashboard() {
     try {
         console.log('📊 Loading order dashboard...');
+        console.log('🔍 Firebase DB available:', !!window.db);
+        console.log('🔍 Document ready state:', document.readyState);
         
         // Show loading state
         showLoadingState();
         
         // Fetch order data from Firebase
+        console.log('⏳ Calling fetchOrderData...');
         const orderData = await fetchOrderData();
         console.log('📦 Order data loaded:', orderData.length, 'orders');
+        console.log('📄 Sample order data:', orderData[0]);
+        
+        // Verify HTML elements exist
+        const container = document.getElementById('enhanced-orders-container');
+        console.log('🔍 Enhanced orders container found:', !!container);
         
         // Update dashboard with data
+        console.log('📊 Updating KPIs...');
         updateOrderKPIs(orderData);
+        
+        console.log('📈 Updating charts...');
         updateOrderCharts(orderData);
+        
+        console.log('📋 Updating tables...');
         updateOrderTables(orderData);
+        
+        console.log('🔍 Updating enhanced order details...');
         updateEnhancedOrderDetails(orderData);
         
         // Setup filter event listeners
@@ -72,24 +93,65 @@ async function initializeOrderDashboard() {
 
 async function fetchOrderData() {
     try {
-        const { collection, getDocs, query, orderBy } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        // Use Firebase v8 syntax instead of v9+ imports
+        if (!window.firebase || !window.firebase.firestore) {
+            throw new Error('Firebase not initialized or Firestore not available');
+        }
         
-        console.log('🔍 Fetching from orderData collection...');
-        const ordersRef = collection(window.db, 'orderData');
+        const db = window.firebase.firestore();
+        
+        // Debug: Check all available collections
+        console.log('🔍 Checking available collections...');
+        const collections = ['orderData', 'orders', 'Order', 'formData', 'ecommerceOrders', 'submissions'];
+        let foundData = [];
+        let workingCollection = null;
+        
+        for (const collectionName of collections) {
+            try {
+                console.log(`🔍 Trying collection: ${collectionName}`);
+                const testRef = db.collection(collectionName);
+                const testSnapshot = await testRef.get();
+                const testSize = testSnapshot.size;
+                console.log(`📊 Collection ${collectionName}: ${testSize} documents`);
+                
+                if (testSize > 0) {
+                    foundData = testSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    workingCollection = collectionName;
+                    console.log(`✅ Found ${testSize} documents in ${collectionName}`);
+                    break;
+                }
+            } catch (error) {
+                console.log(`❌ Error accessing ${collectionName}:`, error.message);
+            }
+        }
+        
+        if (workingCollection) {
+            console.log(`🔍 Using collection: ${workingCollection} with ${foundData.length} documents`);
+            console.log('📄 Sample document:', foundData[0]);
+            
+            // If we already found data, return it directly
+            console.log('✅ Returning found data directly from collection scan');
+            return foundData;
+        }
+        
+        // Fallback to original logic if no data found in any collection
+        console.log('⚠️ No data found in any collection, trying orderData as fallback...');
+        const ordersRef = db.collection('orderData');
         
         // Try without ordering first to see if there's any data
         let querySnapshot;
         try {
-            const q = query(ordersRef, orderBy('createdAt', 'desc'));
-            querySnapshot = await getDocs(q);
+            querySnapshot = await ordersRef.orderBy('createdAt', 'desc').get();
         } catch (orderError) {
             console.log('⚠️ Ordering by createdAt failed, trying timestamp...');
             try {
-                const q = query(ordersRef, orderBy('timestamp', 'desc'));
-                querySnapshot = await getDocs(q);
+                querySnapshot = await ordersRef.orderBy('timestamp', 'desc').get();
             } catch (timestampError) {
                 console.log('⚠️ Ordering failed, fetching all documents...');
-                querySnapshot = await getDocs(ordersRef);
+                querySnapshot = await ordersRef.get();
             }
         }
         
@@ -159,15 +221,17 @@ function updateOrderKPIs(orders) {
     const todayString = today.toDateString();
     const last30Days = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
     
-    // Today's data
-    const todayOrders = orders.filter(order => 
-        new Date(order.timestamp || order.createdAt || order.tarikh).toDateString() === todayString
-    );
+    // Today's data - using enhanced date parsing
+    const todayOrders = orders.filter(order => {
+        const orderDate = parseDate(order.timestamp || order.createdAt || order.tarikh || order.date);
+        return orderDate && orderDate.toDateString() === todayString;
+    });
     
-    // Last 30 days data
-    const last30DaysOrders = orders.filter(order => 
-        new Date(order.timestamp || order.createdAt || order.tarikh) >= last30Days
-    );
+    // Last 30 days data - using enhanced date parsing
+    const last30DaysOrders = orders.filter(order => {
+        const orderDate = parseDate(order.timestamp || order.createdAt || order.tarikh || order.date);
+        return orderDate && orderDate >= last30Days;
+    });
     
     // Calculate metrics
     const totalRevenue = orders.reduce((sum, order) => 
@@ -195,9 +259,11 @@ function updateOrderKPIs(orders) {
     updateElement('total-orders', totalOrders);
     updateElement('avg-order-value', formatCurrency(avgOrderValue));
     
-    // Calculate trends (compare with previous period)
+    // Calculate trends (compare with previous period) - using enhanced date parsing
     const previousPeriod = orders.filter(order => {
-        const orderDate = new Date(order.timestamp || order.createdAt || order.tarikh);
+        const orderDate = parseDate(order.timestamp || order.createdAt || order.tarikh || order.date);
+        if (!orderDate) return false;
+        
         const previous30Days = new Date(last30Days.getTime() - 30 * 24 * 60 * 60 * 1000);
         return orderDate >= previous30Days && orderDate < last30Days;
     });
@@ -265,11 +331,12 @@ function updateOrderTrendChart(orders) {
         last30Days.push(date);
     }
     
-    // Group orders by day
+    // Group orders by day - using enhanced date parsing
     const dailyOrders = last30Days.map(date => {
-        const dayOrders = orders.filter(order => 
-            new Date(order.timestamp || order.createdAt || order.tarikh).toDateString() === date.toDateString()
-        );
+        const dayOrders = orders.filter(order => {
+            const orderDate = parseDate(order.timestamp || order.createdAt || order.tarikh || order.date);
+            return orderDate && orderDate.toDateString() === date.toDateString();
+        });
         
         return {
             date: date,
@@ -691,6 +758,24 @@ function getAllProductsFromOrder(order) {
 function updateEnhancedOrderDetails(orders) {
     console.log('📋 Updating Enhanced Order Details with', orders.length, 'orders');
     
+    // Enhanced debugging - log first few orders to understand structure
+    if (orders.length > 0) {
+        console.log('🔍 First 3 orders structure:');
+        orders.slice(0, 3).forEach((order, index) => {
+            console.log(`📄 Order ${index + 1}:`, {
+                id: order.id,
+                keys: Object.keys(order),
+                invoice: order.nombor_po_invoice || order.invoice,
+                rawDate: order.tarikh || order.timestamp || order.createdAt,
+                dateType: typeof (order.tarikh || order.timestamp || order.createdAt),
+                team: order.team_sale || order.agent || order.team,
+                amount: order.jumlah_bayar || order.total_amount || order.amount,
+                products: order.structuredProducts ? `${order.structuredProducts.length} structured` : 'no structured',
+                rawProductsKeys: Object.keys(order).filter(key => key.toLowerCase().includes('produk') || key.toLowerCase().includes('product'))
+            });
+        });
+    }
+    
     const container = document.getElementById('enhanced-orders-container');
     if (!container) {
         console.error('❌ Enhanced orders container not found');
@@ -720,10 +805,26 @@ function updateEnhancedOrderDetails(orders) {
         console.log('📊 Using REAL orders from Firebase:', orders.length, 'items');
     }
     
-    // Sort orders by date (newest first)
-    const sortedOrders = orders.sort((a, b) => 
-        new Date(b.timestamp || b.createdAt || b.tarikh) - new Date(a.timestamp || a.createdAt || a.tarikh)
-    );
+    // Sort orders by date (newest first) - using enhanced date parsing
+    const sortedOrders = orders.sort((a, b) => {
+        const dateA = parseDate(a.timestamp || a.createdAt || a.tarikh || a.date);
+        const dateB = parseDate(b.timestamp || b.createdAt || b.tarikh || b.date);
+        
+        // Handle null dates by putting them at the end
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        
+        // Sort newest first (descending)
+        return dateB.getTime() - dateA.getTime();
+    });
+    
+    // Log sorting results
+    if (sortedOrders.length > 0) {
+        console.log('📅 Order sorting results:');
+        console.log('🔺 Newest order:', formatDateForEnhanced(sortedOrders[0].timestamp || sortedOrders[0].createdAt || sortedOrders[0].tarikh));
+        console.log('🔻 Oldest order:', formatDateForEnhanced(sortedOrders[sortedOrders.length - 1].timestamp || sortedOrders[sortedOrders.length - 1].createdAt || sortedOrders[sortedOrders.length - 1].tarikh));
+    }
     
     container.innerHTML = sortedOrders.map((order, index) => {
         const products = getAllProductsFromOrder(order);
@@ -910,9 +1011,9 @@ function getSourceText(source) {
 }
 
 function formatDateForTable(dateInput) {
-    if (!dateInput) return 'N/A';
+    const date = parseDate(dateInput);
+    if (!date) return 'N/A';
     
-    const date = new Date(dateInput);
     return date.toLocaleDateString('ms-MY', {
         day: '2-digit',
         month: 'short',
@@ -921,9 +1022,10 @@ function formatDateForTable(dateInput) {
 }
 
 function formatDateForEnhanced(dateInput) {
-    if (!dateInput) return 'N/A';
+    const date = parseDate(dateInput);
+    if (!date) return 'N/A';
     
-    const date = new Date(dateInput);
+    // Format to Malaysian format DD/MM/YYYY
     return date.toLocaleDateString('en-GB', {
         day: '2-digit',
         month: '2-digit',
@@ -1161,9 +1263,20 @@ function updateRecentOrders(orders) {
         return;
     }
     
-    // Get last 10 orders
+    // Get last 10 orders - using enhanced date parsing and sorting
     const recentOrders = orders
-        .sort((a, b) => new Date(b.timestamp || b.createdAt || b.tarikh) - new Date(a.timestamp || a.createdAt || a.tarikh))
+        .sort((a, b) => {
+            const dateA = parseDate(a.timestamp || a.createdAt || a.tarikh || a.date);
+            const dateB = parseDate(b.timestamp || b.createdAt || b.tarikh || b.date);
+            
+            // Handle null dates
+            if (!dateA && !dateB) return 0;
+            if (!dateA) return 1;
+            if (!dateB) return -1;
+            
+            // Sort newest first (descending)
+            return dateB.getTime() - dateA.getTime();
+        })
         .slice(0, 10);
     
     console.log('📋 Recent orders to display:', recentOrders.length);
@@ -1595,6 +1708,75 @@ function getOrderSourceInfo(order) {
 }
 
 // ===================================================
+// DATE UTILITIES
+// ===================================================
+
+function parseDate(dateInput) {
+    if (!dateInput) return null;
+    
+    try {
+        // Handle Firebase Timestamp objects
+        if (dateInput && typeof dateInput.toDate === 'function') {
+            return dateInput.toDate();
+        }
+        
+        // Handle Date objects
+        if (dateInput instanceof Date) {
+            return dateInput;
+        }
+        
+        // Handle numbers (Unix timestamps)
+        if (typeof dateInput === 'number') {
+            return new Date(dateInput);
+        }
+        
+        // Handle strings
+        if (typeof dateInput === 'string') {
+            // Handle DD/MM/YYYY format (Malaysian format)
+            if (dateInput.includes('/')) {
+                const parts = dateInput.split('/');
+                if (parts.length === 3) {
+                    const [day, month, year] = parts;
+                    if (day.length <= 2 && month.length <= 2 && year.length === 4) {
+                        const parsedDate = new Date(year, month - 1, day);
+                        if (!isNaN(parsedDate.getTime())) {
+                            return parsedDate;
+                        }
+                    }
+                }
+            }
+            
+            // Handle DD-MM-YYYY format
+            if (dateInput.includes('-') && dateInput.split('-').length === 3) {
+                const parts = dateInput.split('-');
+                const [part1, part2, part3] = parts;
+                
+                // Try DD-MM-YYYY first
+                if (part1.length <= 2 && part2.length <= 2 && part3.length === 4) {
+                    const parsedDate = new Date(part3, part2 - 1, part1);
+                    if (!isNaN(parsedDate.getTime())) {
+                        return parsedDate;
+                    }
+                }
+            }
+            
+            // Handle ISO strings and other standard formats
+            const isoDate = new Date(dateInput);
+            if (!isNaN(isoDate.getTime())) {
+                return isoDate;
+            }
+        }
+        
+        console.warn('⚠️ Could not parse date:', dateInput);
+        return null;
+        
+    } catch (error) {
+        console.error('❌ Error parsing date:', dateInput, error);
+        return null;
+    }
+}
+
+// ===================================================
 // UTILITY FUNCTIONS
 // ===================================================
 
@@ -1629,10 +1811,14 @@ function formatCurrency(amount) {
     });
 }
 
-function formatDateTime(date) {
-    return new Date(date).toLocaleDateString('ms-MY', {
+function formatDateTime(dateInput) {
+    const date = parseDate(dateInput);
+    if (!date) return 'N/A';
+    
+    return date.toLocaleDateString('ms-MY', {
         month: 'short',
         day: 'numeric',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
     });
@@ -1648,6 +1834,39 @@ function showLoadingState() {
     loadingElements.forEach(id => {
         updateElement(id, '...');
     });
+}
+
+function showFirebaseLoadError() {
+    console.error('Firebase CDN scripts failed to load');
+    
+    const container = document.getElementById('enhanced-orders-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="firebase-error-state" style="text-align: center; padding: 2rem; color: #ef4444;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🔥</div>
+                <h3 style="color: #ef4444; margin-bottom: 1rem;">Firebase Connection Failed</h3>
+                <p style="color: #9ca3af; margin-bottom: 1rem;">Unable to load Firebase from CDN. Check your internet connection.</p>
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button onclick="window.location.reload()" 
+                            style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🔄 Reload Page
+                    </button>
+                    <button onclick="checkNetworkStatus()" 
+                            style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🌐 Check Network
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function checkNetworkStatus() {
+    if (navigator.onLine) {
+        alert('✅ Internet connection is available. Try reloading the page.');
+    } else {
+        alert('❌ No internet connection detected. Check your network settings.');
+    }
 }
 
 function showErrorState() {
