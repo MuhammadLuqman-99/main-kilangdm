@@ -9,6 +9,7 @@ safeInit('notifications', [], function() {
         constructor() {
             this.container = null;
             this.notifications = new Map();
+            this.recentMessages = new Map(); // Track recent messages to prevent duplicates
             this.nextId = 1;
             this.init();
         }
@@ -143,11 +144,35 @@ safeInit('notifications', [], function() {
                 return null;
             }
 
+            // Check for duplicates
+            const messageKey = `${type}:${message}`;
+            const now = Date.now();
+            const recentTime = this.recentMessages.get(messageKey);
+            
+            // If same message shown within last 3 seconds, ignore
+            if (recentTime && (now - recentTime) < 3000) {
+                console.log(`🔕 Duplicate notification blocked: ${message}`);
+                return null;
+            }
+            
+            // Track this message
+            this.recentMessages.set(messageKey, now);
+            
+            // Clean old recent messages (older than 10 seconds)
+            for (const [key, time] of this.recentMessages.entries()) {
+                if (now - time > 10000) {
+                    this.recentMessages.delete(key);
+                }
+            }
+
             const id = this.nextId++;
             const notification = this.createNotification(id, message, type);
             
             this.container.appendChild(notification);
             this.notifications.set(id, notification);
+            
+            // Limit max notifications (keep only 3 visible)
+            this.limitNotifications(3);
 
             // Animate in
             setTimeout(() => notification.classList.add('show'), 10);
@@ -228,6 +253,24 @@ safeInit('notifications', [], function() {
                 this.remove(id);
             }
         }
+
+        // Limit max notifications
+        limitNotifications(maxCount = 5) {
+            if (this.notifications.size <= maxCount) return;
+
+            // Remove oldest notifications
+            const notificationIds = Array.from(this.notifications.keys());
+            const toRemove = notificationIds.slice(0, notificationIds.length - maxCount);
+            
+            toRemove.forEach(id => this.remove(id));
+        }
+
+        // Force show (bypass duplicate check)
+        forceShow(message, type = 'info', duration = 5000) {
+            const messageKey = `${type}:${message}`;
+            this.recentMessages.delete(messageKey); // Remove from recent to allow show
+            return this.show(message, type, duration);
+        }
     }
 
     const notifications = new SafeNotifications();
@@ -238,7 +281,8 @@ safeInit('notifications', [], function() {
         error: (msg, duration) => notifications.error(msg, duration),
         warning: (msg, duration) => notifications.warning(msg, duration),
         info: (msg, duration) => notifications.info(msg, duration),
-        clear: () => notifications.clear()
+        clear: () => notifications.clear(),
+        force: (msg, type, duration) => notifications.forceShow(msg, type, duration)
     };
 
     return notifications;

@@ -5,13 +5,13 @@
 // Wait for safe modules to load
 setTimeout(() => {
     
-    // Demo notifications
-    if (window.notify) {
+    // Demo notifications (only once)
+    if (window.notify && !window.notificationsDemoShown) {
         console.log('🎯 Testing safe notifications...');
+        window.notificationsDemoShown = true;
         
         setTimeout(() => notify.success('Dashboard loaded successfully!'), 1000);
-        setTimeout(() => notify.info('Data refreshed'), 3000);
-        setTimeout(() => notify.warning('Network connection slow'), 5000);
+        // Remove other demo notifications to avoid spam
     }
 
     // Demo loading
