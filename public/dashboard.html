@@ -48,7 +48,6 @@
     
     <!-- Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
     
@@ -161,19 +160,21 @@
         window.addEventListener('error', function(e) {
             console.error('JavaScript Error:', e.error);
             
-            // Create a user-friendly error message
-            var errorDiv = document.createElement('div');
-            errorDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#ef4444;color:white;padding:16px;border-radius:8px;z-index:10000;max-width:400px;font-family:Arial,sans-serif;';
-            errorDiv.innerHTML = '<strong>⚠️ Technical Issue</strong><br>Please refresh the page or contact support if the problem persists.';
-            
-            document.body.appendChild(errorDiv);
-            
-            // Remove after 10 seconds
-            setTimeout(function() {
-                if (errorDiv.parentNode) {
-                    errorDiv.parentNode.removeChild(errorDiv);
-                }
-            }, 10000);
+            // Create a user-friendly error message (only if DOM is ready)
+            if (document.body) {
+                var errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#ef4444;color:white;padding:16px;border-radius:8px;z-index:10000;max-width:400px;font-family:Arial,sans-serif;';
+                errorDiv.innerHTML = '<strong>⚠️ Technical Issue</strong><br>Please refresh the page or contact support if the problem persists.';
+                
+                document.body.appendChild(errorDiv);
+                
+                // Remove after 10 seconds
+                setTimeout(function() {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 10000);
+            }
         });
         
         // Catch unhandled promise rejections
@@ -190,17 +191,10 @@
     
     <!-- Professional Features -->
     <link rel="stylesheet" href="style/professional-animations.css">
-    <script src="js/professional-loading.js"></script>
-    <script src="js/professional-notifications.js"></script>
-    <script src="js/professional-search.js"></script>
-    <script src="js/professional-export.js"></script>
-    <script src="js/professional-help-center.js"></script>
-    <script src="js/professional-showcase.js"></script>
     <script src="js/config.js"></script>
     <script src="js/error-handler.js"></script>
     <!-- PERFORMANCE & SECURITY - Must load early -->
     <script src="js/performance-manager.js"></script>
-    <script src="js/error-boundary.js"></script>
     <script src="js/security-manager.js"></script>
     <!-- MOBILE OPTIMIZATION - Must load early -->
     <script src="js/mobile-optimization.js"></script>
@@ -983,9 +977,7 @@
     <script src="js/chart-filters.js?v=2.1"></script>
     
     <!-- Advanced Features -->
-    <script src="js/export-manager.js"></script>
     <!-- DISABLED ON MOBILE: <script src="js/notification-system.js"></script> -->
     <script src="js/pwa-manager.js"></script>
-    <script src="js/advanced-search.js"></script>
 </body>
 </html>
