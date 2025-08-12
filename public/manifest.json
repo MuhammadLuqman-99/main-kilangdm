@@ -1,14 +1,18 @@
 {
   "name": "KilangDM Dashboard",
   "short_name": "KilangDM",
-  "version": "3.0",
+  "version": "3.0-prod",
   "description": "Professional Business Intelligence & Analytics Dashboard for KilangDM",
-  "start_url": "/dashboard.html?v=3.0",
+  "start_url": "/dashboard.html?prod=true",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
-  "categories": ["business", "productivity", "finance"],
+  "categories": [
+    "business",
+    "productivity",
+    "finance"
+  ],
   "lang": "ms",
   "dir": "ltr",
   "icons": [
@@ -26,28 +30,48 @@
       "short_name": "Dashboard",
       "description": "View main analytics dashboard",
       "url": "/dashboard.html",
-      "icons": [{ "src": "favicon.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "favicon.svg",
+          "sizes": "any"
+        }
+      ]
     },
     {
       "name": "Order Dashboard",
       "short_name": "Orders",
       "description": "View order management dashboard",
       "url": "/dashboardbo.html",
-      "icons": [{ "src": "favicon.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "favicon.svg",
+          "sizes": "any"
+        }
+      ]
     },
     {
       "name": "Create Order",
       "short_name": "New Order",
       "description": "Create new order",
       "url": "/ecommerce.html",
-      "icons": [{ "src": "favicon.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "favicon.svg",
+          "sizes": "any"
+        }
+      ]
     },
     {
       "name": "Sales Team",
       "short_name": "Team",
       "description": "View sales team performance",
       "url": "/salesteam.html",
-      "icons": [{ "src": "favicon.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "favicon.svg",
+          "sizes": "any"
+        }
+      ]
     }
   ],
   "related_applications": [],

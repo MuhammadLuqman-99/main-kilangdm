@@ -38,6 +38,26 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
+    
+    <!-- Production Meta Tags -->
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <meta name="author" content="KilangDM Team">
+    <meta name="description" content="Professional Business Intelligence & Analytics Dashboard for KilangDM - Real-time data monitoring, sales tracking, and performance analytics.">
+    <meta name="keywords" content="dashboard, analytics, business intelligence, KilangDM, sales tracking, performance monitoring">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
+    <!-- Performance Optimizations -->
+    <link rel="dns-prefetch" href="//www.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -164,7 +184,18 @@
     </script>
     
        <!-- Core Scripts -->
+    <script src="js/production-logger.js"></script>
+    <script src="js/production-optimizations.js"></script>
     <script src="js/logger.js"></script>
+    
+    <!-- Professional Features -->
+    <link rel="stylesheet" href="style/professional-animations.css">
+    <script src="js/professional-loading.js"></script>
+    <script src="js/professional-notifications.js"></script>
+    <script src="js/professional-search.js"></script>
+    <script src="js/professional-export.js"></script>
+    <script src="js/professional-help-center.js"></script>
+    <script src="js/professional-showcase.js"></script>
     <script src="js/config.js"></script>
     <script src="js/error-handler.js"></script>
     <!-- PERFORMANCE & SECURITY - Must load early -->

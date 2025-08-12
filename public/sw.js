@@ -1,9 +1,9 @@
 // Service Worker for KilangDM Dashboard PWA
 // Provides offline functionality and caching
 
-const CACHE_NAME = 'kilangdm-dashboard-v3.0';
-const STATIC_CACHE = 'kilangdm-static-v3.0';
-const DYNAMIC_CACHE = 'kilangdm-dynamic-v3.0';
+const CACHE_NAME = 'kilangdm-dashboard-v3.0-prod-prod-prod';
+const STATIC_CACHE = 'kilangdm-static-v3.0-prod-prod-prod';
+const DYNAMIC_CACHE = 'kilangdm-dynamic-v3.0-prod-prod-prod';
 
 // Files to cache for offline use
 const STATIC_FILES = [
@@ -22,12 +22,20 @@ const STATIC_FILES = [
   '/style/responsive.css',
   '/style/professional-charts.css',
   '/style/professional-order-dashboard.css',
+  '/style/professional-animations.css',
   '/style/style.css',
   '/style/improvements.css',
   '/style/enhanced-dashboard.css',
   '/style/dashboard-advanced-filter.css',
   
   // JavaScript Files
+  '/js/production-logger.js',
+  '/js/production-optimizations.js',
+  '/js/professional-loading.js',
+  '/js/professional-notifications.js',
+  '/js/professional-search.js',
+  '/js/professional-export.js',
+  '/js/professional-help-center.js',
   '/js/dashboard.js',
   '/js/dashboard-ui.js',
   '/js/dashboard-advanced-filter.js',
@@ -39,6 +47,8 @@ const STATIC_FILES = [
   '/js/notification-system.js',
   '/js/improvements.js',
   '/js/ready-sync.js',
+  '/js/ecommerce.js',
+  '/js/firebase-config.js',
   
   // External Dependencies (when available)
   'https://cdn.jsdelivr.net/npm/chart.js',
