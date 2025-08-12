@@ -37,8 +37,7 @@
         const cdnSources = [
             'https://www.gstatic.com/firebasejs/' + firebaseVersion,
             'https://unpkg.com/firebase@' + firebaseVersion,
-            'https://cdn.jsdelivr.net/npm/firebase@' + firebaseVersion + '/firebase',
-            'https://cdnjs.cloudflare.com/ajax/libs/firebase/' + firebaseVersion
+            'https://cdn.jsdelivr.net/npm/firebase@' + firebaseVersion + '/firebase'
         ];
         
         let currentCdnIndex = 0;
@@ -63,7 +62,7 @@
                     loadFirebaseScript(scriptName, cdnIndex + 1)
                         .then(resolve)
                         .catch(reject);
-                }, 3000); // 3 second timeout
+                }, 1500); // 1.5 second timeout for faster offline detection
                 
                 script.onload = () => {
                     clearTimeout(timeout);
@@ -179,12 +178,21 @@
                 showLoadingProgress();
                 console.log('🔄 Loading Firebase scripts with CDN fallback...');
                 
+                // Reduced timeout for faster offline detection
+                const originalTimeout = 3000;
+                
                 for (const scriptName of scriptsToLoad) {
                     updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loading ${scriptName}...`);
-                    await loadFirebaseScript(scriptName);
-                    loadedScripts++;
-                    updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loaded ${scriptName}`);
-                    console.log(`📦 Progress: ${loadedScripts}/${scriptsToLoad.length} scripts loaded`);
+                    
+                    try {
+                        await loadFirebaseScript(scriptName);
+                        loadedScripts++;
+                        updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loaded ${scriptName}`);
+                        console.log(`📦 Progress: ${loadedScripts}/${scriptsToLoad.length} scripts loaded`);
+                    } catch (scriptError) {
+                        console.warn(`❌ Failed to load ${scriptName}, continuing in offline mode`);
+                        throw new Error(`Script loading failed: ${scriptName}`);
+                    }
                 }
                 
                 updateLoadingProgress(scriptsToLoad.length, scriptsToLoad.length, 'Initializing Firebase...');
@@ -198,9 +206,12 @@
                 }, 200);
                 
             } catch (error) {
-                console.warn('⚠️ Firebase CDN unavailable, switching to offline mode');
+                console.warn('⚠️ Firebase CDN unavailable, enabling offline mode');
                 hideLoadingProgress();
                 window.firebaseScriptsLoadError = true;
+                
+                // Initialize offline mode immediately
+                initializeOfflineMode();
                 showOfflineMode();
             }
         }
@@ -229,6 +240,65 @@
             callback();
         }
         
+        // Initialize offline mode with local data
+        function initializeOfflineMode() {
+            console.log('🔌 Initializing offline mode...');
+            
+            // Create mock Firebase-like interface
+            window.db = {
+                collection: function(collectionName) {
+                    return {
+                        orderBy: function() { return this; },
+                        limit: function() { return this; },
+                        where: function() { return this; },
+                        get: function() {
+                            return Promise.resolve({
+                                docs: [],
+                                empty: true,
+                                size: 0,
+                                forEach: function() {}
+                            });
+                        },
+                        onSnapshot: function(callback) {
+                            // Return empty snapshot for offline mode
+                            callback({
+                                docs: [],
+                                empty: true,
+                                size: 0,
+                                forEach: function() {}
+                            });
+                            
+                            // Return unsubscribe function
+                            return function() {};
+                        },
+                        add: function(data) {
+                            console.warn('📴 Offline mode: Cannot save data to server');
+                            return Promise.reject(new Error('Offline mode - data not saved'));
+                        }
+                    };
+                }
+            };
+            
+            // Mock Firebase object
+            window.firebase = {
+                firestore: {
+                    FieldValue: {
+                        serverTimestamp: function() {
+                            return new Date();
+                        }
+                    }
+                }
+            };
+            
+            window.firebaseOfflineMode = true;
+            
+            // Dispatch ready event for compatibility
+            setTimeout(() => {
+                window.dispatchEvent(new Event('firebaseReady'));
+                console.log('✅ Offline mode initialized');
+            }, 100);
+        }
+
         // Start loading when DOM is ready with enhanced safety
         domReady(loadAllFirebaseScripts);
         
@@ -311,13 +381,13 @@
     <script>
     // Firebase configuration
     const firebaseConfig = {
-        apiKey: "AIzaSyDvqSuT4sQeJwB5Mb8wQZ4X4X4X4X4X4X",
+        apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
         authDomain: "kilangdm-v1.firebaseapp.com",
         projectId: "kilangdm-v1",
-        storageBucket: "kilangdm-v1.appspot.com",
-        messagingSenderId: "123456789012",
-        appId: "1:123456789012:web:abcdef123456",
-        measurementId: "G-ABCDEFGHIJ"
+        storageBucket: "kilangdm-v1.firebasestorage.app",
+        messagingSenderId: "264191193800",
+        appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
+        measurementId: "G-C02S0CPE63"
     };
 
     // Immediate Firebase initialization (called after scripts load)
