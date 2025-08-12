@@ -653,13 +653,23 @@
         }
         
         function showOfflineMode() {
-            // Skip showing offline notification since we have fallback data
-            console.log('🔄 Firebase offline, but fallback data will be used');
+            console.log('🔄 Firebase offline, checking if we have real data...');
             
-            // Auto load fallback data instead of showing notification
-            setTimeout(() => {
-                loadSampleDataAsFallback();
-            }, 500); // Faster fallback loading
+            // Check if we already have real data from localStorage before using fallback
+            const savedData = localStorage.getItem('dashboardAllData');
+            
+            if (savedData) {
+                console.log('✅ Found real data in localStorage, skipping fallback');
+                // Try to initialize with real data first
+                setTimeout(() => {
+                    initializeBalanceMonitor();
+                }, 500);
+            } else {
+                console.log('❌ No real data found, using fallback');
+                setTimeout(() => {
+                    loadSampleDataAsFallback();
+                }, 500);
+            }
         }
     </script>
     
@@ -744,6 +754,13 @@
         
         // Load sample data as fallback when no real data available
         function loadSampleDataAsFallback() {
+            // Check one last time if real data exists
+            const realData = localStorage.getItem('dashboardAllData');
+            if (realData) {
+                console.log('🛡️ Real data exists, skipping fallback to prevent overwriting');
+                return;
+            }
+            
             console.log('🔄 Loading sample data as fallback...');
             
             const fallbackData = {
@@ -1282,9 +1299,32 @@
                         fetchDataFromFirebase();
                         return;
                     } else if (!allData) {
-                        console.warn('⚠️ No data source available, loading fallback data...');
-                        loadSampleDataAsFallback();
-                        return;
+                        console.warn('⚠️ No data source available');
+                        console.log('📂 Checking localStorage one more time...');
+                        
+                        // Double check localStorage before fallback
+                        const lastChance = localStorage.getItem('dashboardAllData');
+                        if (lastChance) {
+                            try {
+                                const parsed = JSON.parse(lastChance);
+                                if (parsed.salesteam && parsed.salesteam.length > 0) {
+                                    console.log('✅ Found data on second check!');
+                                    allData = { salesteam: parsed.salesteam };
+                                } else {
+                                    console.warn('⚠️ Using fallback data as absolute last resort');
+                                    loadSampleDataAsFallback();
+                                    return;
+                                }
+                            } catch (e) {
+                                console.warn('⚠️ Using fallback data as absolute last resort');
+                                loadSampleDataAsFallback();
+                                return;
+                            }
+                        } else {
+                            console.warn('⚠️ Using fallback data as absolute last resort');
+                            loadSampleDataAsFallback();
+                            return;
+                        }
                     }
                 }
                 
