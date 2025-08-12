@@ -224,7 +224,7 @@
                     <i class="fas fa-phone"></i>
                     <span>Follow Up</span>
                 </a>
-                <a href="balance-monitor.html" class="nav-link" title="Full Screen Balance Monitor">
+                <a href="balance-monitor.html" class="nav-link" title="Full Screen Balance Monitor" target="_blank">
                     <i class="fas fa-tv"></i>
                     <span>Balance Monitor</span>
                 </a>
@@ -681,17 +681,6 @@
 
             <!-- Secondary Metrics -->
             <div class="power-grid secondary-grid">
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <div class="metric-icon">
-                            <i class="fas fa-trending-up"></i>
-                        </div>
-                        <span class="metric-status" id="balance-mtd-status">Gap</span>
-                    </div>
-                    <h4 class="metric-title">Balance MTD</h4>
-                    <p class="metric-value" id="balance-mtd">RM 0</p>
-                    <p class="metric-desc" id="balance-mtd-desc">gap sasaran</p>
-                </div>
 
                 <div class="metric-card">
                     <div class="metric-header">
@@ -834,47 +823,6 @@
                 </div>
             </div>
 
-            <!-- Marketing ROI Main Chart -->
-            <div class="chart-card main-chart">
-                <div class="chart-header">
-                    <div class="header-left">
-                        <h4 class="chart-title">
-                            <i class="fas fa-chart-bar"></i>
-                            Marketing ROI Performance
-                        </h4>
-                        <p class="chart-subtitle">Spend vs Revenue comparison untuk setiap sales team</p>
-                    </div>
-                    <div class="chart-controls">
-                        <!-- Team Sales Filter -->
-                        <div class="chart-filter-group">
-                            <label for="roi-team-filter">Team:</label>
-                            <select id="roi-team-filter" class="chart-filter-select">
-                                <option value="">Semua Team</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Date Range Filter -->
-                        <div class="chart-filter-group">
-                            <label for="roi-date-from">Dari:</label>
-                            <input type="date" id="roi-date-from" class="chart-filter-date">
-                        </div>
-                        <div class="chart-filter-group">
-                            <label for="roi-date-to">Hingga:</label>
-                            <input type="date" id="roi-date-to" class="chart-filter-date">
-                        </div>
-                        
-                        <!-- Period Buttons -->
-                        <div class="chart-period-buttons">
-                            <button class="roi-period-btn active" data-period="7">7 Hari</button>
-                            <button class="roi-period-btn" data-period="30">30 Hari</button>
-                            <button class="roi-period-btn" data-period="90">90 Hari</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="marketingROIChart"></canvas>
-                </div>
-            </div>
 
             <!-- Marketing Cost vs Lead Timeline Chart -->
             <div class="chart-card main-chart">
