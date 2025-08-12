@@ -320,11 +320,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleResize() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            adjustGridsForViewport();
-            makeChartsResponsive();
-            adjustTextForViewport();
-            enhanceModalsForMobile();
-        }, 150);
+            // Use requestAnimationFrame for better performance
+            requestAnimationFrame(() => {
+                adjustGridsForViewport();
+                makeChartsResponsive();
+                adjustTextForViewport();
+                enhanceModalsForMobile();
+            });
+        }, 100); // Reduced from 150ms to 100ms
     }
     
     // ===================================================

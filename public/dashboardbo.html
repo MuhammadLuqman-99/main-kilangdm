@@ -48,6 +48,7 @@
         function loadFirebaseScript(scriptName, cdnIndex = 0) {
             return new Promise((resolve, reject) => {
                 if (cdnIndex >= cdnSources.length) {
+                    console.warn(`⚠️ ${scriptName} failed from all CDNs - switching to offline mode`);
                     reject(new Error(`Failed to load ${scriptName} from all CDNs`));
                     return;
                 }
@@ -56,13 +57,23 @@
                 const cdnUrl = cdnSources[cdnIndex];
                 script.src = `${cdnUrl}/${scriptName}`;
                 
+                // Set timeout for faster fallback
+                const timeout = setTimeout(() => {
+                    script.remove();
+                    loadFirebaseScript(scriptName, cdnIndex + 1)
+                        .then(resolve)
+                        .catch(reject);
+                }, 3000); // 3 second timeout
+                
                 script.onload = () => {
+                    clearTimeout(timeout);
                     console.log(`✅ ${scriptName} loaded from ${cdnUrl}`);
                     resolve();
                 };
                 
                 script.onerror = () => {
-                    console.log(`❌ ${scriptName} failed from ${cdnUrl}, trying next CDN...`);
+                    clearTimeout(timeout);
+                    // console.log(`❌ ${scriptName} failed from ${cdnUrl}, trying next CDN...`);
                     // Remove failed script
                     script.remove();
                     // Try next CDN
@@ -187,7 +198,7 @@
                 }, 200);
                 
             } catch (error) {
-                console.error('❌ Failed to load Firebase scripts:', error);
+                console.warn('⚠️ Firebase CDN unavailable, switching to offline mode');
                 hideLoadingProgress();
                 window.firebaseScriptsLoadError = true;
                 showOfflineMode();

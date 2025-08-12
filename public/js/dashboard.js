@@ -76,10 +76,44 @@ let currentFilters = {
 // Make currentFilters accessible globally for Power Metrics
 window.currentFilters = currentFilters;
 
+// Console filter to reduce spam (debug mode can be enabled via localStorage)
+const originalConsoleLog = console.log;
+const debugMode = localStorage.getItem('dashboardDebugMode') === 'true';
+
+console.log = function(...args) {
+    // Only show important logs, filter out repetitive debug messages
+    const message = args.join(' ');
+    
+    // Allow important logs
+    if (debugMode || 
+        message.includes('🚀') || 
+        message.includes('✅') || 
+        message.includes('❌') || 
+        message.includes('⚠️') ||
+        message.includes('Error') ||
+        message.includes('WARNING') ||
+        message.includes('FATAL')) {
+        originalConsoleLog.apply(console, args);
+    }
+    // Filter out repetitive debug messages
+};
+
+// Functions to control debug mode
+window.enableDebugMode = function() {
+    localStorage.setItem('dashboardDebugMode', 'true');
+    console.log('🐛 Debug mode enabled. Refresh page to see all logs.');
+};
+
+window.disableDebugMode = function() {
+    localStorage.setItem('dashboardDebugMode', 'false');
+    console.log('🔇 Debug mode disabled. Refresh page to filter logs.');
+};
+
 // Add manual refresh function for debugging
 window.debugPowerMetrics = async function() {
-    console.log('🔄 Manual Power Metrics Debug');
-    console.log('Current allData.salesteam:', allData.salesteam.length, 'records');
+    // DEBUG: Manual Power Metrics Debug (disabled to reduce console spam)
+    // console.log('🔄 Manual Power Metrics Debug');
+    // console.log('Current allData.salesteam:', allData.salesteam.length, 'records');
     
     // Re-fetch data
     await fetchAllData();
@@ -87,7 +121,7 @@ window.debugPowerMetrics = async function() {
     // Re-apply filters
     applyFilters();
     
-    console.log('After refresh - allData.salesteam:', allData.salesteam.length, 'records');
+    // console.log('After refresh - allData.salesteam:', allData.salesteam.length, 'records');
 };
 
 // Add specific debug for team wiyah
@@ -96,7 +130,7 @@ window.debugWiyahData = function() {
     console.log('Current filters:', window.currentFilters);
     
     const allPowerMetrics = allData.salesteam.filter(item => item.type === 'power_metrics');
-    console.log(`Total power_metrics records: ${allPowerMetrics.length}`);
+    // console.log(`Total power_metrics records: ${allPowerMetrics.length}`);
     
     // Find all records that might match "wiyah"
     const wiyahRecords = allPowerMetrics.filter(item => {
@@ -795,6 +829,11 @@ async function fetchAllData() {
         } else {
             // Save data for balance monitor access
             saveDataForBalanceMonitor();
+            
+            // Notify balance monitor of data update
+            window.dispatchEvent(new CustomEvent('dashboardDataUpdated', {
+                detail: { salesteam: allData.salesteam.length }
+            }));
         }
 
     } catch (error) {
@@ -2468,13 +2507,14 @@ function updateEnhancedPowerMetricsDisplay(salesTeamData) {
     
     // DEBUG: Log calculated metrics before UI update
     console.log('📊 CALCULATED METRICS for UI update:');
-    console.log(`   Sale MTD: RM ${metrics.saleMTD.toLocaleString()}`);
-    console.log(`   KPI Harian: RM ${metrics.dynamicKpiHarian.toLocaleString()}`);
-    console.log(`   KPI MTD: RM ${metrics.kpiMTD.toLocaleString()}`);
-    console.log(`   Balance Bulanan: RM ${metrics.balanceBulanan.toLocaleString()}`);
-    console.log(`   Balance MTD: RM ${metrics.balanceMTD.toLocaleString()}`);
-    console.log(`   Bilangan Terjual: ${metrics.bilanganTerjual}`);
-    console.log(`   Total Close Rate: ${metrics.totalCloseRate.toFixed(1)}%`);
+    // DEBUG: Detailed metrics (disabled to reduce console spam)
+    // console.log(`   Sale MTD: RM ${metrics.saleMTD.toLocaleString()}`);
+    // console.log(`   KPI Harian: RM ${metrics.dynamicKpiHarian.toLocaleString()}`);
+    // console.log(`   KPI MTD: RM ${metrics.kpiMTD.toLocaleString()}`);
+    // console.log(`   Balance Bulanan: RM ${metrics.balanceBulanan.toLocaleString()}`);
+    // console.log(`   Balance MTD: RM ${metrics.balanceMTD.toLocaleString()}`);
+    // console.log(`   Bilangan Terjual: ${metrics.bilanganTerjual}`);
+    // console.log(`   Total Close Rate: ${metrics.totalCloseRate.toFixed(1)}%`);
 
     // Store metrics globally for Balance Monitor access
     window.currentPowerMetrics = {
@@ -2489,7 +2529,7 @@ function updateEnhancedPowerMetricsDisplay(salesTeamData) {
     // Also store in localStorage for Balance Monitor access
     try {
         localStorage.setItem('currentPowerMetrics', JSON.stringify(window.currentPowerMetrics));
-        console.log('💾 Power metrics stored globally and in localStorage for Balance Monitor access');
+        // console.log('💾 Power metrics stored globally and in localStorage for Balance Monitor access');
     } catch (e) {
         console.warn('⚠️ Could not store to localStorage:', e);
     }

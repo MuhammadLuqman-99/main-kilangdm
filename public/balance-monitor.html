@@ -26,7 +26,7 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%);
             color: white;
             height: 100vh;
             overflow: hidden;
@@ -37,7 +37,7 @@
         /* Header */
         .monitor-header {
             padding: 1rem 2rem;
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(2, 6, 23, 0.95);
             border-bottom: 2px solid #3b82f6;
             display: flex;
             justify-content: space-between;
@@ -89,7 +89,7 @@
         
         /* Team Cards */
         .team-card {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            background: linear-gradient(145deg, rgba(2, 6, 23, 0.95), rgba(15, 23, 42, 0.9));
             border-radius: 20px;
             border: 2px solid transparent;
             backdrop-filter: blur(20px);
@@ -131,31 +131,31 @@
         }
         
         .team-card.wiyah {
-            border-color: #ef4444;
-            box-shadow: 0 0 40px rgba(239, 68, 68, 0.3);
+            border-color: #0ea5e9;
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.3);
         }
         
         .team-card.wiyah .team-name {
-            color: #ef4444;
+            color: #0ea5e9;
         }
         
         /* Balance status colors */
         .team-card.positive {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(34, 197, 94, 0.1));
+            background: linear-gradient(145deg, rgba(2, 6, 23, 0.95), rgba(34, 197, 94, 0.1));
             border-color: #22c55e !important;
-            box-shadow: 0 0 40px rgba(34, 197, 94, 0.4) !important;
+            box-shadow: 0 0 40px rgba(34, 197, 94, 0.3) !important;
         }
         
         .team-card.negative {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(239, 68, 68, 0.1));
-            border-color: #ef4444 !important;
-            box-shadow: 0 0 40px rgba(239, 68, 68, 0.4) !important;
+            background: linear-gradient(145deg, rgba(2, 6, 23, 0.95), rgba(14, 165, 233, 0.1));
+            border-color: #0ea5e9 !important;
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.3) !important;
         }
         
         .team-card.neutral {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(245, 158, 11, 0.1));
+            background: linear-gradient(145deg, rgba(2, 6, 23, 0.95), rgba(245, 158, 11, 0.1));
             border-color: #f59e0b !important;
-            box-shadow: 0 0 40px rgba(245, 158, 11, 0.4) !important;
+            box-shadow: 0 0 40px rgba(245, 158, 11, 0.3) !important;
         }
         
         /* Special card styles */
@@ -295,8 +295,8 @@
         
         /* Team-specific stat item colors */
         .team-card.wiyah .stat-item {
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            background: rgba(14, 165, 233, 0.1);
         }
         
         .team-card.nisya .stat-item {
@@ -310,7 +310,7 @@
         }
         
         .stat-item {
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(2, 6, 23, 0.8);
             padding: 1rem;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -454,19 +454,19 @@
                 <div class="team-role">Sales Team</div>
             </div>
             <div class="balance-section">
-                <div class="balance-label">Balance MTD</div>
-                <div class="balance-amount" id="wiyah-balance-mtd">
+                <div class="balance-label">Sale MTD</div>
+                <div class="balance-amount" id="wiyah-sale-mtd">
                     <div class="loading-spinner"></div>
                 </div>
             </div>
             <div class="team-stats">
                 <div class="stat-item">
-                    <div class="stat-label">KPI MTD</div>
-                    <div class="stat-value" id="wiyah-kpi-mtd">RM 0</div>
+                    <div class="stat-label">KPI Harian</div>
+                    <div class="stat-value" id="wiyah-kpi-harian">RM 0</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">Sale MTD</div>
-                    <div class="stat-value" id="wiyah-sale-mtd">RM 0</div>
+                    <div class="stat-label">Balance MTD</div>
+                    <div class="stat-value" id="wiyah-balance-mtd">RM 0</div>
                 </div>
             </div>
         </div>
@@ -479,19 +479,19 @@
                 <div class="team-role">Sales Team</div>
             </div>
             <div class="balance-section">
-                <div class="balance-label">Balance MTD</div>
-                <div class="balance-amount" id="nisya-balance-mtd">
+                <div class="balance-label">Sale MTD</div>
+                <div class="balance-amount" id="nisya-sale-mtd">
                     <div class="loading-spinner"></div>
                 </div>
             </div>
             <div class="team-stats">
                 <div class="stat-item">
-                    <div class="stat-label">KPI MTD</div>
-                    <div class="stat-value" id="nisya-kpi-mtd">RM 0</div>
+                    <div class="stat-label">KPI Harian</div>
+                    <div class="stat-value" id="nisya-kpi-harian">RM 0</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">Sale MTD</div>
-                    <div class="stat-value" id="nisya-sale-mtd">RM 0</div>
+                    <div class="stat-label">Balance MTD</div>
+                    <div class="stat-value" id="nisya-balance-mtd">RM 0</div>
                 </div>
             </div>
         </div>
@@ -504,19 +504,19 @@
                 <div class="team-role">Sales Team</div>
             </div>
             <div class="balance-section">
-                <div class="balance-label">Balance MTD</div>
-                <div class="balance-amount" id="qilah-balance-mtd">
+                <div class="balance-label">Sale MTD</div>
+                <div class="balance-amount" id="qilah-sale-mtd">
                     <div class="loading-spinner"></div>
                 </div>
             </div>
             <div class="team-stats">
                 <div class="stat-item">
-                    <div class="stat-label">KPI MTD</div>
-                    <div class="stat-value" id="qilah-kpi-mtd">RM 0</div>
+                    <div class="stat-label">KPI Harian</div>
+                    <div class="stat-value" id="qilah-kpi-harian">RM 0</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">Sale MTD</div>
-                    <div class="stat-value" id="qilah-sale-mtd">RM 0</div>
+                    <div class="stat-label">Balance MTD</div>
+                    <div class="stat-value" id="qilah-balance-mtd">RM 0</div>
                 </div>
             </div>
         </div>
@@ -554,7 +554,7 @@
                 };
                 
                 script.onerror = () => {
-                    console.log(`❌ ${scriptName} failed from ${cdnUrl}, trying next CDN...`);
+                    // console.log(`❌ ${scriptName} failed from ${cdnUrl}, trying next CDN...`);
                     // Remove failed script
                     script.remove();
                     // Try next CDN
@@ -580,7 +580,7 @@
             progressDiv.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem;">
                     <div style="animation: spin 1s linear infinite;">🔄</div>
-                    <span id="loading-text">Loading Firebase for Balance Monitor...</span>
+                    <span id="loading-text">Loading Balance Monitor...</span>
                     <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 2px; min-width: 100px;">
                         <div id="progress-bar" style="background: #3b82f6; height: 4px; border-radius: 4px; width: 0%; transition: width 0.3s ease;"></div>
                     </div>
@@ -639,7 +639,7 @@
                 }, 200);
                 
             } catch (error) {
-                console.error('❌ Failed to load Firebase scripts:', error);
+                console.warn('⚠️ Firebase CDN unavailable, using fallback data');
                 hideLoadingProgress();
                 showOfflineMode();
             }
@@ -653,32 +653,13 @@
         }
         
         function showOfflineMode() {
-            const offlineDiv = document.createElement('div');
-            offlineDiv.style.cssText = `
-                position: fixed; top: 0; left: 0; right: 0; 
-                background: linear-gradient(135deg, #1e293b, #334155); 
-                color: white; padding: 1rem; text-align: center; z-index: 10000;
-                border-bottom: 3px solid #ef4444;
-            `;
-            offlineDiv.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
-                    <div style="animation: pulse 2s infinite;">📡</div>
-                    <div>
-                        <h3 style="margin: 0; color: #fbbf24;">Offline Mode - Balance Monitor</h3>
-                        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
-                            Firebase CDN unavailable. Balance data will not be available.
-                        </p>
-                    </div>
-                    <button onclick="window.location.reload()" 
-                            style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        🔄 Retry
-                    </button>
-                </div>
-                <style>
-                    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-                </style>
-            `;
-            document.body.prepend(offlineDiv);
+            // Skip showing offline notification since we have fallback data
+            console.log('🔄 Firebase offline, but fallback data will be used');
+            
+            // Auto load fallback data instead of showing notification
+            setTimeout(() => {
+                loadSampleDataAsFallback();
+            }, 500); // Faster fallback loading
         }
     </script>
     
@@ -1082,6 +1063,20 @@
             return (monthlyTarget / daysInMonth) * daysPassed;
         }
         
+        // Calculate KPI Harian (daily KPI based on remaining days)
+        function calculateKPIHarian(balance) {
+            const now = new Date();
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const currentDay = now.getDate();
+            const remainingDays = daysInMonth - currentDay;
+            
+            if (remainingDays <= 0) {
+                return 0; // No more days left
+            }
+            
+            return balance > 0 ? balance / remainingDays : 0;
+        }
+        
         // Update display with team data
         function updateTeamDisplay(teamName, teamData) {
             console.log(`🔄 Updating display for team ${teamName}:`, teamData);
@@ -1091,14 +1086,17 @@
             // Calculate balance (remaining to achieve target)
             const balance = (teamData.target || 0) - (teamData.saleMTD || 0);
             
-            // Update Balance MTD (big display in center)
-            updateElement(`${teamKey}-balance-mtd`, formatCurrency(Math.abs(balance)));
+            // Calculate KPI Harian
+            const kpiHarian = calculateKPIHarian(balance);
             
-            // Update KPI MTD (target) - small display
-            updateElement(`${teamKey}-kpi-mtd`, formatCurrency(teamData.target || 0).replace(/<[^>]*>/g, ''));
+            // Update Sale MTD (big display in center)
+            updateElement(`${teamKey}-sale-mtd`, formatCurrency(teamData.saleMTD || 0));
             
-            // Update Sale MTD - small display
-            updateElement(`${teamKey}-sale-mtd`, formatCurrency(teamData.saleMTD || 0).replace(/<[^>]*>/g, ''));
+            // Update KPI Harian - small display
+            updateElement(`${teamKey}-kpi-harian`, formatCurrency(kpiHarian).replace(/<[^>]*>/g, ''));
+            
+            // Update Balance MTD - small display
+            updateElement(`${teamKey}-balance-mtd`, formatCurrency(Math.abs(balance)).replace(/<[^>]*>/g, ''));
             
             // Update card status based on achievement
             const teamCard = document.querySelector(`.team-card.${teamKey}`);
@@ -1115,7 +1113,7 @@
                 }
             }
             
-            console.log(`💰 Updated ${teamName} - Sale MTD: RM ${teamData.saleMTD}, Balance: RM ${balance.toFixed(2)}, Target: RM ${teamData.target}`);
+            console.log(`💰 Updated ${teamName} - Sale MTD: RM ${teamData.saleMTD}, Balance: RM ${balance.toFixed(2)}, KPI Harian: RM ${kpiHarian.toFixed(2)}`);
         }
         
         // Get team data from power metrics
@@ -1206,9 +1204,9 @@
             const teams = ['wiyah', 'nisya', 'qilah'];
             
             teams.forEach(teamName => {
-                updateElement(`${teamName}-balance-mtd`, '<span style="color: #f59e0b;">Tiada Data</span>');
-                updateElement(`${teamName}-kpi-mtd`, '<span style="color: #f59e0b;">Tiada Data</span>');
                 updateElement(`${teamName}-sale-mtd`, '<span style="color: #f59e0b;">Tiada Data</span>');
+                updateElement(`${teamName}-kpi-harian`, '<span style="color: #f59e0b;">Tiada Data</span>');
+                updateElement(`${teamName}-balance-mtd`, '<span style="color: #f59e0b;">Tiada Data</span>');
             });
         }
         
@@ -1382,7 +1380,7 @@
             // If still no data after 2 seconds, force load fallback
             setTimeout(() => {
                 const hasData = ['wiyah', 'nisya', 'qilah'].some(team => {
-                    const element = document.getElementById(`${team}-balance-mtd`);
+                    const element = document.getElementById(`${team}-sale-mtd`);
                     return element && !element.innerHTML.includes('loading-spinner') && !element.innerHTML.includes('Tiada Data');
                 });
                 
@@ -1398,8 +1396,22 @@
                 fetchBalanceData();
             });
             
-            // Refresh data every 30 seconds
-            setInterval(fetchBalanceData, 30000);
+            // Refresh data every 10 seconds for real-time updates
+            setInterval(fetchBalanceData, 10000);
+            
+            // Also refresh when localStorage changes (from dashboard updates)
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'dashboardAllData') {
+                    console.log('🔄 localStorage data changed, refreshing...');
+                    setTimeout(fetchBalanceData, 500);
+                }
+            });
+            
+            // Listen for dashboard data updates
+            window.addEventListener('dashboardDataUpdated', (e) => {
+                console.log('🔄 Dashboard data updated, refreshing balance monitor...');
+                setTimeout(fetchBalanceData, 200);
+            });
             
             // Handle window focus (refresh when user returns to tab)
             window.addEventListener('focus', () => {

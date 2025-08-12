@@ -384,7 +384,10 @@ self.addEventListener('notificationclick', event => {
 
 // Message handling from main thread
 self.addEventListener('message', event => {
-  console.log('💬 Service Worker: Message received:', event.data);
+  // Only log meaningful messages, filter out object spam
+  if (event.data && event.data.type) {
+    console.log('💬 Service Worker: Message received:', event.data.type);
+  }
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
