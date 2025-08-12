@@ -30,352 +30,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="KilangDM">
     
-    <!-- Firebase SDK - Multiple CDN fallbacks -->
-    <script>
-        // Firebase loading with multiple CDN fallbacks
-        const firebaseVersion = '8.10.1';
-        const cdnSources = [
-            'https://www.gstatic.com/firebasejs/' + firebaseVersion,
-            'https://unpkg.com/firebase@' + firebaseVersion,
-            'https://cdn.jsdelivr.net/npm/firebase@' + firebaseVersion + '/firebase'
-        ];
-        
-        let currentCdnIndex = 0;
-        let scriptsToLoad = ['firebase-app.js', 'firebase-firestore.js', 'firebase-auth.js'];
-        let loadedScripts = 0;
-        
-        function loadFirebaseScript(scriptName, cdnIndex = 0) {
-            return new Promise((resolve, reject) => {
-                if (cdnIndex >= cdnSources.length) {
-                    console.warn(`⚠️ ${scriptName} failed from all CDNs - switching to offline mode`);
-                    reject(new Error(`Failed to load ${scriptName} from all CDNs`));
-                    return;
-                }
-                
-                const script = document.createElement('script');
-                const cdnUrl = cdnSources[cdnIndex];
-                script.src = `${cdnUrl}/${scriptName}`;
-                
-                // Set timeout for faster fallback
-                const timeout = setTimeout(() => {
-                    script.remove();
-                    loadFirebaseScript(scriptName, cdnIndex + 1)
-                        .then(resolve)
-                        .catch(reject);
-                }, 1500); // 1.5 second timeout for faster offline detection
-                
-                script.onload = () => {
-                    clearTimeout(timeout);
-                    console.log(`✅ ${scriptName} loaded from ${cdnUrl}`);
-                    resolve();
-                };
-                
-                script.onerror = () => {
-                    clearTimeout(timeout);
-                    // console.log(`❌ ${scriptName} failed from ${cdnUrl}, trying next CDN...`);
-                    // Remove failed script
-                    script.remove();
-                    // Try next CDN
-                    loadFirebaseScript(scriptName, cdnIndex + 1)
-                        .then(resolve)
-                        .catch(reject);
-                };
-                
-                document.head.appendChild(script);
-            });
-        }
-        
-        // Show loading progress (DOM safe with multiple fallbacks)
-        function showLoadingProgress() {
-            // Wait for DOM to be ready
-            function addProgressDiv() {
-                // Multiple fallback strategies
-                let targetElement = document.body;
-                
-                if (!targetElement) {
-                    targetElement = document.documentElement;
-                }
-                
-                if (!targetElement) {
-                    targetElement = document.head;
-                }
-                
-                if (!targetElement) {
-                    console.log('⚠️ No DOM element available - retrying in 50ms...');
-                    setTimeout(addProgressDiv, 50);
-                    return;
-                }
-                
-                // Avoid duplicate progress indicators
-                const existingProgress = document.getElementById('firebase-loading');
-                if (existingProgress) {
-                    console.log('📊 Progress indicator already exists');
-                    return;
-                }
-                
-                const progressDiv = document.createElement('div');
-                progressDiv.id = 'firebase-loading';
-                progressDiv.style.cssText = `
-                    position: fixed; top: 0; left: 0; right: 0; 
-                    background: linear-gradient(135deg, #0f172a, #1e293b); 
-                    color: white; padding: 0.75rem; text-align: center; z-index: 10000;
-                    border-bottom: 2px solid #3b82f6;
-                `;
-                progressDiv.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem;">
-                        <div style="animation: spin 1s linear infinite;">🔄</div>
-                        <span id="loading-text">Loading Firebase...</span>
-                        <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 2px; min-width: 100px;">
-                            <div id="progress-bar" style="background: #3b82f6; height: 4px; border-radius: 4px; width: 0%; transition: width 0.3s ease;"></div>
-                        </div>
-                    </div>
-                    <style>
-                        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                    </style>
-                `;
-                
-                // Safe insertion with multiple methods
-                try {
-                    if (targetElement.prepend) {
-                        targetElement.prepend(progressDiv);
-                    } else if (targetElement.insertBefore) {
-                        targetElement.insertBefore(progressDiv, targetElement.firstChild);
-                    } else if (targetElement.appendChild) {
-                        targetElement.appendChild(progressDiv);
-                    } else {
-                        targetElement.innerHTML = progressDiv.outerHTML + targetElement.innerHTML;
-                    }
-                    console.log('📊 Firebase loading progress displayed');
-                } catch (error) {
-                    console.warn('⚠️ Failed to display progress indicator:', error);
-                }
-            }
-            
-            addProgressDiv();
-        }
-        
-        function updateLoadingProgress(current, total, message) {
-            const progressBar = document.getElementById('progress-bar');
-            const loadingText = document.getElementById('loading-text');
-            
-            if (progressBar && loadingText) {
-                const percentage = (current / total) * 100;
-                progressBar.style.width = percentage + '%';
-                loadingText.textContent = message || `Loading... (${current}/${total})`;
-            }
-        }
-        
-        function hideLoadingProgress() {
-            const progressDiv = document.getElementById('firebase-loading');
-            if (progressDiv) {
-                progressDiv.remove();
-            }
-        }
-
-        // Load all Firebase scripts
-        async function loadAllFirebaseScripts() {
-            try {
-                showLoadingProgress();
-                console.log('🔄 Loading Firebase scripts with CDN fallback...');
-                
-                // Reduced timeout for faster offline detection
-                const originalTimeout = 3000;
-                
-                for (const scriptName of scriptsToLoad) {
-                    updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loading ${scriptName}...`);
-                    
-                    try {
-                        await loadFirebaseScript(scriptName);
-                        loadedScripts++;
-                        updateLoadingProgress(loadedScripts, scriptsToLoad.length, `Loaded ${scriptName}`);
-                        console.log(`📦 Progress: ${loadedScripts}/${scriptsToLoad.length} scripts loaded`);
-                    } catch (scriptError) {
-                        console.warn(`❌ Failed to load ${scriptName}, continuing in offline mode`);
-                        throw new Error(`Script loading failed: ${scriptName}`);
-                    }
-                }
-                
-                updateLoadingProgress(scriptsToLoad.length, scriptsToLoad.length, 'Initializing Firebase...');
-                console.log('✅ All Firebase scripts loaded successfully');
-                window.firebaseScriptsLoaded = true;
-                
-                // Initialize Firebase immediately
-                setTimeout(() => {
-                    initializeFirebaseImmediate();
-                    hideLoadingProgress();
-                }, 200);
-                
-            } catch (error) {
-                console.warn('⚠️ Firebase CDN unavailable, enabling offline mode');
-                hideLoadingProgress();
-                window.firebaseScriptsLoadError = true;
-                
-                // Initialize offline mode immediately
-                initializeOfflineMode();
-                showOfflineMode();
-            }
-        }
-        
-        // Enhanced DOM ready check with multiple fallbacks
-        function domReady(callback) {
-            if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                // DOM is already ready
-                setTimeout(callback, 1);
-                return;
-            }
-            
-            if (document.readyState === 'loading') {
-                // Wait for DOM content loaded
-                document.addEventListener('DOMContentLoaded', callback);
-                // Also add a fallback timeout
-                setTimeout(() => {
-                    if (document.readyState !== 'loading') {
-                        callback();
-                    }
-                }, 5000); // 5 second fallback
-                return;
-            }
-            
-            // Fallback - try immediately
-            callback();
-        }
-        
-        // Initialize offline mode with local data
-        function initializeOfflineMode() {
-            console.log('🔌 Initializing offline mode...');
-            
-            // Create mock Firebase-like interface
-            window.db = {
-                collection: function(collectionName) {
-                    return {
-                        orderBy: function() { return this; },
-                        limit: function() { return this; },
-                        where: function() { return this; },
-                        get: function() {
-                            return Promise.resolve({
-                                docs: [],
-                                empty: true,
-                                size: 0,
-                                forEach: function() {}
-                            });
-                        },
-                        onSnapshot: function(callback) {
-                            // Return empty snapshot for offline mode
-                            callback({
-                                docs: [],
-                                empty: true,
-                                size: 0,
-                                forEach: function() {}
-                            });
-                            
-                            // Return unsubscribe function
-                            return function() {};
-                        },
-                        add: function(data) {
-                            console.warn('📴 Offline mode: Cannot save data to server');
-                            return Promise.reject(new Error('Offline mode - data not saved'));
-                        }
-                    };
-                }
-            };
-            
-            // Mock Firebase object
-            window.firebase = {
-                firestore: {
-                    FieldValue: {
-                        serverTimestamp: function() {
-                            return new Date();
-                        }
-                    }
-                }
-            };
-            
-            window.firebaseOfflineMode = true;
-            
-            // Dispatch ready event for compatibility
-            setTimeout(() => {
-                window.dispatchEvent(new Event('firebaseReady'));
-                console.log('✅ Offline mode initialized');
-            }, 100);
-        }
-
-        // Start loading when DOM is ready with enhanced safety
-        domReady(loadAllFirebaseScripts);
-        
-        function showOfflineMode() {
-            // Wait for DOM to be available with better safety
-            function addOfflineDiv() {
-                // Multiple fallback strategies for DOM elements
-                let targetElement = document.body;
-                
-                if (!targetElement) {
-                    targetElement = document.documentElement;
-                }
-                
-                if (!targetElement) {
-                    targetElement = document.head;
-                }
-                
-                if (!targetElement) {
-                    console.log('⚠️ No DOM element available for offline mode - retrying in 50ms...');
-                    setTimeout(addOfflineDiv, 50);
-                    return;
-                }
-                
-                // Avoid duplicate offline indicators
-                const existingOffline = document.querySelector('[data-offline-mode="true"]');
-                if (existingOffline) {
-                    console.log('📡 Offline mode indicator already exists');
-                    return;
-                }
-                
-                const offlineDiv = document.createElement('div');
-                offlineDiv.setAttribute('data-offline-mode', 'true');
-                offlineDiv.style.cssText = `
-                    position: fixed; top: 0; left: 0; right: 0; 
-                    background: linear-gradient(135deg, #1e293b, #334155); 
-                    color: white; padding: 1rem; text-align: center; z-index: 10000;
-                    border-bottom: 3px solid #ef4444;
-                `;
-                offlineDiv.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
-                        <div style="animation: pulse 2s infinite;">📡</div>
-                        <div>
-                            <h3 style="margin: 0; color: #fbbf24;">Offline Mode</h3>
-                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
-                                Firebase CDN unavailable. Some features may be limited.
-                            </p>
-                        </div>
-                        <button onclick="window.location.reload()" 
-                                style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            🔄 Retry
-                        </button>
-                    </div>
-                    <style>
-                        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-                    </style>
-                `;
-                
-                // Safe insertion with multiple methods
-                try {
-                    if (targetElement.prepend) {
-                        targetElement.prepend(offlineDiv);
-                    } else if (targetElement.insertBefore) {
-                        targetElement.insertBefore(offlineDiv, targetElement.firstChild);
-                    } else if (targetElement.appendChild) {
-                        targetElement.appendChild(offlineDiv);
-                    } else {
-                        targetElement.innerHTML = offlineDiv.outerHTML + targetElement.innerHTML;
-                    }
-                    console.log('📡 Offline mode indicator displayed');
-                } catch (error) {
-                    console.warn('⚠️ Failed to display offline mode indicator:', error);
-                }
-            }
-            
-            addOfflineDiv();
-        }
-    </script>
+    <!-- Firebase SDK - Local Files -->
+    <script src="js/firebase-app.js"></script>
+    <script src="js/firebase-firestore.js"></script>
+    <script src="js/firebase-auth.js"></script>
     
     <!-- Firebase Config -->
     <script>
@@ -417,36 +75,21 @@
         }
     }
 
-    // Fallback initialization for older approach
+    // Simple Firebase initialization with debug
     document.addEventListener('DOMContentLoaded', function() {
-        // Only run if Firebase hasn't been initialized yet
-        if (!window.firebaseScriptsLoaded && !window.firebaseScriptsLoadError) {
-            console.log('⏳ Waiting for Firebase scripts to load...');
-            
-            // Check periodically if Firebase is available
-            const checkFirebase = setInterval(() => {
-                if (window.firebaseScriptsLoaded) {
-                    clearInterval(checkFirebase);
-                    // Already initialized by immediate function
-                } else if (window.firebaseScriptsLoadError) {
-                    clearInterval(checkFirebase);
-                    console.log('❌ Firebase loading failed, running in offline mode');
-                } else if (typeof firebase !== 'undefined') {
-                    // Scripts loaded but flag not set
-                    clearInterval(checkFirebase);
-                    initializeFirebaseImmediate();
-                }
-            }, 200);
-            
-            // Timeout after 10 seconds
-            setTimeout(() => {
-                clearInterval(checkFirebase);
-                if (!window.db) {
-                    console.error('❌ Firebase initialization timeout');
-                    showFirebaseError('Firebase initialization timeout');
-                }
-            }, 10000);
-        }
+        console.log('🔍 Checking Firebase...');
+        console.log('Firebase object:', typeof firebase);
+        
+        // Wait a bit for scripts to load
+        setTimeout(function() {
+            if (typeof firebase !== 'undefined') {
+                console.log('✅ Firebase object found, initializing...');
+                initializeFirebaseImmediate();
+            } else {
+                console.error('❌ Firebase scripts not loaded after timeout');
+                showFirebaseError('Firebase scripts not loaded');
+            }
+        }, 1000);
     });
 
     function showFirebaseError(message) {
@@ -533,15 +176,13 @@
         addErrorDiv();
     }
 
-    // Listen for online/offline events
+    // Simple online/offline detection
     window.addEventListener('online', function() {
-        console.log('✅ Back online, attempting to reload Firebase...');
-        setTimeout(() => window.location.reload(), 1000);
+        console.log('✅ Back online');
     });
 
     window.addEventListener('offline', function() {
         console.log('📡 Gone offline');
-        showFirebaseError('No internet connection detected');
     });
     </script>
     <!-- Core Scripts -->
