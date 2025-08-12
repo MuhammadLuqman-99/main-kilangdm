@@ -16,6 +16,24 @@ let allData = {
     orders: []
 };
 
+// Make allData globally accessible for balance monitor
+window.allData = allData;
+
+// Function to save data for balance monitor
+function saveDataForBalanceMonitor() {
+    try {
+        // Save current data to localStorage for balance monitor access
+        localStorage.setItem('dashboardAllData', JSON.stringify({
+            salesteam: allData.salesteam,
+            orders: allData.orders,
+            timestamp: new Date().toISOString()
+        }));
+        console.log('💾 Data saved for balance monitor');
+    } catch (error) {
+        console.warn('⚠️ Could not save data for balance monitor:', error);
+    }
+}
+
 // Check chart preferences on page load
 function checkChartPreferences() {
     try {
@@ -550,8 +568,6 @@ async function initializeDashboard() {
             window.ProfessionalCharts.updateChannelChart(allData);
             window.ProfessionalCharts.updateTeamChart(allData);
             
-            // Update Balance MTD Widget
-            updateBalanceMTDWidget();
         } else {
             // Fallback to original charts if professional charts not loaded
             createMarketingCostPerTeamChart(allData);
@@ -561,9 +577,6 @@ async function initializeDashboard() {
             updateChannelChart(allData);
             updateTeamChart(allData);
         }
-        
-        // Update Balance MTD Widget
-        updateBalanceMTDWidget();
         
         // Initialize marketing cost chart (this is async)
         try {
@@ -779,6 +792,9 @@ async function fetchAllData() {
         
         if (totalRecords === 0) {
             showNoDataState();
+        } else {
+            // Save data for balance monitor access
+            saveDataForBalanceMonitor();
         }
 
     } catch (error) {
@@ -2460,6 +2476,24 @@ function updateEnhancedPowerMetricsDisplay(salesTeamData) {
     console.log(`   Bilangan Terjual: ${metrics.bilanganTerjual}`);
     console.log(`   Total Close Rate: ${metrics.totalCloseRate.toFixed(1)}%`);
 
+    // Store metrics globally for Balance Monitor access
+    window.currentPowerMetrics = {
+        saleMTD: metrics.saleMTD,
+        balanceMTD: metrics.balanceMTD,
+        kpiMTD: metrics.kpiMTD,
+        target: metrics.monthlyKPI || 15000,
+        balanceBulanan: metrics.balanceBulanan,
+        lastUpdated: new Date()
+    };
+    
+    // Also store in localStorage for Balance Monitor access
+    try {
+        localStorage.setItem('currentPowerMetrics', JSON.stringify(window.currentPowerMetrics));
+        console.log('💾 Power metrics stored globally and in localStorage for Balance Monitor access');
+    } catch (e) {
+        console.warn('⚠️ Could not store to localStorage:', e);
+    }
+
     // Helper function to update elements safely
     const updateElement = (id, value) => {
         const element = document.getElementById(id);
@@ -3563,93 +3597,5 @@ function openBalanceMonitor() {
     window.open('balance-monitor.html', '_blank');
 }
 
-// Calculate MTD balance for teams
-function calculateMTDBalance(orders, teamName) {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    let mtdTotal = 0;
-    
-    orders.forEach(order => {
-        // Handle different team name formats
-        const orderTeam = (order.team || order.agent || order.agent_name || '').toLowerCase();
-        if (orderTeam !== teamName.toLowerCase()) {
-            return;
-        }
-        
-        // Parse order date
-        let orderDate = null;
-        if (order.tarikh) {
-            if (order.tarikh.toDate) {
-                orderDate = order.tarikh.toDate();
-            } else {
-                orderDate = new Date(order.tarikh);
-            }
-        }
-        
-        if (!orderDate || isNaN(orderDate.getTime())) {
-            return;
-        }
-        
-        // Check if order is in current month (MTD)
-        if (orderDate >= startOfMonth && orderDate <= now) {
-            const amount = parseFloat(order.amount || order.total || order.revenue || 0);
-            mtdTotal += amount;
-        }
-    });
-    
-    return mtdTotal;
-}
-
-// Update Balance MTD Widget
-function updateBalanceMTDWidget() {
-    console.log('💰 Updating Balance MTD Widget...');
-    
-    if (!window.allData || !window.allData.ecommerce) {
-        console.warn('⚠️ No data available for Balance MTD Widget');
-        return;
-    }
-    
-    const widget = document.querySelector('.balance-mtd-widget');
-    if (widget) {
-        widget.classList.add('loading');
-    }
-    
-    try {
-        // Get all order data
-        const allOrders = [...window.allData.ecommerce, ...(window.allData.orders || [])];
-        
-        // Calculate MTD for each team
-        const teams = ['Nisya', 'Qilah', 'Wiyah'];
-        
-        teams.forEach(teamName => {
-            const mtdBalance = calculateMTDBalance(allOrders, teamName);
-            const element = document.getElementById(`${teamName.toLowerCase()}-mtd-preview`);
-            
-            if (element) {
-                element.textContent = `RM ${mtdBalance.toLocaleString('ms-MY', { 
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                })}`;
-                
-                // Add color coding based on performance
-                element.style.color = mtdBalance > 10000 ? 'var(--success-400)' : 
-                                    mtdBalance > 5000 ? 'var(--warning-400)' : 
-                                    'var(--error-400)';
-            }
-            
-            console.log(`💰 ${teamName} MTD: RM ${mtdBalance.toLocaleString()}`);
-        });
-        
-    } catch (error) {
-        console.error('❌ Error updating Balance MTD Widget:', error);
-    } finally {
-        if (widget) {
-            widget.classList.remove('loading');
-        }
-    }
-}
-
-// Export functions for external use
+// Export function for external use
 window.openBalanceMonitor = openBalanceMonitor;
-window.updateBalanceMTDWidget = updateBalanceMTDWidget;

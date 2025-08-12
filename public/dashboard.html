@@ -681,6 +681,17 @@
 
             <!-- Secondary Metrics -->
             <div class="power-grid secondary-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="fas fa-trending-up"></i>
+                        </div>
+                        <span class="metric-status" id="balance-mtd-status">Gap</span>
+                    </div>
+                    <h4 class="metric-title">Balance MTD</h4>
+                    <p class="metric-value" id="balance-mtd">RM 0</p>
+                    <p class="metric-desc" id="balance-mtd-desc">gap sasaran</p>
+                </div>
 
                 <div class="metric-card">
                     <div class="metric-header">
@@ -718,34 +729,6 @@
                     <p class="metric-desc" id="working-days-desc">hari ini / total</p>
                 </div>
 
-                <!-- Balance MTD Monitor Widget -->
-                <div class="metric-card balance-mtd-widget" onclick="openBalanceMonitor()" style="cursor: pointer;">
-                    <div class="metric-header">
-                        <div class="metric-icon">
-                            <i class="fas fa-tv"></i>
-                        </div>
-                        <span class="metric-status">Monitor</span>
-                    </div>
-                    <h4 class="metric-title">Balance MTD Teams</h4>
-                    <div class="balance-preview" id="balance-preview">
-                        <div class="team-balance">
-                            <span class="team-name">Nisya:</span>
-                            <span class="team-amount" id="nisya-mtd-preview">RM 0</span>
-                        </div>
-                        <div class="team-balance">
-                            <span class="team-name">Qilah:</span>
-                            <span class="team-amount" id="qilah-mtd-preview">RM 0</span>
-                        </div>
-                        <div class="team-balance">
-                            <span class="team-name">Wiyah:</span>
-                            <span class="team-amount" id="wiyah-mtd-preview">RM 0</span>
-                        </div>
-                    </div>
-                    <p class="metric-desc">
-                        <i class="fas fa-external-link-alt"></i>
-                        Click untuk full screen monitor
-                    </p>
-                </div>
             </div>
 
             <!-- Progress Section -->

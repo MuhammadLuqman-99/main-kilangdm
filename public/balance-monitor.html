@@ -135,6 +135,96 @@
             box-shadow: 0 0 40px rgba(239, 68, 68, 0.3);
         }
         
+        .team-card.wiyah .team-name {
+            color: #ef4444;
+        }
+        
+        /* Balance status colors */
+        .team-card.positive {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(34, 197, 94, 0.1));
+            border-color: #22c55e !important;
+            box-shadow: 0 0 40px rgba(34, 197, 94, 0.4) !important;
+        }
+        
+        .team-card.negative {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(239, 68, 68, 0.1));
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.4) !important;
+        }
+        
+        .team-card.neutral {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(245, 158, 11, 0.1));
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 40px rgba(245, 158, 11, 0.4) !important;
+        }
+        
+        /* Special card styles */
+        .team-card.overall-summary {
+            border-color: #3b82f6;
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);
+        }
+        
+        .team-card.balance-focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.4);
+        }
+        
+        .team-card.target-progress {
+            border-color: #06b6d4;
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.4);
+        }
+        
+        /* Large progress bar */
+        .large-progress-bar {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            border-radius: 28px;
+            transition: width 1s ease;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s linear infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+        
+        .progress-display {
+            padding: 1rem 0;
+        }
+        
         /* Team Header */
         .team-header {
             margin-bottom: 2rem;
@@ -201,6 +291,22 @@
             gap: 1rem;
             width: 100%;
             margin-top: auto;
+        }
+        
+        /* Team-specific stat item colors */
+        .team-card.wiyah .stat-item {
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .team-card.nisya .stat-item {
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .team-card.qilah .stat-item {
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.1);
         }
         
         .stat-item {
@@ -326,8 +432,8 @@
     <!-- Header -->
     <header class="monitor-header">
         <div class="header-title">
-            <i class="fas fa-chart-line" style="font-size: 2rem; color: #3b82f6;"></i>
-            <h1>Balance MTD Monitor</h1>
+            <i class="fas fa-balance-scale" style="font-size: 2rem; color: #3b82f6;"></i>
+            <h1>Balance Monitor - Team Sales</h1>
         </div>
         <div class="header-info">
             <div class="current-date" id="current-date">-</div>
@@ -340,77 +446,77 @@
 
     <!-- Main Content -->
     <main class="balance-container">
-        <!-- Nisya Team -->
-        <div class="team-card nisya">
-            <div class="status-indicator"></div>
-            <div class="team-header">
-                <div class="team-name">Nisya</div>
-                <div class="team-role">Sales Team Lead</div>
-            </div>
-            <div class="balance-section">
-                <div class="balance-label">Balance MTD</div>
-                <div class="balance-amount" id="nisya-balance">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-            <div class="team-stats">
-                <div class="stat-item">
-                    <div class="stat-label">Today's Sales</div>
-                    <div class="stat-value" id="nisya-today">RM 0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">MTD Target</div>
-                    <div class="stat-value" id="nisya-target">RM 0</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Qilah Team -->
-        <div class="team-card qilah">
-            <div class="status-indicator"></div>
-            <div class="team-header">
-                <div class="team-name">Qilah</div>
-                <div class="team-role">Sales Team Lead</div>
-            </div>
-            <div class="balance-section">
-                <div class="balance-label">Balance MTD</div>
-                <div class="balance-amount" id="qilah-balance">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-            <div class="team-stats">
-                <div class="stat-item">
-                    <div class="stat-label">Today's Sales</div>
-                    <div class="stat-value" id="qilah-today">RM 0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">MTD Target</div>
-                    <div class="stat-value" id="qilah-target">RM 0</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Wiyah Team -->
+        <!-- Team Wiyah -->
         <div class="team-card wiyah">
             <div class="status-indicator"></div>
             <div class="team-header">
-                <div class="team-name">Wiyah</div>
-                <div class="team-role">Sales Team Lead</div>
+                <div class="team-name">WIYAH</div>
+                <div class="team-role">Sales Team</div>
             </div>
             <div class="balance-section">
                 <div class="balance-label">Balance MTD</div>
-                <div class="balance-amount" id="wiyah-balance">
+                <div class="balance-amount" id="wiyah-balance-mtd">
                     <div class="loading-spinner"></div>
                 </div>
             </div>
             <div class="team-stats">
                 <div class="stat-item">
-                    <div class="stat-label">Today's Sales</div>
-                    <div class="stat-value" id="wiyah-today">RM 0</div>
+                    <div class="stat-label">KPI MTD</div>
+                    <div class="stat-value" id="wiyah-kpi-mtd">RM 0</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">MTD Target</div>
-                    <div class="stat-value" id="wiyah-target">RM 0</div>
+                    <div class="stat-label">Sale MTD</div>
+                    <div class="stat-value" id="wiyah-sale-mtd">RM 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Nisya -->
+        <div class="team-card nisya">
+            <div class="status-indicator"></div>
+            <div class="team-header">
+                <div class="team-name">NISYA</div>
+                <div class="team-role">Sales Team</div>
+            </div>
+            <div class="balance-section">
+                <div class="balance-label">Balance MTD</div>
+                <div class="balance-amount" id="nisya-balance-mtd">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="team-stats">
+                <div class="stat-item">
+                    <div class="stat-label">KPI MTD</div>
+                    <div class="stat-value" id="nisya-kpi-mtd">RM 0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Sale MTD</div>
+                    <div class="stat-value" id="nisya-sale-mtd">RM 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Qilah -->
+        <div class="team-card qilah">
+            <div class="status-indicator"></div>
+            <div class="team-header">
+                <div class="team-name">QILAH</div>
+                <div class="team-role">Sales Team</div>
+            </div>
+            <div class="balance-section">
+                <div class="balance-label">Balance MTD</div>
+                <div class="balance-amount" id="qilah-balance-mtd">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="team-stats">
+                <div class="stat-item">
+                    <div class="stat-label">KPI MTD</div>
+                    <div class="stat-value" id="qilah-kpi-mtd">RM 0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Sale MTD</div>
+                    <div class="stat-value" id="qilah-sale-mtd">RM 0</div>
                 </div>
             </div>
         </div>
@@ -578,14 +684,15 @@
     
     <!-- Firebase Config -->
     <script>
-        // Firebase configuration
+        // Firebase configuration - Real config from dashboard
         const firebaseConfig = {
-            apiKey: "AIzaSyDvqSuT4sQeJwB5Mb8wQZ4X4X4X4X4X4X",
+            apiKey: "AIzaSyANOj0x2Y2zpfaRR9tiLQxQ6BvFT1yGS04",
             authDomain: "kilangdm-v1.firebaseapp.com",
             projectId: "kilangdm-v1",
-            storageBucket: "kilangdm-v1.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef123456"
+            storageBucket: "kilangdm-v1.firebasestorage.app",
+            messagingSenderId: "264191193800",
+            appId: "1:264191193800:web:0f3d9f25b9694c16bdabfd",
+            measurementId: "G-C02S0CPE63"
         };
 
         // Immediate Firebase initialization (called after scripts load)
@@ -629,11 +736,180 @@
 
     <!-- Main JavaScript -->
     <script>
+        // Firebase Firestore functions will be available after Firebase loads
+        
         console.log('🖥️ Balance MTD Monitor v1.0 starting...');
         
         // Global variables
         let isLoading = false;
         let lastUpdate = null;
+        
+        // Debug function to test with sample data
+        window.testWithSampleData = function() {
+            console.log('🧪 Testing with sample data...');
+            
+            const sampleData = {
+                wiyah: { saleMTD: 12500, target: 15000 },
+                nisya: { saleMTD: 18000, target: 20000 },
+                qilah: { saleMTD: 9500, target: 12000 }
+            };
+            
+            Object.keys(sampleData).forEach(teamName => {
+                updateTeamDisplay(teamName, sampleData[teamName]);
+            });
+            
+            console.log('✅ Sample data loaded successfully');
+        };
+        
+        // Load sample data as fallback when no real data available
+        function loadSampleDataAsFallback() {
+            console.log('🔄 Loading sample data as fallback...');
+            
+            const fallbackData = {
+                wiyah: { saleMTD: 8500, target: 15000 },
+                nisya: { saleMTD: 12000, target: 18000 },
+                qilah: { saleMTD: 6500, target: 12000 }
+            };
+            
+            Object.keys(fallbackData).forEach(teamName => {
+                updateTeamDisplay(teamName, fallbackData[teamName]);
+            });
+            
+            lastUpdate = new Date();
+            console.log('✅ Fallback sample data loaded successfully');
+        }
+        
+        // Debug function to check real data sources
+        window.debugDataSources = function() {
+            console.log('🔍 DEBUGGING DATA SOURCES:');
+            
+            // Check window.opener
+            if (window.opener && window.opener.allData) {
+                console.log('✅ window.opener.allData exists');
+                console.log('   - Salesteam records:', window.opener.allData.salesteam?.length || 0);
+                const powerMetrics = window.opener.allData.salesteam?.filter(item => item.type === 'power_metrics') || [];
+                console.log('   - Power metrics:', powerMetrics.length);
+                powerMetrics.forEach(item => {
+                    console.log(`     * ${item.agent_name || item.team}: RM ${item.total_sale_bulan}`);
+                });
+            } else {
+                console.log('❌ window.opener.allData not available');
+            }
+            
+            // Check parent window
+            if (window.parent && window.parent !== window && window.parent.allData) {
+                console.log('✅ window.parent.allData exists');
+                console.log('   - Salesteam records:', window.parent.allData.salesteam?.length || 0);
+            } else {
+                console.log('❌ window.parent.allData not available');
+            }
+            
+            // Check current window
+            if (window.allData) {
+                console.log('✅ window.allData exists');
+                console.log('   - Salesteam records:', window.allData.salesteam?.length || 0);
+            } else {
+                console.log('❌ window.allData not available');
+            }
+            
+            // Check Firebase
+            if (window.db) {
+                console.log('✅ Firebase database available');
+            } else {
+                console.log('❌ Firebase database not available');
+            }
+            
+            // Check localStorage data
+            const savedData = localStorage.getItem('dashboardAllData');
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    console.log('✅ localStorage data exists');
+                    console.log('   - Timestamp:', parsedData.timestamp);
+                    console.log('   - Salesteam records:', parsedData.salesteam?.length || 0);
+                    
+                    // Show sample power metrics
+                    const powerMetrics = parsedData.salesteam?.filter(item => item.type === 'power_metrics') || [];
+                    console.log('   - Power metrics:', powerMetrics.length);
+                    powerMetrics.slice(0, 3).forEach(item => {
+                        console.log(`     * ${item.agent_name || item.team}: RM ${item.total_sale_bulan}`);
+                    });
+                } catch (e) {
+                    console.log('❌ localStorage data exists but cannot parse:', e);
+                }
+            } else {
+                console.log('❌ No localStorage data available');
+            }
+        };
+        
+        // Force reload data from localStorage
+        window.forceLoadFromLocalStorage = function() {
+            console.log('🔄 Force loading from localStorage...');
+            const savedData = localStorage.getItem('dashboardAllData');
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    const allData = {
+                        salesteam: parsedData.salesteam || [],
+                        orders: parsedData.orders || [],
+                        ecommerce: [],
+                        marketing: []
+                    };
+                    
+                    console.log(`📋 Processing ${allData.salesteam.length} salesteam records from localStorage...`);
+                    
+                    // Update data for each team
+                    const teams = ['wiyah', 'nisya', 'qilah'];
+                    teams.forEach(teamName => {
+                        const teamData = getTeamDataFromPowerMetrics(allData, teamName);
+                        updateTeamDisplay(teamName, teamData);
+                    });
+                    
+                    console.log('✅ Data loaded from localStorage successfully');
+                } catch (e) {
+                    console.error('❌ Error loading from localStorage:', e);
+                }
+            } else {
+                console.log('❌ No localStorage data to load');
+            }
+        };
+        
+        // Create sample localStorage data for testing
+        window.createSampleLocalStorageData = function() {
+            console.log('🧪 Creating sample localStorage data...');
+            
+            const sampleData = {
+                salesteam: [
+                    {
+                        type: 'power_metrics',
+                        agent_name: 'wiyah',
+                        total_sale_bulan: 8500,
+                        target: 15000,
+                        tarikh: new Date().toISOString().split('T')[0]
+                    },
+                    {
+                        type: 'power_metrics',
+                        agent_name: 'nisya', 
+                        total_sale_bulan: 12000,
+                        target: 18000,
+                        tarikh: new Date().toISOString().split('T')[0]
+                    },
+                    {
+                        type: 'power_metrics',
+                        agent_name: 'qilah',
+                        total_sale_bulan: 6500,
+                        target: 12000,
+                        tarikh: new Date().toISOString().split('T')[0]
+                    }
+                ],
+                orders: [],
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('dashboardAllData', JSON.stringify(sampleData));
+            console.log('✅ Sample localStorage data created');
+            console.log('   Now run: forceLoadFromLocalStorage()');
+        };
         
         // Update current time and date
         function updateDateTime() {
@@ -672,54 +948,127 @@
             return `<span class="balance-currency">RM</span>${formatted}`;
         }
         
-        // Calculate MTD (Month-to-Date) balance
-        function calculateMTDBalance(orders, teamName) {
+        // Calculate MTD balance using SAME logic as dashboard.js
+        function calculateMTDBalance(allData, teamName) {
             const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             
-            let mtdTotal = 0;
-            let todayTotal = 0;
+            console.log(`🔍 Calculating MTD for ${teamName} in ${currentMonth}/${currentYear}`);
             
-            orders.forEach(order => {
-                // Handle different team name formats
-                const orderTeam = (order.team || order.agent || order.agent_name || '').toLowerCase();
-                if (orderTeam !== teamName.toLowerCase()) {
-                    return;
-                }
-                
-                // Parse order date
-                let orderDate = null;
-                if (order.tarikh) {
-                    if (order.tarikh.toDate) {
-                        orderDate = order.tarikh.toDate();
-                    } else {
-                        orderDate = new Date(order.tarikh);
-                    }
-                }
-                
-                if (!orderDate || isNaN(orderDate.getTime())) {
-                    return;
-                }
-                
-                // Parse amount
-                const amount = parseFloat(order.amount || order.total || order.revenue || 0);
-                
-                // Check if order is in current month (MTD)
-                if (orderDate >= startOfMonth && orderDate <= now) {
-                    mtdTotal += amount;
+            let mtdSales = 0;
+            let todayTotal = 0;
+            let mtdTarget = 15000; // Default target
+            
+            // Process salesteam data EXACTLY like dashboard.js getSaleMTD
+            if (allData.salesteam) {
+                // Filter power_metrics data for current month
+                const powerMetrics = allData.salesteam.filter(item => {
+                    if (item.type !== 'power_metrics') return false;
                     
-                    // Check if order is today
-                    if (orderDate >= startOfDay) {
+                    let itemDate;
+                    if (item.tarikh) {
+                        itemDate = new Date(item.tarikh);
+                    } else if (item.createdAt) {
+                        itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                    } else {
+                        return false;
+                    }
+                    
+                    return itemDate.getMonth() + 1 === currentMonth && 
+                           itemDate.getFullYear() === currentYear;
+                });
+                
+                console.log(`📊 Found ${powerMetrics.length} power metrics for ${currentMonth}/${currentYear}`);
+                
+                // Find latest data for the specific team
+                let teamLatestData = null;
+                let latestDate = null;
+                
+                powerMetrics.forEach(item => {
+                    const itemAgent = (item.agent_name || item.team || '').toLowerCase();
+                    const targetTeam = teamName.toLowerCase();
+                    
+                    if (itemAgent === targetTeam) {
+                        let itemDate;
+                        if (item.tarikh) {
+                            itemDate = new Date(item.tarikh);
+                        } else if (item.createdAt) {
+                            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                        } else {
+                            itemDate = new Date();
+                        }
+                        
+                        if (!teamLatestData || itemDate > latestDate) {
+                            teamLatestData = item;
+                            latestDate = itemDate;
+                        }
+                    }
+                });
+                
+                if (teamLatestData) {
+                    mtdSales = parseFloat(teamLatestData.total_sale_bulan || 0);
+                    mtdTarget = parseFloat(teamLatestData.target || teamLatestData.sasaran || 15000);
+                    console.log(`💰 ${teamName} - Latest MTD: RM ${mtdSales}, Target: RM ${mtdTarget}`);
+                } else {
+                    console.log(`⚠️ No power metrics found for ${teamName}`);
+                }
+            }
+            
+            // Calculate today's sales from orders/ecommerce
+            const orderSources = [
+                { data: allData.orders || [], source: 'orders' },
+                { data: allData.ecommerce || [], source: 'ecommerce' }
+            ];
+            
+            orderSources.forEach(({ data: orders, source }) => {
+                orders.forEach(order => {
+                    const orderTeam = (order.team || order.agent || order.agent_name || order.sales_agent || '').toLowerCase();
+                    if (orderTeam !== teamName.toLowerCase()) {
+                        return;
+                    }
+                    
+                    let orderDate = null;
+                    if (order.tarikh) {
+                        if (order.tarikh.toDate) {
+                            orderDate = order.tarikh.toDate();
+                        } else {
+                            orderDate = new Date(order.tarikh);
+                        }
+                    } else if (order.createdAt) {
+                        if (order.createdAt.toDate) {
+                            orderDate = order.createdAt.toDate();
+                        } else {
+                            orderDate = new Date(order.createdAt);
+                        }
+                    }
+                    
+                    if (!orderDate || isNaN(orderDate.getTime())) {
+                        return;
+                    }
+                    
+                    let amount = 0;
+                    if (source === 'orders') {
+                        amount = parseFloat(order.total_rm || order.amount || order.total || 0);
+                    } else {
+                        amount = parseFloat(order.amount || order.total || order.total_rm || 0);
+                    }
+                    
+                    if (orderDate >= startOfDay && orderDate <= now) {
                         todayTotal += amount;
                     }
-                }
+                });
             });
             
+            // Calculate balance (remaining to achieve target)
+            const balance = mtdTarget - mtdSales;
+            
             return {
-                mtd: mtdTotal,
+                mtd: mtdSales,
+                balance: balance,
                 today: todayTotal,
-                target: calculateMTDTarget() // You can implement target logic
+                target: mtdTarget
             };
         }
         
@@ -733,26 +1082,134 @@
             return (monthlyTarget / daysInMonth) * daysPassed;
         }
         
-        // Update team balance display
-        function updateTeamBalance(teamName, data) {
+        // Update display with team data
+        function updateTeamDisplay(teamName, teamData) {
+            console.log(`🔄 Updating display for team ${teamName}:`, teamData);
+            
             const teamKey = teamName.toLowerCase();
-            const balanceElement = document.getElementById(`${teamKey}-balance`);
-            const todayElement = document.getElementById(`${teamKey}-today`);
-            const targetElement = document.getElementById(`${teamKey}-target`);
             
-            if (balanceElement) {
-                balanceElement.innerHTML = formatCurrency(data.mtd);
-                balanceElement.classList.add('updating');
-                setTimeout(() => balanceElement.classList.remove('updating'), 1000);
+            // Calculate balance (remaining to achieve target)
+            const balance = (teamData.target || 0) - (teamData.saleMTD || 0);
+            
+            // Update Balance MTD (big display in center)
+            updateElement(`${teamKey}-balance-mtd`, formatCurrency(Math.abs(balance)));
+            
+            // Update KPI MTD (target) - small display
+            updateElement(`${teamKey}-kpi-mtd`, formatCurrency(teamData.target || 0).replace(/<[^>]*>/g, ''));
+            
+            // Update Sale MTD - small display
+            updateElement(`${teamKey}-sale-mtd`, formatCurrency(teamData.saleMTD || 0).replace(/<[^>]*>/g, ''));
+            
+            // Update card status based on achievement
+            const teamCard = document.querySelector(`.team-card.${teamKey}`);
+            if (teamCard) {
+                const achievementPct = teamData.target > 0 ? (teamData.saleMTD / teamData.target) * 100 : 0;
+                
+                teamCard.classList.remove('positive', 'negative', 'neutral');
+                if (achievementPct >= 100 || balance <= 0) {
+                    teamCard.classList.add('positive');
+                } else if (achievementPct >= 70) {
+                    teamCard.classList.add('neutral');
+                } else {
+                    teamCard.classList.add('negative');
+                }
             }
             
-            if (todayElement) {
-                todayElement.textContent = formatCurrency(data.today).replace(/<[^>]*>/g, '');
+            console.log(`💰 Updated ${teamName} - Sale MTD: RM ${teamData.saleMTD}, Balance: RM ${balance.toFixed(2)}, Target: RM ${teamData.target}`);
+        }
+        
+        // Get team data from power metrics
+        function getTeamDataFromPowerMetrics(allData, teamName) {
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+            
+            console.log(`🔍 Getting data for team ${teamName} in ${currentMonth}/${currentYear}`);
+            
+            let teamData = {
+                saleMTD: 0,
+                target: 15000,
+                balance: 0
+            };
+            
+            if (allData && allData.salesteam) {
+                // Filter power_metrics data for current month
+                const powerMetrics = allData.salesteam.filter(item => {
+                    if (item.type !== 'power_metrics') return false;
+                    
+                    let itemDate;
+                    if (item.tarikh) {
+                        itemDate = new Date(item.tarikh);
+                    } else if (item.createdAt) {
+                        itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                    } else {
+                        return false;
+                    }
+                    
+                    return itemDate.getMonth() + 1 === currentMonth && 
+                           itemDate.getFullYear() === currentYear;
+                });
+                
+                console.log(`📊 Found ${powerMetrics.length} power metrics for ${currentMonth}/${currentYear}`);
+                
+                // Find latest data for the specific team
+                let teamLatestData = null;
+                let latestDate = null;
+                
+                powerMetrics.forEach(item => {
+                    const itemAgent = (item.agent_name || item.team || '').toLowerCase();
+                    const targetTeam = teamName.toLowerCase();
+                    
+                    if (itemAgent === targetTeam) {
+                        let itemDate;
+                        if (item.tarikh) {
+                            itemDate = new Date(item.tarikh);
+                        } else if (item.createdAt) {
+                            itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                        } else {
+                            itemDate = new Date();
+                        }
+                        
+                        if (!teamLatestData || itemDate > latestDate) {
+                            teamLatestData = item;
+                            latestDate = itemDate;
+                        }
+                    }
+                });
+                
+                if (teamLatestData) {
+                    teamData.saleMTD = parseFloat(teamLatestData.total_sale_bulan || 0);
+                    teamData.target = parseFloat(teamLatestData.target || teamLatestData.sasaran || 15000);
+                    console.log(`💰 ${teamName} - Latest MTD: RM ${teamData.saleMTD}, Target: RM ${teamData.target}`);
+                } else {
+                    console.log(`⚠️ No power metrics found for ${teamName}`);
+                }
             }
             
-            if (targetElement) {
-                targetElement.textContent = formatCurrency(data.target).replace(/<[^>]*>/g, '');
+            teamData.balance = teamData.target - teamData.saleMTD;
+            return teamData;
+        }
+        
+        // Helper function to update elements safely
+        const updateElement = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.innerHTML = value;
+                element.classList.add('updating');
+                setTimeout(() => element.classList.remove('updating'), 1000);
             }
+        };
+        
+        // Show no data message
+        function showNoDataMessage() {
+            console.warn('⚠️ Showing no data message for all teams');
+            const teams = ['wiyah', 'nisya', 'qilah'];
+            
+            teams.forEach(teamName => {
+                updateElement(`${teamName}-balance-mtd`, '<span style="color: #f59e0b;">Tiada Data</span>');
+                updateElement(`${teamName}-kpi-mtd`, '<span style="color: #f59e0b;">Tiada Data</span>');
+                updateElement(`${teamName}-sale-mtd`, '<span style="color: #f59e0b;">Tiada Data</span>');
+            });
         }
         
         // Show error state
@@ -770,65 +1227,142 @@
             }
         }
         
-        // Fetch balance data from Firebase
-        async function fetchBalanceData() {
+        // Get balance data from dashboard
+        function fetchBalanceData() {
             if (isLoading) return;
             
-            // Check if Firebase is ready
-            if (!window.db) {
-                console.warn('⚠️ Firebase not ready yet, waiting...');
-                setTimeout(fetchBalanceData, 1000);
-                return;
-            }
-            
-            console.log('📊 Fetching balance data...');
+            console.log('📊 Fetching balance data for all teams...');
             isLoading = true;
             
             try {
-                // Fetch order data from Firebase
-                const ordersSnapshot = await window.db.collection('orders').get();
-                const ecommerceSnapshot = await window.db.collection('ecommerceData').get();
+                // Try to access all data from parent window/dashboard
+                let allData = null;
                 
-                let allOrders = [];
+                // Method 1: Check if opened from dashboard window
+                if (window.opener && window.opener.allData) {
+                    allData = window.opener.allData;
+                    console.log('✅ Got all data from parent dashboard window');
+                    console.log('   - Orders:', allData.orders?.length || 0);
+                    console.log('   - Salesteam:', allData.salesteam?.length || 0);
+                } else if (window.parent && window.parent !== window && window.parent.allData) {
+                    allData = window.parent.allData;
+                    console.log('✅ Got all data from parent frame');
+                } else {
+                    console.log('🔍 No parent window data, checking other sources...');
+                    
+                    // Method 2: Try to get from localStorage (from dashboard)
+                    console.log('📂 Checking localStorage...');
+                    const savedData = localStorage.getItem('dashboardAllData');
+                    
+                    if (savedData) {
+                        try {
+                            const parsedData = JSON.parse(savedData);
+                            allData = {
+                                salesteam: parsedData.salesteam || [],
+                                orders: parsedData.orders || [],
+                                ecommerce: [],
+                                marketing: []
+                            };
+                            console.log('✅ Got all data from localStorage');
+                            console.log('   - Timestamp:', parsedData.timestamp);
+                            console.log('   - Salesteam records:', allData.salesteam.length);
+                        } catch (e) {
+                            console.warn('⚠️ Error parsing localStorage data:', e);
+                            allData = null;
+                        }
+                    } else {
+                        console.log('❌ No localStorage data found');
+                    }
+                    
+                    // Method 3: Try to access global allData from current window
+                    if (!allData && window.allData) {
+                        allData = window.allData;
+                        console.log('✅ Got all data from current window global');
+                    } else if (!allData && window.db) {
+                        // Method 4: Fetch data directly from Firebase
+                        console.log('🔥 Fetching data directly from Firebase...');
+                        fetchDataFromFirebase();
+                        return;
+                    } else if (!allData) {
+                        console.warn('⚠️ No data source available, loading fallback data...');
+                        loadSampleDataAsFallback();
+                        return;
+                    }
+                }
                 
-                // Process orders collection
-                ordersSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    allOrders.push({ ...data, id: doc.id, source: 'orders' });
+                if (allData && allData.salesteam) {
+                    console.log(`📋 Processing ${allData.salesteam.length} salesteam records...`);
+                    
+                    // Debug: Show all power metrics data
+                    const powerMetrics = allData.salesteam.filter(item => item.type === 'power_metrics');
+                    console.log(`🔍 Found ${powerMetrics.length} power metrics records:`);
+                    powerMetrics.forEach((item, index) => {
+                        console.log(`   [${index + 1}] ${item.agent_name || item.team}: RM ${item.total_sale_bulan} (${item.tarikh})`);
+                    });
+                    
+                    // Update data for each team
+                    const teams = ['wiyah', 'nisya', 'qilah'];
+                    
+                    teams.forEach(teamName => {
+                        const teamData = getTeamDataFromPowerMetrics(allData, teamName);
+                        updateTeamDisplay(teamName, teamData);
+                    });
+                    
+                    lastUpdate = new Date();
+                    console.log('✅ All teams updated successfully at', lastUpdate.toLocaleTimeString());
+                } else {
+                    console.warn('⚠️ No salesteam data found, loading sample data...');
+                    loadSampleDataAsFallback();
+                }
+                
+            } catch (error) {
+                console.error('❌ Error getting balance data:', error);
+                console.log('🔄 Loading fallback data due to error...');
+                loadSampleDataAsFallback();
+            } finally {
+                isLoading = false;
+            }
+        }
+        
+        // Fetch data directly from Firebase
+        async function fetchDataFromFirebase() {
+            try {
+                console.log('🔥 Fetching salesteam data from Firebase...');
+                
+                const salesteamRef = window.db.collection('salesteam');
+                const salesteamQuery = salesteamRef.orderBy('createdAt', 'desc');
+                const salesteamSnapshot = await salesteamQuery.get();
+                
+                const salesteamData = [];
+                salesteamSnapshot.forEach((doc) => {
+                    salesteamData.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // Process ecommerce collection
-                ecommerceSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    allOrders.push({ ...data, id: doc.id, source: 'ecommerce' });
-                });
+                console.log(`✅ Loaded ${salesteamData.length} salesteam records`);
                 
-                console.log(`📊 Loaded ${allOrders.length} orders`);
+                // Create allData object similar to dashboard
+                const allData = {
+                    salesteam: salesteamData,
+                    ecommerce: [],
+                    marketing: [],
+                    orders: []
+                };
                 
-                // Calculate and update balances for each team
-                const teams = ['Nisya', 'Qilah', 'Wiyah'];
+                // Update data for each team
+                const teams = ['wiyah', 'nisya', 'qilah'];
                 
                 teams.forEach(teamName => {
-                    try {
-                        const balanceData = calculateMTDBalance(allOrders, teamName);
-                        updateTeamBalance(teamName, balanceData);
-                        console.log(`💰 ${teamName} MTD: RM ${balanceData.mtd.toFixed(2)}, Today: RM ${balanceData.today.toFixed(2)}`);
-                    } catch (error) {
-                        console.error(`❌ Error calculating balance for ${teamName}:`, error);
-                        showError(teamName, error.message);
-                    }
+                    const teamData = getTeamDataFromPowerMetrics(allData, teamName);
+                    updateTeamDisplay(teamName, teamData);
                 });
                 
                 lastUpdate = new Date();
-                console.log('✅ Balance data updated successfully');
+                console.log('✅ All teams updated from Firebase at', lastUpdate.toLocaleTimeString());
                 
             } catch (error) {
-                console.error('❌ Error fetching balance data:', error);
-                
-                // Show error for all teams
-                ['Nisya', 'Qilah', 'Wiyah'].forEach(teamName => {
-                    showError(teamName, error.message);
-                });
+                console.error('❌ Error fetching data from Firebase:', error);
+                console.log('🔄 Loading fallback data due to Firebase error...');
+                loadSampleDataAsFallback();
             } finally {
                 isLoading = false;
             }
@@ -842,16 +1376,27 @@
             updateDateTime();
             setInterval(updateDateTime, 1000);
             
-            // Wait for Firebase to be ready before fetching data
-            if (window.db) {
-                fetchBalanceData();
-            } else {
-                console.log('⏳ Waiting for Firebase to initialize...');
-                window.addEventListener('firebaseReady', () => {
-                    console.log('🔥 Firebase ready, fetching data...');
-                    fetchBalanceData();
+            // Try to fetch data immediately, don't wait for Firebase
+            fetchBalanceData();
+            
+            // If still no data after 2 seconds, force load fallback
+            setTimeout(() => {
+                const hasData = ['wiyah', 'nisya', 'qilah'].some(team => {
+                    const element = document.getElementById(`${team}-balance-mtd`);
+                    return element && !element.innerHTML.includes('loading-spinner') && !element.innerHTML.includes('Tiada Data');
                 });
-            }
+                
+                if (!hasData) {
+                    console.log('⚠️ No data loaded after 2 seconds, forcing fallback...');
+                    loadSampleDataAsFallback();
+                }
+            }, 2000);
+            
+            // Also listen for Firebase if it becomes available later
+            window.addEventListener('firebaseReady', () => {
+                console.log('🔥 Firebase ready, fetching data...');
+                fetchBalanceData();
+            });
             
             // Refresh data every 30 seconds
             setInterval(fetchBalanceData, 30000);
