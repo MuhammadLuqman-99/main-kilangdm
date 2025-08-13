@@ -1,6 +1,46 @@
 // Professional Order Dashboard JavaScript
 // Clean, focused order analytics with real data integration
 
+// ===================================================
+// UTILITY FUNCTIONS
+// ===================================================
+
+/**
+ * Extract amount from order object with multiple field fallbacks
+ * @param {Object} order - The order object
+ * @returns {number} - The amount value or 0 if not found
+ */
+function extractOrderAmount(order) {
+    const possibleAmountFields = [
+        'jumlah_bayar',     // Malay: Payment amount
+        'total_amount',     // Standard total amount
+        'amount',           // Simple amount
+        'total_rm',         // Total in RM
+        'total',            // Generic total
+        'harga',            // Malay: Price
+        'price',            // Standard price
+        'totalPrice',       // Camel case total price
+        'grandTotal',       // Grand total
+        'finalAmount',      // Final amount
+        'totalCost',        // Total cost
+        'orderTotal',       // Order total
+        'payableAmount',    // Payable amount
+        'netAmount',        // Net amount
+        'grossAmount'       // Gross amount
+    ];
+    
+    for (const field of possibleAmountFields) {
+        if (order[field] !== undefined && order[field] !== null && order[field] !== '') {
+            const amount = parseFloat(order[field]);
+            if (!isNaN(amount) && amount > 0) {
+                return amount;
+            }
+        }
+    }
+    
+    return 0;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔄 Initializing Professional Order Dashboard...');
     
@@ -234,17 +274,13 @@ function updateOrderKPIs(orders) {
     });
     
     // Calculate metrics
-    const totalRevenue = orders.reduce((sum, order) => 
-        sum + (parseFloat(order.total_rm || order.amount) || 0), 0
-    );
+    const totalRevenue = orders.reduce((sum, order) => sum + extractOrderAmount(order), 0);
     
     const totalOrders = orders.length;
     
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     
-    const todayRevenue = todayOrders.reduce((sum, order) => 
-        sum + (parseFloat(order.total_rm || order.amount) || 0), 0
-    );
+    const todayRevenue = todayOrders.reduce((sum, order) => sum + extractOrderAmount(order), 0);
     
     const todayOrderCount = todayOrders.length;
     const todayAOV = todayOrderCount > 0 ? todayRevenue / todayOrderCount : 0;
@@ -268,9 +304,7 @@ function updateOrderKPIs(orders) {
         return orderDate >= previous30Days && orderDate < last30Days;
     });
     
-    const prevRevenue = previousPeriod.reduce((sum, order) => 
-        sum + (parseFloat(order.total_rm || order.amount) || 0), 0
-    );
+    const prevRevenue = previousPeriod.reduce((sum, order) => sum + extractOrderAmount(order), 0);
     
     const revenueGrowth = prevRevenue > 0 ? 
         ((totalRevenue - prevRevenue) / prevRevenue * 100).toFixed(1) : 0;
@@ -341,7 +375,7 @@ function updateOrderTrendChart(orders) {
         return {
             date: date,
             orders: dayOrders.length,
-            revenue: dayOrders.reduce((sum, order) => sum + (parseFloat(order.total_rm || order.amount) || 0), 0)
+            revenue: dayOrders.reduce((sum, order) => sum + extractOrderAmount(order), 0)
         };
     });
     
@@ -539,7 +573,7 @@ function updateTopProductsChart(orders) {
             product = product.replace(/^(item:|product:|nama:)/i, '').trim();
         }
         
-        const amount = parseFloat(order.total_rm || order.amount || order.total || 0);
+        const amount = extractOrderAmount(order);
         
         // Debug first few orders
         if (index < 3) {
@@ -878,7 +912,33 @@ function updateEnhancedOrderDetails(orders) {
     container.innerHTML = sortedOrders.map((order, index) => {
         const products = getAllProductsFromOrder(order);
         const totalQuantity = products.reduce((sum, p) => sum + (parseInt(p.quantity) || 0), 0);
-        const totalAmount = parseFloat(order.jumlah_bayar || order.total_amount || order.amount || 0);
+        // Enhanced amount calculation using utility function
+        const totalAmount = extractOrderAmount(order);
+        
+        // Debug amount calculation for first few orders
+        if (index < 3) {
+            console.log(`💰 Amount calculation for Order ${index + 1}:`, {
+                extracted: totalAmount,
+                allAmountFields: Object.keys(order).filter(key => 
+                    key.toLowerCase().includes('amount') || 
+                    key.toLowerCase().includes('total') || 
+                    key.toLowerCase().includes('bayar') ||
+                    key.toLowerCase().includes('harga') ||
+                    key.toLowerCase().includes('price') ||
+                    key.toLowerCase().includes('cost')
+                ),
+                fieldValues: Object.keys(order)
+                    .filter(key => 
+                        key.toLowerCase().includes('amount') || 
+                        key.toLowerCase().includes('total') || 
+                        key.toLowerCase().includes('bayar') ||
+                        key.toLowerCase().includes('harga') ||
+                        key.toLowerCase().includes('price') ||
+                        key.toLowerCase().includes('cost')
+                    )
+                    .reduce((obj, key) => ({...obj, [key]: order[key]}), {})
+            });
+        }
         
         return `
             <div class="order-row" id="order-row-${index}">
@@ -940,8 +1000,13 @@ function updateEnhancedOrderDetails(orders) {
                 
                 <!-- Amount -->
                 <div class="order-cell cell-amount">
-                    <i class="fas fa-money-bill-wave" style="margin-right: 0.25rem;"></i>
-                    <strong>RM ${totalAmount.toLocaleString('ms-MY', {minimumFractionDigits: 2})}</strong>
+                    <i class="fas fa-money-bill-wave" style="margin-right: 0.25rem; color: ${totalAmount > 0 ? '#22c55e' : '#64748b'};"></i>
+                    <strong style="color: ${totalAmount > 0 ? '#e2e8f0' : '#94a3b8'};">
+                        ${totalAmount > 0 ? 
+                            `RM ${totalAmount.toLocaleString('ms-MY', {minimumFractionDigits: 2})}` : 
+                            '<span style="font-style: italic; font-size: 0.85em;">No amount</span>'
+                        }
+                    </strong>
                 </div>
                 
                 <!-- Actions -->
@@ -1990,7 +2055,7 @@ window.debugProductNames = function() {
             product = product.replace(/^(item:|product:|nama:)/i, '').trim();
         }
         
-        const amount = parseFloat(order.total_rm || order.amount || order.total || 0);
+        const amount = extractOrderAmount(order);
         
         console.log(`\nOrder ${index + 1}:`, {
             extractedProduct: product,
