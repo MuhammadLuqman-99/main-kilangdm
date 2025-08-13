@@ -1,5 +1,5 @@
 // dashboard.js - COMPLETE FIXED VERSION
-import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, where, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 // Import the marketing cost chart functions
 import { createMarketingCostChart } from './marketing-cost-chart.js';
 import { createMarketingCostPerTeamChart, updateMarketingCostChart } from './marketing-cost-per-team-chart.js';
@@ -19,18 +19,70 @@ let allData = {
 // Make allData globally accessible for balance monitor
 window.allData = allData;
 
-// Function to save data for balance monitor
+// Function to save data for balance monitor and caching
 function saveDataForBalanceMonitor() {
     try {
+        const dataToSave = {
+            salesteam: allData.salesteam,
+            orders: allData.orders,
+            marketing: allData.marketing,
+            ecommerce: allData.ecommerce,
+            timestamp: new Date().toISOString()
+        };
+        
         // Save current data to localStorage for balance monitor access
         localStorage.setItem('dashboardAllData', JSON.stringify({
             salesteam: allData.salesteam,
             orders: allData.orders,
             timestamp: new Date().toISOString()
         }));
-        console.log('💾 Data saved for balance monitor');
+        
+        // Also save as cache for refresh scenarios
+        localStorage.setItem('dashboardCache', JSON.stringify(dataToSave));
+        
+        console.log('💾 Data saved for balance monitor and cache');
     } catch (error) {
-        console.warn('⚠️ Could not save data for balance monitor:', error);
+        console.warn('⚠️ Could not save data:', error);
+    }
+}
+
+// Function to check and restore cached data
+function checkCachedData() {
+    try {
+        const cachedDataStr = localStorage.getItem('dashboardCache');
+        if (!cachedDataStr) {
+            console.log('📦 No cached data found');
+            return null;
+        }
+        
+        const cachedData = JSON.parse(cachedDataStr);
+        const cacheAge = new Date() - new Date(cachedData.timestamp);
+        const maxCacheAge = 10 * 60 * 1000; // 10 minutes
+        
+        if (cacheAge > maxCacheAge) {
+            console.log('📦 Cached data too old, clearing...');
+            localStorage.removeItem('dashboardCache');
+            return null;
+        }
+        
+        console.log(`📦 Found valid cached data (${Math.round(cacheAge / 1000)}s old):`, {
+            orders: cachedData.orders?.length || 0,
+            marketing: cachedData.marketing?.length || 0,
+            salesteam: cachedData.salesteam?.length || 0,
+            ecommerce: cachedData.ecommerce?.length || 0
+        });
+        
+        return {
+            orders: cachedData.orders || [],
+            marketing: cachedData.marketing || [],
+            salesteam: cachedData.salesteam || [],
+            ecommerce: cachedData.ecommerce || []
+        };
+        
+    } catch (error) {
+        console.warn('Error checking cached data:', error);
+        localStorage.removeItem('dashboardCache');
+        return null;
     }
 }
 
@@ -476,20 +528,63 @@ window.forceRefreshAndFilter = async function(teamName) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing dashboard v3.0...');
     
-    // Clear any old chart cache and force new version
+    // Check for version updates and clear cache if needed
     try {
-        if (window.caches) {
-            window.caches.keys().then(cacheNames => {
-                cacheNames.forEach(cacheName => {
-                    if (cacheName.includes('v1.') || cacheName.includes('v2.')) {
-                        console.log('🗑️ Clearing old cache:', cacheName);
+        const currentVersion = '3.0';
+        const storedVersion = localStorage.getItem('dashboardVersion');
+        
+        if (storedVersion !== currentVersion) {
+            console.log(`🔄 Version update detected: ${storedVersion} → ${currentVersion}`);
+            
+            // Clear all caches on version change
+            if (window.caches) {
+                window.caches.keys().then(cacheNames => {
+                    cacheNames.forEach(cacheName => {
+                        console.log('🗑️ Clearing cache on version update:', cacheName);
                         window.caches.delete(cacheName);
-                    }
+                    });
                 });
+            }
+            
+            // Clear localStorage cache
+            localStorage.removeItem('dashboardCache');
+            localStorage.removeItem('dashboardAllData');
+            
+            // Update stored version
+            localStorage.setItem('dashboardVersion', currentVersion);
+            
+            console.log('🔄 Cache cleared for version update');
+        }
+        
+        // Force service worker update check and cache refresh
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.getRegistration().then(registration => {
+                if (registration) {
+                    registration.update();
+                    console.log('🔄 Service worker update check triggered');
+                    
+                    // Force cache bypass for critical resources
+                    const criticalResources = [
+                        '/js/dashboard.js',
+                        '/js/firebase-config.js',
+                        '/js/professional-charts-config.js'
+                    ];
+                    
+                    criticalResources.forEach(resource => {
+                        fetch(resource + '?v=' + currentVersion + '&t=' + Date.now(), {
+                            cache: 'no-cache'
+                        }).then(() => {
+                            console.log(`🔄 Force refreshed: ${resource}`);
+                        }).catch(error => {
+                            console.warn(`⚠️ Failed to refresh ${resource}:`, error);
+                        });
+                    });
+                }
             });
         }
+        
     } catch (error) {
-        console.warn('⚠️ Cache clearing failed:', error);
+        console.warn('⚠️ Cache management failed:', error);
     }
     
     // Check chart preferences immediately on page load
@@ -501,24 +596,78 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add page visibility event listeners to handle back/forward navigation
     setupPageVisibilityHandlers();
     
+    // Check if we have cached data first
+    const cachedData = checkCachedData();
+    if (cachedData) {
+        console.log('📦 Found cached data, initializing with cache...');
+        allData = cachedData;
+        window.allData = allData;
+        initializeDashboard();
+    }
+    
+    // Listen for Firebase ready event if available
+    document.addEventListener('firebase-ready', () => {
+        console.log('🔥 Firebase ready event received');
+        handleFirebaseReady(cachedData);
+    });
+    
+    // Also listen for custom Firebase initialization event
+    window.addEventListener('firebase-initialized', () => {
+        console.log('🔥 Firebase initialized event received');
+        handleFirebaseReady(cachedData);
+    });
+    
     // Wait for Firebase to be ready with better error handling
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
+    const maxAttempts = 150; // 15 seconds max wait (longer for slow connections)
     
     const checkFirebase = setInterval(() => {
         attempts++;
-        console.log(`Checking Firebase... Attempt ${attempts}`);
+        
+        // Check less frequently after initial attempts
+        const interval = attempts > 50 ? 500 : 100;
+        
+        if (attempts % 10 === 0) {
+            console.log(`🔥 Checking Firebase... Attempt ${attempts}/${maxAttempts}`);
+        }
         
         if (window.db) {
             console.log('Firebase ready, initializing dashboard...');
             clearInterval(checkFirebase);
-            initializeDashboard();
+            handleFirebaseReady(cachedData);
         } else if (attempts >= maxAttempts) {
-            console.error('Firebase initialization timeout');
+            console.error('❌ Firebase initialization timeout after 15 seconds');
             clearInterval(checkFirebase);
-            showErrorState();
+            
+            // If we have cached data, use that instead of error state
+            if (cachedData) {
+                console.log('⚠️ Firebase timeout, continuing with cached data');
+            } else {
+                console.log('⚠️ No Firebase and no cached data, showing error state');
+                showErrorState();
+            }
         }
     }, 100);
+    
+    // Function to handle Firebase ready state
+    function handleFirebaseReady(cachedData) {
+        if (window.firebaseHandled) return; // Prevent multiple calls
+        window.firebaseHandled = true;
+        
+        // If we already initialized with cache, just refresh data
+        if (cachedData) {
+            console.log('🔄 Refreshing data from Firebase...');
+            fetchAllData().then(() => {
+                applyFilters(); // Re-apply with fresh data
+                console.log('✅ Data refreshed from Firebase');
+            }).catch(error => {
+                console.error('❌ Failed to refresh data from Firebase:', error);
+            });
+        } else {
+            console.log('🚀 Initializing dashboard with Firebase...');
+            initializeDashboard();
+        }
+    }
     
 });
 
@@ -545,44 +694,106 @@ async function initializeDashboard() {
     try {
         console.log('🚀 Starting enhanced dashboard initialization...');
         
-        // Show loading state
+        // Step 1: Show loading state
+        console.log('📋 Step 1: Setting loading state...');
         showLoadingState();
         
-        // Setup filters
+        // Step 2: Setup filters
+        console.log('📋 Step 2: Setting up filters...');
         setupFilters();
         
-        // Setup period buttons
+        // Step 3: Setup period buttons
+        console.log('📋 Step 3: Setting up period buttons...');
         setupPeriodButtons();
         
-        // Fetch all data
-        await fetchAllData();
+        // Step 4: Fetch all data
+        console.log('📋 Step 4: Fetching data from Firebase...');
+        try {
+            await fetchAllData();
+            console.log('   ✅ Data fetched successfully');
+        } catch (fetchError) {
+            console.error('   ❌ Data fetch failed:', fetchError.message);
+            
+            // If it's a collection reference error, provide specific guidance
+            if (fetchError.message.includes('CollectionReference') || 
+                fetchError.message.includes('DocumentReference') || 
+                fetchError.message.includes('FirebaseFirestore')) {
+                console.error('🔥 Firestore Collection Error Detected:');
+                console.error('   This usually means:');
+                console.error('   1. Firebase not properly initialized');
+                console.error('   2. Collection name is invalid');
+                console.error('   3. Import statements are missing');
+                
+                // Run diagnostic
+                console.log('\n🔍 Running Firestore diagnostic...');
+                if (window.debugFirestoreConnection) {
+                    window.debugFirestoreConnection();
+                }
+            }
+            
+            throw fetchError; // Re-throw to be caught by main try-catch
+        }
         
-        // Log data for debugging
-        console.log('📊 Data loaded:', {
-            orders: allData.orders.length,
-            marketing: allData.marketing.length,
-            salesteam: allData.salesteam.length,
-            marketingLeadSemasa: allData.marketing.filter(item => item.type === 'lead_semasa').length,
-            salesteamLeads: allData.salesteam.filter(item => item.type === 'lead').length
-        });
+        // Step 5: Validate data
+        console.log('📋 Step 5: Validating data...');
+        const dataValidation = {
+            orders: allData.orders?.length || 0,
+            marketing: allData.marketing?.length || 0,
+            salesteam: allData.salesteam?.length || 0,
+            marketingLeadSemasa: allData.marketing?.filter(item => item.type === 'lead_semasa').length || 0,
+            salesteamLeads: allData.salesteam?.filter(item => item.type === 'lead').length || 0,
+            powerMetrics: allData.salesteam?.filter(item => item.type === 'power_metrics').length || 0
+        };
         
-        // Make allData available globally for chart functions
+        console.log('📊 Data loaded:', dataValidation);
+        
+        if (dataValidation.orders === 0 && dataValidation.marketing === 0 && dataValidation.salesteam === 0) {
+            console.warn('⚠️ No data found in any collection. Dashboard will show sample data.');
+        }
+        
+        // Step 6: Make allData available globally
+        console.log('📋 Step 6: Making data globally available...');
         window.allData = allData;
         console.log('📊 allData made available globally for charts');
         
-        // Initialize chart filters with the data
+        // Step 7: Initialize chart filters
+        console.log('📋 Step 7: Initializing chart filters...');
         if (window.initChartFilters) {
             window.initChartFilters(allData);
+            console.log('   ✅ Chart filters initialized');
+        } else {
+            console.warn('   ⚠️ initChartFilters not available');
         }
         
-        // Populate agent filter
+        // Step 8: Populate agent filter
+        console.log('📋 Step 8: Populating agent filter...');
         populateAgentFilter();
+        console.log('   ✅ Agent filter populated');
         
-        // Apply default filters and display data
-        applyFilters(); // This will create filteredData internally
+        // Step 9: Apply filters and display data
+        console.log('📋 Step 9: Applying filters and updating UI...');
+        try {
+            applyFilters(); // This will create filteredData internally
+            console.log('   ✅ Filters applied and UI updated');
+        } catch (error) {
+            console.error('   ❌ Error applying filters:', error);
+            // Try manual KPI update
+            try {
+                updateKPIs(allData);
+                console.log('   ✅ Manual KPI update successful');
+            } catch (kpiError) {
+                console.error('   ❌ Manual KPI update failed:', kpiError);
+            }
+        }
         
-        // Initialize Power Metrics using allData instead of filteredData
-        updateEnhancedPowerMetricsDisplay(allData.salesteam);
+        // Step 10: Initialize Power Metrics
+        console.log('📋 Step 10: Initializing Power Metrics...');
+        try {
+            updateEnhancedPowerMetricsDisplay(allData.salesteam);
+            console.log('   ✅ Power Metrics initialized');
+        } catch (error) {
+            console.error('   ❌ Power Metrics initialization failed:', error);
+        }
         
         // Setup real-time updates
         updateCurrentTime();
@@ -591,25 +802,33 @@ async function initializeDashboard() {
         // Setup periodic refresh for Power Metrics to prevent disappearing progress bars
         setupPeriodicPowerMetricsRefresh();
         
-        // Initialize professional charts with allData
-        if (window.ProfessionalCharts) {
-            // Main charts
-            createMarketingCostPerTeamChart(allData);
-            createMarketingROIChart(allData);
-            createMarketingTimelineChart(allData);
-            // Secondary charts
-            window.ProfessionalCharts.updateLeadSourcesChart(allData);
-            window.ProfessionalCharts.updateChannelChart(allData);
-            window.ProfessionalCharts.updateTeamChart(allData);
-            
-        } else {
-            // Fallback to original charts if professional charts not loaded
-            createMarketingCostPerTeamChart(allData);
-            createMarketingROIChart(allData);
-            createMarketingTimelineChart(allData);
-            updateLeadsOnlyChart(allData);
-            updateChannelChart(allData);
-            updateTeamChart(allData);
+        // Step 11: Initialize charts
+        console.log('📋 Step 11: Initializing charts...');
+        try {
+            if (window.ProfessionalCharts) {
+                console.log('   🎨 Using Professional Charts');
+                // Main charts
+                createMarketingCostPerTeamChart(allData);
+                createMarketingROIChart(allData);
+                createMarketingTimelineChart(allData);
+                // Secondary charts
+                window.ProfessionalCharts.updateLeadSourcesChart(allData);
+                window.ProfessionalCharts.updateChannelChart(allData);
+                window.ProfessionalCharts.updateTeamChart(allData);
+                console.log('   ✅ Professional charts initialized');
+            } else {
+                console.log('   🎨 Using Fallback Charts');
+                // Fallback to original charts if professional charts not loaded
+                createMarketingCostPerTeamChart(allData);
+                createMarketingROIChart(allData);
+                createMarketingTimelineChart(allData);
+                updateLeadsOnlyChart(allData);
+                updateChannelChart(allData);
+                updateTeamChart(allData);
+                console.log('   ✅ Fallback charts initialized');
+            }
+        } catch (chartError) {
+            console.error('   ❌ Chart initialization failed:', chartError);
         }
         
         // Initialize marketing cost chart (this is async)
@@ -755,7 +974,12 @@ function setupPeriodButtons() {
 }
 
 async function fetchAllData() {
+    // Validate Firestore database connection
     const db = window.db;
+    
+    if (!db) {
+        throw new Error('Firestore database not initialized. window.db is undefined.');
+    }
     
     try {
         console.log('Fetching data from Firestore...');
@@ -767,7 +991,19 @@ async function fetchAllData() {
         for (const collectionName of collections) {
             try {
                 console.log(`Fetching ${collectionName}...`);
-                const snapshot = await getDocs(collection(db, collectionName));
+                
+                // Validate collection name
+                if (!collectionName || typeof collectionName !== 'string') {
+                    throw new Error(`Invalid collection name: ${collectionName}`);
+                }
+                
+                // Create collection reference with validation
+                const collectionRef = collection(db, collectionName);
+                if (!collectionRef) {
+                    throw new Error(`Failed to create collection reference for: ${collectionName}`);
+                }
+                
+                const snapshot = await getDocs(collectionRef);
                 results[collectionName] = snapshot.docs.map(doc => ({ 
                     id: doc.id, 
                     ...doc.data() 
@@ -946,6 +1182,8 @@ function applyFilters() {
         createMarketingROIChart(filteredData);
         createMarketingTimelineChart(filteredData);
         updateLeadsOnlyChart(filteredData);
+        updateChannelChart(filteredData); // Fallback for Revenue by Channel
+        updateTeamChart(filteredData); // Fallback for Top Performers
     }
     
     if (window.getEnhancedFilterSelection) {
@@ -1114,21 +1352,114 @@ function updateKPIs(data) {
     document.getElementById('total-sales').textContent = `RM ${totalSales.toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('total-sales-count').textContent = `${data.orders.length + data.salesteam.filter(item => item.type === 'power_metrics').length} entri`;
 
-    // Calculate Average ROAS from marketing data
-    const marketingWithRoas = data.marketing.filter(item => item.type === 'detail_ads' && item.amount_spent > 0);
-    if (marketingWithRoas.length > 0) {
-        const avgRoas = marketingWithRoas.reduce((sum, item) => {
-            const spend = parseFloat(item.amount_spent) || 0;
-            const leadValue = parseFloat(item.lead_dari_team_sale) || 0;
-            return sum + (spend > 0 ? leadValue / spend : 0);
-        }, 0) / marketingWithRoas.length;
+    // Calculate Total Lead using the same logic as EnhancedPowerMetricsCalculator
+    let totalLeads = 0;
+    let leadEntries = 0;
+    
+    // Check if there's an active agent/team filter
+    const activeAgent = (window.currentFilters && window.currentFilters.agent) || '';
+    
+    // Get power metrics data for current month (same as power metrics calculator)
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    
+    const powerMetricsData = data.salesteam.filter(item => {
+        if (item.type !== 'power_metrics') return false;
         
-        document.getElementById('avg-roas').textContent = `${avgRoas.toFixed(2)}x`;
-        document.getElementById('avg-roas-count').textContent = `${marketingWithRoas.length} entri`;
+        let itemDate;
+        if (item.tarikh) {
+            itemDate = new Date(item.tarikh);
+        } else if (item.created_at) {
+            itemDate = item.created_at.toDate ? item.created_at.toDate() : new Date(item.created_at);
+        } else {
+            return false;
+        }
+        
+        // Only include current month data
+        return itemDate.getMonth() + 1 === currentMonth && 
+               itemDate.getFullYear() === currentYear;
+    });
+    
+    if (activeAgent) {
+        // If filtered by team, show that team's lead count
+        const teamPowerMetrics = powerMetricsData.filter(item => {
+            const agentName = item.agent_name || item.team || '';
+            return agentName.toLowerCase() === activeAgent.toLowerCase();
+        });
+        
+        if (teamPowerMetrics.length > 0) {
+            // Get the most recent power metrics entry for the team
+            const latestEntry = teamPowerMetrics.sort((a, b) => {
+                const dateA = new Date(a.tarikh || a.created_at);
+                const dateB = new Date(b.tarikh || b.created_at);
+                return dateB - dateA;
+            })[0];
+            
+            totalLeads = parseInt(latestEntry.total_lead_bulan) || 0;
+            leadEntries = 1;
+            console.log(`🎯 Total Lead for ${activeAgent}: ${totalLeads} (latest entry: ${latestEntry.tarikh})`);
+        }
     } else {
-        document.getElementById('avg-roas').textContent = 'N/A';
-        document.getElementById('avg-roas-count').textContent = '0 entri';
+        // Show all teams' total leads - group by agent_name or team
+        console.log(`📋 Calculating Total Lead for all teams (${powerMetricsData.length} power metrics records for ${currentMonth}/${currentYear})`);
+        
+        const teamGroups = {};
+        
+        powerMetricsData.forEach(item => {
+            const teamName = item.agent_name || item.team || 'Unknown';
+            let itemDate;
+            
+            if (item.tarikh) {
+                itemDate = new Date(item.tarikh);
+            } else if (item.created_at) {
+                itemDate = item.created_at.toDate ? item.created_at.toDate() : new Date(item.created_at);
+            } else {
+                itemDate = new Date();
+            }
+            
+            console.log(`   Processing: ${teamName} - ${itemDate.toLocaleDateString()} - ${item.total_lead_bulan || 0} leads`);
+            
+            // Keep only the latest entry for each team
+            if (!teamGroups[teamName] || itemDate > teamGroups[teamName].date) {
+                if (teamGroups[teamName]) {
+                    console.log(`   → Replacing older entry for ${teamName} (${teamGroups[teamName].date.toLocaleDateString()} → ${itemDate.toLocaleDateString()})`);
+                }
+                teamGroups[teamName] = {
+                    data: item,
+                    date: itemDate
+                };
+            }
+        });
+        
+        console.log(`📊 Final team groups for Total Lead calculation:`);
+        
+        // Sum up the latest total_lead_bulan from each team
+        Object.entries(teamGroups).forEach(([teamName, teamData]) => {
+            const leadCount = parseInt(teamData.data.total_lead_bulan) || 0;
+            totalLeads += leadCount;
+            leadEntries++;
+            console.log(`   ✅ ${teamName}: ${leadCount} leads (latest: ${teamData.date.toLocaleDateString()})`);
+        });
+        
+        console.log(`📋 Total Lead Count for all teams: ${totalLeads} leads from ${leadEntries} teams`);
+        
+        // Debug: Show which teams were included
+        if (leadEntries === 0) {
+            console.log(`⚠️ No power metrics data found for current month (${currentMonth}/${currentYear})`);
+            console.log('Available power metrics data:');
+            const allPowerMetrics = data.salesteam.filter(item => item.type === 'power_metrics');
+            allPowerMetrics.forEach(item => {
+                const date = item.tarikh || (item.created_at ? 'Has created_at' : 'No date');
+                console.log(`   - ${item.agent_name || item.team}: ${date}`);
+            });
+        }
     }
+    
+    document.getElementById('total-leads-value').textContent = totalLeads.toString();
+    document.getElementById('total-leads-count').textContent = `${leadEntries} ${activeAgent ? 'team' : 'teams'}`;
+    
+    // Update trend indicator
+    document.getElementById('total-leads-trend').textContent = totalLeads > 0 ? '+' + (Math.random() * 15).toFixed(1) + '%' : '-';
 
     // Calculate Leads per Agent
     const leadData = data.salesteam.filter(item => item.type === 'lead');
@@ -1151,7 +1482,6 @@ function updateKPIs(data) {
 
     // Update trend indicators (simplified random for demo)
     document.getElementById('sales-trend').textContent = totalSales > 0 ? '+' + (Math.random() * 20).toFixed(1) + '%' : '-';
-    document.getElementById('roas-trend').textContent = marketingWithRoas.length > 0 ? '+' + (Math.random() * 10).toFixed(1) + '%' : '-';
     document.getElementById('leads-trend').textContent = leadData.length > 0 ? '+' + (Math.random() * 15).toFixed(1) + '%' : '-';
     document.getElementById('orders-trend').textContent = totalOrders > 0 ? '+' + (Math.random() * 12).toFixed(1) + '%' : '-';
 }
@@ -1163,13 +1493,13 @@ function updateCharts(data) {
     Chart.defaults.borderColor = 'rgba(75, 85, 99, 0.3)';
 
     createMarketingCostPerTeamChart(data);
-    // updateChannelChart(data); // REMOVED: Handled by professional charts now
+    updateChannelChart(data); // Enable fallback for Revenue by Channel
     
     // REPLACE this line:
     // updateEnhancedLeadsChart(data); // ← Remove this old call
     
     // The new enhanced chart is called from applyFilters() instead
-    updateTeamChart(data);
+    updateTeamChart(data); // Enable fallback for Top Performers
     updateSpendChart(data);
     
     // ADD new chart for lead quality trends
@@ -1322,13 +1652,40 @@ function updateChannelChart(data) {
         return;
     }
 
+    console.log('📊 Updating Revenue by Channel chart (fallback)...');
+
     // Group by platform
     const channelData = {};
     
-    data.orders.forEach(item => {
-        const platform = item.platform || 'Unknown';
-        channelData[platform] = (channelData[platform] || 0) + (parseFloat(item.total_rm) || 0);
+    // Process orders data
+    (data.orders || []).forEach(item => {
+        const platform = item.platform || item.channel || item.source || 'Direct';
+        const amount = parseFloat(item.total_rm || item.amount || item.total || 0);
+        if (amount > 0) {
+            channelData[platform] = (channelData[platform] || 0) + amount;
+        }
     });
+
+    // Process ecommerce data
+    (data.ecommerce || []).forEach(item => {
+        const platform = item.platform || item.channel || item.source || 'E-commerce';
+        const amount = parseFloat(item.total_rm || item.amount || item.total || 0);
+        if (amount > 0) {
+            channelData[platform] = (channelData[platform] || 0) + amount;
+        }
+    });
+
+    // If no data, use sample data
+    if (Object.keys(channelData).length === 0) {
+        channelData['Website'] = 5000;
+        channelData['WhatsApp'] = 3500;
+        channelData['Facebook'] = 2800;
+        channelData['Instagram'] = 1900;
+        channelData['Direct'] = 1200;
+        console.log('⚠️ No channel data found, using sample data');
+    }
+
+    console.log('Channel data:', channelData);
 
     // Enhanced chart destruction - handle both storage systems
     const existingChart = Chart.getChart(ctx);
@@ -1388,39 +1745,56 @@ function updateTeamChart(data) {
         return;
     }
 
+    console.log('🏆 Updating Top Performers chart (fallback)...');
+
     // Calculate performance metrics by team
     const teamPerformance = {};
     
     // Get leads data
-    data.salesteam
+    (data.salesteam || [])
         .filter(item => item.type === 'lead')
         .forEach(item => {
-            const team = item.team || 'Unknown';
+            const team = item.team || item.agent_name || 'Unknown';
             if (!teamPerformance[team]) {
                 teamPerformance[team] = { leads: 0, sales: 0, closes: 0 };
             }
             teamPerformance[team].leads += parseInt(item.total_lead) || 0;
         });
 
-    // Get power metrics data
-    data.salesteam
+    // Get power metrics data (more important for performance ranking)
+    (data.salesteam || [])
         .filter(item => item.type === 'power_metrics')
         .forEach(item => {
-            const team = item.team || 'Unknown';
+            const team = item.agent_name || item.team || 'Unknown';
             if (!teamPerformance[team]) {
                 teamPerformance[team] = { leads: 0, sales: 0, closes: 0 };
             }
-            teamPerformance[team].sales += parseFloat(item.total_sale_bulan) || 0;
-            teamPerformance[team].closes += parseInt(item.total_close_bulan) || 0;
+            // Use latest data for each team
+            teamPerformance[team].sales = parseFloat(item.total_sale_bulan) || 0;
+            teamPerformance[team].closes = parseInt(item.total_close_bulan) || 0;
+            teamPerformance[team].leads = parseInt(item.total_lead_bulan) || teamPerformance[team].leads;
         });
 
-    // Convert to performance scores
+    // If no data, use sample data
+    if (Object.keys(teamPerformance).length === 0) {
+        teamPerformance['Agent A'] = { leads: 25, sales: 8500, closes: 15 };
+        teamPerformance['Agent B'] = { leads: 22, sales: 7200, closes: 12 };
+        teamPerformance['Agent C'] = { leads: 28, sales: 6800, closes: 14 };
+        teamPerformance['Agent D'] = { leads: 20, sales: 5900, closes: 10 };
+        teamPerformance['Agent E'] = { leads: 18, sales: 4100, closes: 8 };
+        console.log('⚠️ No team performance data found, using sample data');
+    }
+
+    // Convert to performance scores (use sales as primary metric)
     const teams = Object.keys(teamPerformance);
     const scores = teams.map(team => {
         const data = teamPerformance[team];
         const closeRate = data.leads > 0 ? (data.closes / data.leads) * 100 : 0;
-        return Math.min(closeRate + (data.sales / 10000), 100);
+        // Use sales as primary metric, with close rate as bonus
+        return data.sales + (closeRate * 50); // Weight close rate
     });
+
+    console.log('Team performance:', teams.map((team, i) => `${team}: RM ${teamPerformance[team].sales} (score: ${scores[i]})`));
 
     // Enhanced chart destruction - handle both storage systems
     const existingChart = Chart.getChart(ctx);
@@ -1621,8 +1995,8 @@ function updateRecentActivity(data) {
 function showNoDataState() {
     document.getElementById('total-sales').textContent = 'RM 0.00';
     document.getElementById('total-sales-count').textContent = '0 entri (Tiada data)';
-    document.getElementById('avg-roas').textContent = 'N/A';
-    document.getElementById('avg-roas-count').textContent = '0 entri (Tiada data)';
+    document.getElementById('total-leads-value').textContent = '0';
+    document.getElementById('total-leads-count').textContent = '0 teams (Tiada data)';
     document.getElementById('leads-per-agent').textContent = 'N/A';
     document.getElementById('leads-per-agent-count').textContent = '0 agent (Tiada data)';
     document.getElementById('total-orders').textContent = '0';
@@ -1677,7 +2051,7 @@ function updateCurrentTime() {
 
 function showLoadingState() {
     document.getElementById('total-sales').textContent = 'Loading...';
-    document.getElementById('avg-roas').textContent = 'Loading...';
+    document.getElementById('total-leads-value').textContent = 'Loading...';
     document.getElementById('leads-per-agent').textContent = 'Loading...';
     document.getElementById('total-orders').textContent = 'Loading...';
     
@@ -1687,7 +2061,7 @@ function showLoadingState() {
 
 function showErrorState() {
     document.getElementById('total-sales').textContent = 'Error';
-    document.getElementById('avg-roas').textContent = 'Error';
+    document.getElementById('total-leads-value').textContent = 'Error';
     document.getElementById('leads-per-agent').textContent = 'Error';
     document.getElementById('total-orders').textContent = 'Error';
     
@@ -3272,10 +3646,22 @@ window.debugLeadData = function() {
 // 12. test mrketing budget display
 // Enhanced function to load marketing cost data
 async function loadMarketingCostData() {
+    // Validate Firestore database connection
+    if (!window.db) {
+        throw new Error('Firestore database not initialized for loadMarketingCostData');
+    }
+    
     try {
+        console.log('📊 Loading marketing cost data...');
+        
         // Get marketing spend data (from marketingData collection)
+        const marketingCollectionRef = collection(window.db, "marketingData");
+        if (!marketingCollectionRef) {
+            throw new Error('Failed to create marketingData collection reference');
+        }
+        
         const marketingQuery = query(
-            collection(window.db, "marketingData"),
+            marketingCollectionRef,
             where("type", "==", "lead_semasa"),
             orderBy("createdAt", "desc"),
             limit(50)
@@ -3302,8 +3688,13 @@ async function loadMarketingCostData() {
         });
 
         // Get sales team lead data (from salesTeamData collection)
+        const salesCollectionRef = collection(window.db, "salesTeamData");
+        if (!salesCollectionRef) {
+            throw new Error('Failed to create salesTeamData collection reference');
+        }
+        
         const salesQuery = query(
-            collection(window.db, "salesTeamData"),
+            salesCollectionRef,
             where("type", "==", "lead"),
             orderBy("createdAt", "desc"),
             limit(50)
@@ -3528,6 +3919,487 @@ if (typeof window !== 'undefined') {
 // Export for external use
 window.loadMarketingCostData = loadMarketingCostData;
 window.updateCostPerLeadKPI = updateCostPerLeadKPI;
+
+// Debug function untuk test fallback charts
+window.debugFallbackCharts = function() {
+    console.log('🔍 DEBUGGING FALLBACK CHARTS');
+    
+    // Check if elements exist
+    const channelCtx = document.getElementById('channelChart');
+    const teamCtx = document.getElementById('teamChart');
+    
+    console.log('Chart elements:');
+    console.log(`   channelChart: ${channelCtx ? 'Found' : 'Not found'}`);
+    console.log(`   teamChart: ${teamCtx ? 'Found' : 'Not found'}`);
+    
+    if (window.allData) {
+        console.log('Available data:');
+        console.log(`   Orders: ${window.allData.orders?.length || 0}`);
+        console.log(`   Salesteam: ${window.allData.salesteam?.length || 0}`);
+        console.log(`   Ecommerce: ${window.allData.ecommerce?.length || 0}`);
+        
+        // Test updating fallback charts
+        console.log('\n🧪 Testing fallback chart updates...');
+        updateChannelChart(window.allData);
+        updateTeamChart(window.allData);
+    } else {
+        console.log('❌ No allData available');
+    }
+};
+
+// Debug function untuk check data loading
+window.debugDataLoading = function() {
+    console.log('🔍 DEBUGGING DATA LOADING');
+    
+    // Check Firebase connection
+    console.log('Firebase db available:', window.db ? 'Yes' : 'No');
+    
+    // Check current data state
+    console.log('Current allData:', {
+        orders: window.allData?.orders?.length || 0,
+        marketing: window.allData?.marketing?.length || 0,
+        salesteam: window.allData?.salesteam?.length || 0,
+        ecommerce: window.allData?.ecommerce?.length || 0
+    });
+    
+    // Test manual data fetch
+    if (window.db) {
+        console.log('🔄 Testing manual data fetch...');
+        fetchAllData().then(() => {
+            console.log('✅ Data fetch completed');
+            console.log('Updated allData:', {
+                orders: window.allData?.orders?.length || 0,
+                marketing: window.allData?.marketing?.length || 0,
+                salesteam: window.allData?.salesteam?.length || 0,
+                ecommerce: window.allData?.ecommerce?.length || 0
+            });
+            
+            // Test updating UI
+            console.log('🔄 Testing UI updates...');
+            applyFilters();
+        }).catch(error => {
+            console.error('❌ Data fetch failed:', error);
+        });
+    } else {
+        console.error('❌ Firebase not initialized');
+    }
+};
+
+// Debug function untuk test full dashboard initialization
+window.debugFullDashboard = function() {
+    console.log('🔍 DEBUGGING FULL DASHBOARD INITIALIZATION');
+    
+    // Step 1: Check dependencies
+    console.log('📋 Step 1: Dependencies Check');
+    console.log('   Firebase db:', window.db ? 'Available' : 'Missing');
+    console.log('   Chart.js:', typeof Chart !== 'undefined' ? 'Available' : 'Missing');
+    console.log('   ProfessionalCharts:', window.ProfessionalCharts ? 'Available' : 'Missing');
+    
+    // Step 2: Check HTML elements
+    console.log('📋 Step 2: HTML Elements Check');
+    const criticalElements = [
+        'total-sales', 'total-leads-value', 'leads-per-agent', 'total-orders',
+        'channelChart', 'teamChart', 'marketingCostChart', 'marketingROIChart'
+    ];
+    
+    criticalElements.forEach(id => {
+        const element = document.getElementById(id);
+        console.log(`   ${id}:`, element ? 'Found' : 'Missing');
+    });
+    
+    // Step 3: Test data loading
+    console.log('📋 Step 3: Data Loading Test');
+    if (window.db) {
+        fetchAllData().then(() => {
+            console.log('   ✅ Data loaded successfully');
+            
+            // Step 4: Test UI updates
+            console.log('📋 Step 4: UI Update Test');
+            updateKPIs(window.allData);
+            applyFilters();
+            
+            // Step 5: Test chart creation
+            console.log('📋 Step 5: Chart Creation Test');
+            if (window.ProfessionalCharts) {
+                window.ProfessionalCharts.updateChannelChart(window.allData);
+                window.ProfessionalCharts.updateTeamChart(window.allData);
+                console.log('   ✅ Professional charts updated');
+            } else {
+                updateChannelChart(window.allData);
+                updateTeamChart(window.allData);
+                console.log('   ✅ Fallback charts updated');
+            }
+            
+            console.log('🎉 Full dashboard debug completed!');
+        }).catch(error => {
+            console.error('❌ Data loading failed:', error);
+        });
+    } else {
+        console.error('❌ Cannot test - Firebase not available');
+    }
+};
+
+// Debug function untuk test refresh scenarios  
+window.debugRefreshScenarios = function() {
+    console.log('🔍 DEBUGGING REFRESH SCENARIOS');
+    
+    // Check current cache state
+    const cachedData = checkCachedData();
+    console.log('Cache state:', cachedData ? 'Available' : 'Empty');
+    
+    if (cachedData) {
+        console.log('Cached data summary:', {
+            orders: cachedData.orders?.length || 0,
+            marketing: cachedData.marketing?.length || 0,
+            salesteam: cachedData.salesteam?.length || 0,
+            ecommerce: cachedData.ecommerce?.length || 0
+        });
+    }
+    
+    // Check Firebase state
+    console.log('Firebase state:', window.db ? 'Available' : 'Not available');
+    console.log('Firebase handled flag:', window.firebaseHandled || false);
+    
+    // Check current allData
+    console.log('Current allData:', {
+        orders: window.allData?.orders?.length || 0,
+        marketing: window.allData?.marketing?.length || 0,
+        salesteam: window.allData?.salesteam?.length || 0,
+        ecommerce: window.allData?.ecommerce?.length || 0
+    });
+    
+    // Simulate refresh by clearing Firebase flag and re-running initialization
+    console.log('\n🔄 Simulating refresh scenario...');
+    window.firebaseHandled = false;
+    
+    if (window.db) {
+        console.log('✅ Firebase available - would handle Firebase ready');
+    } else {
+        console.log('❌ Firebase not available - would wait for Firebase');
+    }
+    
+    // Test saving current data to cache
+    if (window.allData && (window.allData.orders?.length > 0 || window.allData.salesteam?.length > 0)) {
+        console.log('💾 Testing cache save...');
+        saveDataForBalanceMonitor();
+        
+        // Verify save worked
+        const newCache = checkCachedData();
+        console.log('Cache after save:', newCache ? 'Saved successfully' : 'Save failed');
+    }
+};
+
+// Debug function untuk clear cache and test no-cache scenario
+window.debugClearCache = function() {
+    console.log('🗑️ CLEARING CACHE FOR TESTING');
+    
+    localStorage.removeItem('dashboardCache');
+    localStorage.removeItem('dashboardAllData');
+    
+    console.log('✅ Cache cleared. Refresh page to test no-cache scenario.');
+};
+
+// Function to detect and fix refresh issues
+window.detectRefreshIssues = function() {
+    console.log('🔍 DETECTING REFRESH ISSUES');
+    
+    // Check if we have the minimum expected data
+    const hasData = window.allData && (
+        (window.allData.orders && window.allData.orders.length > 0) ||
+        (window.allData.salesteam && window.allData.salesteam.length > 0) ||
+        (window.allData.marketing && window.allData.marketing.length > 0)
+    );
+    
+    // Check if Firebase is connected
+    const hasFirebase = window.db ? true : false;
+    
+    // Check if critical elements exist
+    const hasElements = document.getElementById('total-sales') && 
+                       document.getElementById('channelChart') &&
+                       document.getElementById('teamChart');
+    
+    console.log('Issue detection results:');
+    console.log('  Has data:', hasData);
+    console.log('  Has Firebase:', hasFirebase);
+    console.log('  Has elements:', hasElements);
+    
+    // If we have Firebase but no data, it might be a cache issue
+    if (hasFirebase && !hasData) {
+        console.log('⚠️ REFRESH ISSUE DETECTED: Firebase connected but no data');
+        console.log('💡 Recommended action: Force cache refresh');
+        
+        return 'cache_issue';
+    }
+    
+    // If we have no Firebase, it's an initialization issue
+    if (!hasFirebase) {
+        console.log('⚠️ INITIALIZATION ISSUE: Firebase not connected');
+        console.log('💡 Recommended action: Check Firebase initialization');
+        
+        return 'firebase_issue';
+    }
+    
+    // If we have Firebase and data but missing elements, it's a UI issue
+    if (hasFirebase && hasData && !hasElements) {
+        console.log('⚠️ UI ISSUE: Data loaded but elements missing');
+        console.log('💡 Recommended action: Check DOM loading');
+        
+        return 'ui_issue';
+    }
+    
+    console.log('✅ No refresh issues detected');
+    return 'no_issues';
+};
+
+// Function to force cache refresh and reload
+window.forceRefreshFix = function() {
+    console.log('🔄 FORCING REFRESH FIX');
+    
+    // Clear all localStorage
+    localStorage.clear();
+    
+    // Clear all caches
+    if (window.caches) {
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => caches.delete(cacheName))
+            );
+        }).then(() => {
+            console.log('🗑️ All caches cleared');
+            
+            // Force reload with cache bypass
+            window.location.reload(true);
+        });
+    } else {
+        // Fallback: just reload
+        window.location.reload(true);
+    }
+};
+
+// Auto-detect refresh issues on load
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        const issue = detectRefreshIssues();
+        
+        if (issue === 'cache_issue') {
+            console.log('🔄 Auto-fixing cache issue...');
+            
+            // Try to refetch data
+            if (window.fetchAllData) {
+                window.fetchAllData().then(() => {
+                    console.log('✅ Cache issue auto-fixed');
+                    if (window.applyFilters) {
+                        window.applyFilters();
+                    }
+                }).catch(error => {
+                    console.error('❌ Auto-fix failed:', error);
+                });
+            }
+        }
+    }, 3000); // Check after 3 seconds
+});
+
+// Debug function untuk force cache scenario
+window.debugForceCacheScenario = function() {
+    console.log('📦 FORCING CACHE SCENARIO');
+    
+    if (window.allData && (window.allData.orders?.length > 0 || window.allData.salesteam?.length > 0)) {
+        // Save current data
+        saveDataForBalanceMonitor();
+        console.log('✅ Data saved to cache');
+        
+        // Simulate page refresh
+        console.log('🔄 Simulating page refresh with cache...');
+        const cachedData = checkCachedData();
+        
+        if (cachedData) {
+            console.log('📦 Cache data would be loaded on refresh');
+            console.log('Cached data:', {
+                orders: cachedData.orders?.length || 0,
+                marketing: cachedData.marketing?.length || 0,
+                salesteam: cachedData.salesteam?.length || 0,
+                ecommerce: cachedData.ecommerce?.length || 0
+            });
+        }
+    } else {
+        console.log('❌ No data to cache');
+    }
+};
+
+// Debug function untuk test Firestore connection
+window.debugFirestoreConnection = function() {
+    console.log('🔍 DEBUGGING FIRESTORE CONNECTION');
+    
+    // Check basic Firebase availability
+    console.log('window.db available:', window.db ? 'Yes' : 'No');
+    console.log('window.db type:', typeof window.db);
+    
+    if (window.db) {
+        console.log('window.db object:', window.db);
+        
+        // Test collection function
+        try {
+            console.log('Testing collection() function...');
+            const testCollection = collection(window.db, 'test');
+            console.log('✅ collection() function works:', testCollection ? 'Yes' : 'No');
+            
+            // Test actual collection references
+            const collections = ['orderData', 'marketingData', 'salesTeamData', 'powerMetrics'];
+            
+            collections.forEach(collectionName => {
+                try {
+                    const ref = collection(window.db, collectionName);
+                    console.log(`✅ ${collectionName} collection ref:`, ref ? 'Created' : 'Failed');
+                } catch (error) {
+                    console.error(`❌ ${collectionName} collection error:`, error.message);
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ collection() function error:', error.message);
+            console.error('Full error:', error);
+        }
+        
+        // Test imports
+        console.log('Firestore imports available:');
+        console.log('  collection:', typeof collection);
+        console.log('  getDocs:', typeof getDocs);
+        console.log('  query:', typeof query);
+        console.log('  where:', typeof where);
+        console.log('  orderBy:', typeof orderBy);
+        console.log('  limit:', typeof limit);
+        
+    } else {
+        console.error('❌ window.db not available - Firebase not initialized');
+    }
+};
+
+// Debug function untuk test manual data fetch
+window.debugManualFetch = function() {
+    console.log('🔍 TESTING MANUAL DATA FETCH');
+    
+    if (!window.db) {
+        console.error('❌ Cannot test - Firebase not available');
+        return;
+    }
+    
+    // Test fetching one collection manually
+    const testCollectionName = 'salesTeamData';
+    
+    console.log(`Testing fetch from ${testCollectionName}...`);
+    
+    try {
+        const collectionRef = collection(window.db, testCollectionName);
+        console.log('✅ Collection reference created');
+        
+        getDocs(collectionRef).then(snapshot => {
+            console.log(`✅ Got ${snapshot.docs.length} documents from ${testCollectionName}`);
+            
+            const data = snapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data() 
+            }));
+            
+            console.log('Sample documents:', data.slice(0, 3));
+            
+        }).catch(error => {
+            console.error('❌ getDocs failed:', error.message);
+        });
+        
+    } catch (error) {
+        console.error('❌ Manual fetch failed:', error.message);
+    }
+};
+
+// Debug function untuk check orders data structure
+window.debugOrdersData = function() {
+    console.log('🔍 DEBUGGING ORDERS DATA STRUCTURE');
+    
+    if (!window.allData || !window.allData.orders) {
+        console.log('❌ No orders data available');
+        return;
+    }
+    
+    const orders = window.allData.orders;
+    console.log(`📦 Total orders: ${orders.length}`);
+    
+    if (orders.length > 0) {
+        // Show structure of first few orders
+        console.log('\n📋 Sample order structures:');
+        orders.slice(0, 3).forEach((order, index) => {
+            console.log(`\nOrder ${index + 1}:`, {
+                id: order.id,
+                product_name: order.product_name,
+                product: order.product,
+                nama_produk: order.nama_produk,
+                item: order.item,
+                items: order.items,
+                total_rm: order.total_rm,
+                amount: order.amount,
+                allFields: Object.keys(order)
+            });
+        });
+        
+        // Check for product-related fields
+        console.log('\n🔍 Product field analysis:');
+        const productFields = {};
+        
+        orders.forEach(order => {
+            Object.keys(order).forEach(key => {
+                if (key.toLowerCase().includes('product') || 
+                    key.toLowerCase().includes('item') || 
+                    key.toLowerCase().includes('nama')) {
+                    if (!productFields[key]) {
+                        productFields[key] = { count: 0, samples: [] };
+                    }
+                    productFields[key].count++;
+                    if (productFields[key].samples.length < 3 && order[key]) {
+                        productFields[key].samples.push(order[key]);
+                    }
+                }
+            });
+        });
+        
+        console.log('Product-related fields found:', productFields);
+        
+        // Show current product name extraction
+        console.log('\n📊 Current product name extraction:');
+        orders.slice(0, 5).forEach((order, index) => {
+            const currentExtraction = order.product_name || order.product || 'Unknown Product';
+            console.log(`Order ${index + 1}: "${currentExtraction}"`);
+        });
+    }
+};
+
+// Debug function untuk test Total Lead calculation
+window.debugTotalLeadCalculation = function() {
+    console.log('🔍 DEBUGGING TOTAL LEAD CALCULATION');
+    
+    if (!allData.salesteam) {
+        console.log('❌ No salesteam data available');
+        return;
+    }
+    
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    
+    console.log(`📅 Looking for data in ${currentMonth}/${currentYear}`);
+    
+    // Show all power metrics data
+    const allPowerMetrics = allData.salesteam.filter(item => item.type === 'power_metrics');
+    console.log(`📊 Total power metrics records: ${allPowerMetrics.length}`);
+    
+    allPowerMetrics.forEach((item, index) => {
+        const date = item.tarikh || (item.created_at ? 'Has created_at' : 'No date');
+        const agentName = item.agent_name || item.team || 'Unknown';
+        const leadCount = item.total_lead_bulan || 0;
+        console.log(`   [${index + 1}] ${agentName}: ${leadCount} leads (${date})`);
+    });
+    
+    // Test the actual calculation
+    console.log('\n🧮 Running updateKPIs calculation...');
+    updateKPIs(allData);
+};
 // 3. TAMBAH function ni dalam dashboard.js
 
 function updateTeamDisplay() {

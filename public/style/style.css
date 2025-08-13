@@ -1246,6 +1246,10 @@ section:hover {
     background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
 }
 
+.leads-total-card::before {
+    background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+}
+
 .leads-card::before {
     background: linear-gradient(90deg, var(--secondary-500), var(--secondary-600));
 }
@@ -1282,6 +1286,11 @@ section:hover {
 }
 
 .roas-icon {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    color: white;
+}
+
+.leads-total-icon {
     background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
     color: white;
 }

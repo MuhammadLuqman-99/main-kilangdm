@@ -502,13 +502,62 @@ function updateTopProductsChart(orders) {
         console.log('🗑️ Previous top products chart destroyed');
     }
     
-    // Group by product
+    // Group by product with comprehensive field detection
     const products = {};
-    orders.forEach(order => {
-        const product = order.product_name || order.product || 'Unknown Product';
-        const amount = parseFloat(order.total_rm || order.amount) || 0;
+    
+    console.log('🔍 Analyzing product names from orders...');
+    
+    orders.forEach((order, index) => {
+        // Try multiple possible product name fields
+        let product = order.product_name || 
+                     order.product || 
+                     order.nama_produk || 
+                     order.item || 
+                     order.item_name ||
+                     order.produk ||
+                     order.description ||
+                     order.nama_item;
+        
+        // Check if items array exists and extract product name from it
+        if (!product && order.items && Array.isArray(order.items) && order.items.length > 0) {
+            const firstItem = order.items[0];
+            product = firstItem.name || firstItem.product_name || firstItem.item || firstItem.description;
+        }
+        
+        // Check if products array exists (structured products)
+        if (!product && order.products && Array.isArray(order.products) && order.products.length > 0) {
+            const firstProduct = order.products[0];
+            product = firstProduct.product_name || firstProduct.name || firstProduct.item;
+        }
+        
+        // Clean up product name and fallback
+        if (!product || product === '' || product === null || product === undefined) {
+            product = 'Unknown Product';
+        } else {
+            product = String(product).trim();
+            // Remove common prefixes/suffixes that might make grouping inconsistent
+            product = product.replace(/^(item:|product:|nama:)/i, '').trim();
+        }
+        
+        const amount = parseFloat(order.total_rm || order.amount || order.total || 0);
+        
+        // Debug first few orders
+        if (index < 3) {
+            console.log(`Order ${index + 1} product detection:`, {
+                extracted: product,
+                amount: amount,
+                availableFields: Object.keys(order).filter(key => 
+                    key.toLowerCase().includes('product') || 
+                    key.toLowerCase().includes('item') || 
+                    key.toLowerCase().includes('nama')
+                )
+            });
+        }
+        
         products[product] = (products[product] || 0) + amount;
     });
+    
+    console.log('📊 Product grouping results:', products);
     
     // Get top 5 products
     const sortedProducts = Object.entries(products)
@@ -1107,8 +1156,13 @@ function groupProductsByName(products) {
     const groups = {};
     
     products.forEach(product => {
-        // Use full product name with color as the key
-        const productKey = product.name || 'Unknown Product';
+        // Try multiple possible name fields
+        const productKey = product.name || 
+                          product.product_name || 
+                          product.item || 
+                          product.description ||
+                          product.base_name ||
+                          'Unknown Product';
         
         if (!groups[productKey]) {
             groups[productKey] = [];
@@ -1890,5 +1944,105 @@ function setupRealTimeUpdates() {
         updateOrderKPIs(orderData);
     }, 5 * 60 * 1000);
 }
+
+// Debug function to test product name extraction
+window.debugProductNames = function() {
+    console.log('🔍 DEBUGGING PRODUCT NAME EXTRACTION');
+    
+    if (!allOrdersData || allOrdersData.length === 0) {
+        console.log('❌ No orders data available');
+        console.log('💡 Try: await initializeOrderDashboard() first');
+        return;
+    }
+    
+    console.log(`📦 Total orders: ${allOrdersData.length}`);
+    
+    // Test product name extraction with current logic
+    const productAnalysis = {};
+    
+    allOrdersData.slice(0, 10).forEach((order, index) => {
+        // Use same logic as updateTopProductsChart
+        let product = order.product_name || 
+                     order.product || 
+                     order.nama_produk || 
+                     order.item || 
+                     order.item_name ||
+                     order.produk ||
+                     order.description ||
+                     order.nama_item;
+        
+        // Check arrays
+        if (!product && order.items && Array.isArray(order.items) && order.items.length > 0) {
+            const firstItem = order.items[0];
+            product = firstItem.name || firstItem.product_name || firstItem.item || firstItem.description;
+        }
+        
+        if (!product && order.products && Array.isArray(order.products) && order.products.length > 0) {
+            const firstProduct = order.products[0];
+            product = firstProduct.product_name || firstProduct.name || firstProduct.item;
+        }
+        
+        // Clean up
+        if (!product || product === '' || product === null || product === undefined) {
+            product = 'Unknown Product';
+        } else {
+            product = String(product).trim();
+            product = product.replace(/^(item:|product:|nama:)/i, '').trim();
+        }
+        
+        const amount = parseFloat(order.total_rm || order.amount || order.total || 0);
+        
+        console.log(`\nOrder ${index + 1}:`, {
+            extractedProduct: product,
+            amount: amount,
+            rawFields: {
+                product_name: order.product_name,
+                product: order.product,
+                nama_produk: order.nama_produk,
+                item: order.item,
+                description: order.description,
+                hasItems: order.items ? `Array(${order.items.length})` : 'No',
+                hasProducts: order.products ? `Array(${order.products.length})` : 'No',
+                allFields: Object.keys(order)
+            }
+        });
+        
+        // Track for analysis
+        if (!productAnalysis[product]) {
+            productAnalysis[product] = { count: 0, totalAmount: 0 };
+        }
+        productAnalysis[product].count++;
+        productAnalysis[product].totalAmount += amount;
+    });
+    
+    console.log('\n📊 Product analysis summary:');
+    Object.entries(productAnalysis).forEach(([product, data]) => {
+        console.log(`  "${product}": ${data.count} orders, RM ${data.totalAmount.toFixed(2)}`);
+    });
+    
+    // Test if top products chart would show Unknown Product
+    const unknownCount = productAnalysis['Unknown Product']?.count || 0;
+    const totalOrders = Object.values(productAnalysis).reduce((sum, data) => sum + data.count, 0);
+    
+    if (unknownCount > 0) {
+        console.log(`\n⚠️ ISSUE DETECTED: ${unknownCount}/${totalOrders} orders show as "Unknown Product"`);
+        console.log('💡 This means product name fields are missing or have different names');
+        console.log('🔧 Recommended: Check actual field names in your orders data');
+    } else {
+        console.log('\n✅ No "Unknown Product" issues detected in sample');
+    }
+};
+
+// Debug function to force refresh top products chart
+window.refreshTopProductsChart = function() {
+    console.log('🔄 REFRESHING TOP PRODUCTS CHART');
+    
+    if (allOrdersData && allOrdersData.length > 0) {
+        updateTopProductsChart(allOrdersData);
+        console.log('✅ Top products chart refreshed');
+    } else {
+        console.log('❌ No orders data available to refresh chart');
+    }
+};
 
 console.log('📦 Professional Order Dashboard loaded!');

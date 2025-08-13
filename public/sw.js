@@ -1,9 +1,9 @@
 // Service Worker for KilangDM Dashboard PWA
 // Provides offline functionality and caching
 
-const CACHE_NAME = 'kilangdm-dashboard-v3.0-prod-prod-prod';
-const STATIC_CACHE = 'kilangdm-static-v3.0-prod-prod-prod';
-const DYNAMIC_CACHE = 'kilangdm-dynamic-v3.0-prod-prod-prod';
+const CACHE_NAME = 'kilangdm-dashboard-v3.1';
+const STATIC_CACHE = 'kilangdm-static-v3.1';
+const DYNAMIC_CACHE = 'kilangdm-dynamic-v3.1';
 
 // Files to cache for offline use
 const STATIC_FILES = [
@@ -60,7 +60,10 @@ const STATIC_FILES = [
 const NETWORK_FIRST = [
   '/api/',
   'firebase',
-  'firestore'
+  'firestore',
+  '?v=', // Files with version query parameters should use network-first
+  'dashboard.js', // Critical dashboard files should always be fresh
+  'firebase-config.js' // Firebase config should always be fresh
 ];
 
 // Cache-first resources (use cached version if available)

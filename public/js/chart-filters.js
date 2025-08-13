@@ -3,16 +3,24 @@
 
 class ChartFiltersManager {
     constructor() {
+        // Initialize with default dates
+        const today = new Date().toISOString().split('T')[0];
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+        
         this.filters = {
-            cost: { team: '', dateFrom: '', dateTo: '' },
-            roi: { team: '', dateFrom: '', dateTo: '' },
-            timeline: { team: '', dateFrom: '', dateTo: '', timeSlot: '' }
+            cost: { team: '', dateFrom: thirtyDaysAgoStr, dateTo: today },
+            roi: { team: '', dateFrom: thirtyDaysAgoStr, dateTo: today },
+            timeline: { team: '', dateFrom: today, dateTo: today, timeSlot: '' } // Timeline uses today as start date
         };
         
         this.teamOptions = new Set();
         this.isInitialized = false;
         
-        console.log('📊 Chart Filters Manager initialized');
+        console.log('📊 Chart Filters Manager initialized with default dates');
+        console.log(`   Standard charts: ${thirtyDaysAgoStr} to ${today}`);
+        console.log(`   Timeline chart: ${today} to ${today}`);
     }
 
     init(allData) {
@@ -123,15 +131,15 @@ class ChartFiltersManager {
 
         const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
         const toDate = today.toISOString().split('T')[0];
+        const todayDate = today.toISOString().split('T')[0];
 
-        // Set default dates for all charts
-        const dateInputs = [
+        // Set default dates for cost and roi charts (30 days ago to today)
+        const standardCharts = [
             { from: 'cost-date-from', to: 'cost-date-to' },
-            { from: 'roi-date-from', to: 'roi-date-to' },
-            { from: 'timeline-date-from', to: 'timeline-date-to' }
+            { from: 'roi-date-from', to: 'roi-date-to' }
         ];
 
-        dateInputs.forEach(({ from, to }) => {
+        standardCharts.forEach(({ from, to }) => {
             const fromInput = document.getElementById(from);
             const toInput = document.getElementById(to);
             
@@ -139,7 +147,16 @@ class ChartFiltersManager {
             if (toInput) toInput.value = toDate;
         });
 
-        console.log(`📅 Set default date range: ${fromDate} to ${toDate}`);
+        // Special handling for timeline chart (Lead Performance by Sales Team)
+        // Set "Dari" to today's date instead of 30 days ago
+        const timelineFromInput = document.getElementById('timeline-date-from');
+        const timelineToInput = document.getElementById('timeline-date-to');
+        
+        if (timelineFromInput) timelineFromInput.value = todayDate;
+        if (timelineToInput) timelineToInput.value = toDate;
+
+        console.log(`📅 Set default date range for standard charts: ${fromDate} to ${toDate}`);
+        console.log(`📅 Set default date range for timeline chart: ${todayDate} to ${toDate}`);
     }
 
     setupEventListeners() {
@@ -504,6 +521,16 @@ class ChartFiltersManager {
         // Reset date ranges to default
         this.setDefaultDateRange();
         
+        // Reset period buttons
+        document.querySelectorAll('.timeline-period-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        // Set default active button (2.30pm)
+        const defaultButton = document.querySelector('.timeline-period-btn[data-time="2.30pm"]');
+        if (defaultButton) {
+            defaultButton.classList.add('active');
+        }
+        
         // Update all charts
         this.updateAllCharts();
         
@@ -534,6 +561,32 @@ window.initChartFilters = function(allData) {
     if (window.chartFiltersManager && !window.chartFiltersManager.isInitialized) {
         window.chartFiltersManager.init(allData);
     }
+};
+
+// Debug function to test timeline filter dates
+window.debugTimelineFilters = function() {
+    console.log('🔍 DEBUGGING TIMELINE FILTERS');
+    
+    const manager = window.chartFiltersManager;
+    if (!manager) {
+        console.log('❌ Chart filters manager not found');
+        return;
+    }
+    
+    console.log('Current filter values:');
+    console.log('Timeline filters:', manager.filters.timeline);
+    
+    const fromInput = document.getElementById('timeline-date-from');
+    const toInput = document.getElementById('timeline-date-to');
+    
+    console.log('Input field values:');
+    console.log(`   From input: ${fromInput ? fromInput.value : 'Not found'}`);
+    console.log(`   To input: ${toInput ? toInput.value : 'Not found'}`);
+    
+    const today = new Date().toISOString().split('T')[0];
+    console.log(`   Today: ${today}`);
+    
+    console.log('Expected: "Dari" should be today\'s date, "Hingga" should be today\'s date');
 };
 
 console.log('📊 Chart Filters Manager loaded');
