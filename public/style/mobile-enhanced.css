@@ -1,0 +1,486 @@
+/* ===================================================
+   KILANGDM MOBILE ENHANCED OPTIMIZATION
+   Advanced mobile experience improvements
+   ================================================= */
+
+/* ===================================================
+   MOBILE PERFORMANCE OPTIMIZATIONS
+   ================================================= */
+
+/* Reduce animations and transitions on mobile for better performance */
+@media (max-width: 768px) {
+    /* Disable heavy animations on mobile */
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.2s !important;
+        transition-duration: 0.2s !important;
+    }
+    
+    /* Optimize scrolling performance */
+    body {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: none;
+    }
+    
+    /* Optimize paint layers */
+    .nav-link,
+    .btn,
+    .kpi-card,
+    .chart-card {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+    }
+}
+
+/* ===================================================
+   TOUCH OPTIMIZATION
+   ================================================= */
+
+/* Minimum touch target sizes (44x44px Apple, 48x48px Google) */
+@media (max-width: 768px) {
+    .nav-link,
+    .btn,
+    .mobile-menu-btn,
+    .home-btn,
+    button,
+    .form-input,
+    .form-select,
+    .filter-input,
+    .filter-select {
+        min-height: 48px !important;
+        min-width: 48px !important;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Remove iOS button styling */
+    input[type="submit"],
+    input[type="button"],
+    button {
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        border-radius: var(--radius-md) !important;
+    }
+    
+    /* Improve input focus on mobile */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        transform: scale(1.02) !important;
+        z-index: 10 !important;
+    }
+}
+
+/* ===================================================
+   MOBILE NAVIGATION IMPROVEMENTS
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Sticky navigation behavior */
+    .main-nav {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 999 !important;
+        backdrop-filter: blur(20px) !important;
+        border-bottom: 2px solid var(--border-primary) !important;
+    }
+    
+    /* Enhanced mobile menu */
+    .nav-links.mobile-active {
+        max-height: calc(100vh - 100px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        animation: slideDown 0.3s ease !important;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Improve mobile menu button positioning */
+    .mobile-menu-btn {
+        position: fixed !important;
+        top: 1rem !important;
+        right: 1rem !important;
+        z-index: 9999 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        backdrop-filter: blur(10px) !important;
+    }
+    
+    /* Better brand positioning on mobile */
+    .nav-brand {
+        flex: 1 !important;
+        justify-content: center !important;
+        margin-right: 60px !important; /* Make space for mobile button */
+    }
+    
+    .brand-text h2 {
+        font-size: 1.25rem !important;
+    }
+    
+    .brand-text span {
+        font-size: 0.75rem !important;
+    }
+}
+
+/* ===================================================
+   MOBILE TYPOGRAPHY IMPROVEMENTS
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Better font scaling for mobile */
+    html {
+        font-size: 14px !important;
+    }
+    
+    .section-title {
+        font-size: 1.5rem !important;
+        line-height: 1.3 !important;
+    }
+    
+    .kpi-value {
+        font-size: 1.75rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    .kpi-title {
+        font-size: 0.9rem !important;
+    }
+    
+    .section-subtitle {
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    html {
+        font-size: 13px !important;
+    }
+    
+    .section-title {
+        font-size: 1.25rem !important;
+    }
+    
+    .kpi-value {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* ===================================================
+   MOBILE LAYOUT IMPROVEMENTS
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Better container spacing */
+    .main-container {
+        margin-top: 0 !important;
+        padding-top: 1rem !important;
+    }
+    
+    /* Optimize section spacing */
+    .dashboard-section {
+        margin-bottom: 1.5rem !important;
+        padding: 1rem !important;
+        border-radius: var(--radius-lg) !important;
+    }
+    
+    /* Better breadcrumb for mobile */
+    .breadcrumb {
+        margin-bottom: 1rem !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.8rem !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Improve card spacing */
+    .kpi-card,
+    .chart-card,
+    .metric-card {
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Better grid layouts */
+    .kpi-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .power-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+        gap: 1rem !important;
+    }
+    
+    .secondary-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-section {
+        padding: 0.75rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .kpi-card,
+    .chart-card,
+    .metric-card {
+        padding: 0.75rem !important;
+    }
+    
+    .power-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ===================================================
+   MOBILE FORM IMPROVEMENTS
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Better form layouts */
+    .form-grid-4,
+    .form-grid-3,
+    .form-grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    /* Improve input styling */
+    .form-input,
+    .form-select,
+    input,
+    select,
+    textarea {
+        font-size: 16px !important; /* Prevent zoom on iOS */
+        padding: 1rem !important;
+        border-radius: var(--radius-lg) !important;
+    }
+    
+    /* Better button layouts */
+    .filter-actions,
+    .section-actions {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        align-items: stretch !important;
+    }
+    
+    .btn {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 1rem !important;
+    }
+}
+
+/* ===================================================
+   MOBILE CHART IMPROVEMENTS
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Better chart container sizing */
+    .chart-container {
+        height: 250px !important;
+        min-height: 250px !important;
+        margin: 1rem 0 !important;
+    }
+    
+    .main-chart .chart-container {
+        height: 300px !important;
+        min-height: 300px !important;
+    }
+    
+    /* Hide complex chart controls on mobile */
+    .chart-controls {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .chart-filter-group {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.25rem !important;
+    }
+    
+    .chart-period-buttons {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+    
+    .period-btn,
+    .timeline-period-btn {
+        flex: 1 !important;
+        min-width: auto !important;
+        font-size: 0.75rem !important;
+        padding: 0.5rem !important;
+    }
+}
+
+/* ===================================================
+   MOBILE ACCESSIBILITY IMPROVEMENTS
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Improve focus indicators on mobile */
+    *:focus {
+        outline: 3px solid var(--primary-color) !important;
+        outline-offset: 2px !important;
+    }
+    
+    /* Better contrast for mobile */
+    .nav-link,
+    .btn {
+        font-weight: 600 !important;
+    }
+    
+    /* Improve text readability */
+    .kpi-meta,
+    .section-subtitle {
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+    }
+}
+
+/* ===================================================
+   MOBILE PERFORMANCE PREFIXES
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Hardware acceleration */
+    .main-nav,
+    .mobile-menu-btn,
+    .nav-links,
+    .floating-home-btn {
+        will-change: transform !important;
+        transform: translateZ(0) !important;
+    }
+    
+    /* Optimize repaints */
+    .kpi-card:hover,
+    .chart-card:hover,
+    .btn:hover {
+        will-change: auto !important;
+    }
+}
+
+/* ===================================================
+   MOBILE SPECIFIC UTILITIES
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Hide on mobile */
+    .mobile-hidden {
+        display: none !important;
+    }
+    
+    /* Show only on mobile */
+    .mobile-only {
+        display: block !important;
+    }
+    
+    /* Full width on mobile */
+    .mobile-full-width {
+        width: 100% !important;
+        max-width: none !important;
+    }
+    
+    /* Stack vertically on mobile */
+    .mobile-stack {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-only {
+        display: none !important;
+    }
+}
+
+/* ===================================================
+   MOBILE LANDSCAPE OPTIMIZATIONS
+   ================================================= */
+
+@media (max-width: 768px) and (orientation: landscape) {
+    /* Reduce header height in landscape */
+    .nav-container {
+        padding: 0.5rem 1rem !important;
+    }
+    
+    .brand-text h2 {
+        font-size: 1rem !important;
+    }
+    
+    .brand-text span {
+        display: none !important;
+    }
+    
+    /* Optimize chart heights for landscape */
+    .chart-container {
+        height: 200px !important;
+        min-height: 200px !important;
+    }
+    
+    .main-chart .chart-container {
+        height: 250px !important;
+        min-height: 250px !important;
+    }
+}
+
+/* ===================================================
+   DARK MODE MOBILE OPTIMIZATIONS
+   ================================================= */
+
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+    /* Ensure good contrast in dark mode on mobile */
+    .nav-link,
+    .btn,
+    .form-input,
+    .form-select {
+        border-color: var(--border-primary) !important;
+    }
+    
+    /* Better visibility for mobile dark mode */
+    .kpi-card,
+    .chart-card,
+    .dashboard-section {
+        border-color: var(--border-secondary) !important;
+        background: var(--bg-surface) !important;
+    }
+}
+
+/* ===================================================
+   MOBILE PRINT OPTIMIZATIONS
+   ================================================= */
+
+@media print and (max-width: 768px) {
+    .mobile-menu-btn,
+    .floating-home-btn,
+    .chart-controls {
+        display: none !important;
+    }
+    
+    .main-container {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .dashboard-section {
+        break-inside: avoid !important;
+        margin-bottom: 1rem !important;
+        padding: 1rem !important;
+    }
+}

@@ -1,0 +1,749 @@
+/* ===================================================
+   KILANGDM UI COMPREHENSIVE FIX
+   Fixes all UI/UX issues across the entire website
+   ================================================= */
+
+/* ===================================================
+   GLOBAL RESET & CONSISTENCY
+   ================================================= */
+
+/* Ensure consistent box-sizing everywhere */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Reset margins and paddings */
+* {
+    margin: 0;
+    padding: 0;
+}
+
+/* Root variables for consistency */
+:root {
+    /* Updated Colors */
+    --primary-color: #3b82f6;
+    --primary-dark: #1d4ed8;
+    --secondary-color: #1e293b;
+    --success-color: #22c55e;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    
+    /* Background Colors */
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --bg-card: rgba(30, 41, 59, 0.85);
+    --bg-surface: rgba(15, 23, 42, 0.9);
+    
+    /* Text Colors */
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+    --text-accent: #3b82f6;
+    
+    /* Border Colors */
+    --border-primary: rgba(59, 130, 246, 0.3);
+    --border-secondary: rgba(148, 163, 184, 0.2);
+    --border-muted: rgba(100, 116, 139, 0.15);
+    
+    /* Spacing */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+    
+    /* Transitions */
+    --transition-fast: all 0.15s ease;
+    --transition-normal: all 0.3s ease;
+    --transition-slow: all 0.5s ease;
+    
+    /* Z-index scale */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    --z-toast: 1080;
+}
+
+/* ===================================================
+   BODY & HTML CONSISTENCY
+   ================================================= */
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%) !important;
+    background-attachment: fixed !important;
+    color: var(--text-primary) !important;
+    line-height: 1.6;
+    font-size: 16px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+/* Force override any existing body styles */
+body.bg-gray-900,
+body[class*="bg-"],
+body[style*="background"] {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%) !important;
+    background-attachment: fixed !important;
+    color: var(--text-primary) !important;
+}
+
+/* ===================================================
+   NAVIGATION CONSISTENCY FIXES
+   ================================================= */
+
+/* Main Navigation */
+.main-nav {
+    background: var(--bg-card) !important;
+    backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid var(--border-secondary) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: var(--z-sticky) !important;
+    width: 100% !important;
+    padding: 0 !important;
+}
+
+.nav-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    position: relative !important;
+}
+
+/* Brand Section */
+.nav-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-md) !important;
+    flex-shrink: 0 !important;
+}
+
+.brand-icon {
+    width: 40px !important;
+    height: 40px !important;
+    background: var(--primary-color) !important;
+    border-radius: var(--radius-md) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-size: 18px !important;
+}
+
+.brand-text h2 {
+    color: var(--text-primary) !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+}
+
+.brand-text span {
+    color: var(--text-secondary) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+}
+
+/* Navigation Links */
+.nav-links {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-sm) !important;
+    list-style: none !important;
+}
+
+.nav-link {
+    display: flex !important;
+    align-items: center !important;
+    padding: var(--space-sm) var(--space-md) !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--text-secondary) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    transition: var(--transition-fast) !important;
+    white-space: nowrap !important;
+    min-height: 44px !important;
+}
+
+.nav-link:hover {
+    background: rgba(59, 130, 246, 0.1) !important;
+    color: var(--text-primary) !important;
+    transform: translateY(-1px) !important;
+}
+
+.nav-link.active {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+.nav-link i {
+    margin-right: var(--space-sm) !important;
+    font-size: 16px !important;
+    width: 16px !important;
+}
+
+/* Time Display */
+.nav-time {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    font-size: 0.75rem !important;
+}
+
+.time-label {
+    color: var(--text-muted) !important;
+    font-weight: 400 !important;
+}
+
+.time-value {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    font-family: 'Courier New', monospace !important;
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+    display: none !important;
+    background: var(--primary-color) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: var(--radius-md) !important;
+    padding: var(--space-md) !important;
+    cursor: pointer !important;
+    transition: var(--transition-fast) !important;
+    width: 44px !important;
+    height: 44px !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.mobile-menu-btn:hover {
+    background: var(--primary-dark) !important;
+    transform: scale(1.05) !important;
+}
+
+.mobile-menu-btn:active {
+    transform: scale(0.95) !important;
+}
+
+/* ===================================================
+   CONTAINER CONSISTENCY
+   ================================================= */
+
+/* Main Containers */
+.main-container,
+.container,
+.order-main-container,
+.dashboard-container,
+.ecommerce-container {
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+    padding: var(--space-xl) var(--space-lg) !important;
+    width: 100% !important;
+}
+
+/* ===================================================
+   SECTION STYLING CONSISTENCY
+   ================================================= */
+
+/* Dashboard Sections */
+.dashboard-section,
+.section {
+    margin-bottom: var(--space-2xl) !important;
+    background: var(--bg-card) !important;
+    border-radius: var(--radius-xl) !important;
+    padding: var(--space-xl) !important;
+    border: 1px solid var(--border-secondary) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+/* Section Headers */
+.section-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: var(--space-xl) !important;
+    padding-bottom: var(--space-lg) !important;
+    border-bottom: 1px solid var(--border-muted) !important;
+}
+
+.section-title {
+    color: var(--text-primary) !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+}
+
+.section-subtitle {
+    color: var(--text-secondary) !important;
+    font-size: 0.875rem !important;
+    margin: var(--space-xs) 0 0 0 !important;
+}
+
+/* ===================================================
+   CARD CONSISTENCY
+   ================================================= */
+
+/* All Card Types */
+.kpi-card,
+.chart-card,
+.order-data-card,
+.enhanced-order-card,
+.analytics-card,
+.form-card,
+.metric-card {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border-secondary) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: var(--space-lg) !important;
+    backdrop-filter: blur(8px) !important;
+    box-shadow: var(--shadow-md) !important;
+    transition: var(--transition-normal) !important;
+}
+
+.kpi-card:hover,
+.chart-card:hover,
+.metric-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-color: var(--border-primary) !important;
+}
+
+/* KPI Card Headers */
+.kpi-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: var(--space-md) !important;
+}
+
+.kpi-icon {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: var(--radius-md) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+    color: white !important;
+}
+
+.sales-icon { background: linear-gradient(135deg, #22c55e, #16a34a) !important; }
+.leads-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; }
+.orders-icon { background: linear-gradient(135deg, #f59e0b, #d97706) !important; }
+
+/* KPI Content */
+.kpi-title {
+    color: var(--text-primary) !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    margin: 0 0 var(--space-sm) 0 !important;
+}
+
+.kpi-value {
+    color: var(--text-primary) !important;
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    margin: 0 0 var(--space-xs) 0 !important;
+    line-height: 1.2 !important;
+}
+
+.kpi-meta {
+    color: var(--text-muted) !important;
+    font-size: 0.75rem !important;
+    margin: 0 !important;
+}
+
+/* ===================================================
+   GRID LAYOUTS CONSISTENCY
+   ================================================= */
+
+/* KPI Grid */
+.kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: var(--space-lg) !important;
+    margin-bottom: var(--space-2xl) !important;
+}
+
+/* Power Grid */
+.power-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+    gap: var(--space-lg) !important;
+    margin-bottom: var(--space-xl) !important;
+}
+
+.secondary-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+}
+
+/* ===================================================
+   FORM CONSISTENCY
+   ================================================= */
+
+/* Form Elements */
+.form-input,
+.form-select,
+.filter-input,
+.filter-select,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+select,
+textarea {
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border-secondary) !important;
+    border-radius: var(--radius-md) !important;
+    padding: var(--space-md) !important;
+    color: var(--text-primary) !important;
+    font-family: inherit !important;
+    font-size: 0.875rem !important;
+    transition: var(--transition-fast) !important;
+    width: 100% !important;
+}
+
+.form-input:focus,
+.form-select:focus,
+.filter-input:focus,
+.filter-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    border-radius: var(--radius-md) !important;
+    font-family: inherit !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    border: 1px solid transparent !important;
+    cursor: pointer !important;
+    transition: var(--transition-fast) !important;
+    white-space: nowrap !important;
+    min-height: 44px !important;
+}
+
+.btn-primary {
+    background: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-secondary {
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-secondary) !important;
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-primary) !important;
+}
+
+.btn-outline {
+    background: transparent !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-primary) !important;
+}
+
+.btn-outline:hover {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+/* ===================================================
+   BREADCRUMB CONSISTENCY
+   ================================================= */
+
+.breadcrumb {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-sm) !important;
+    margin-bottom: var(--space-xl) !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    background: var(--bg-card) !important;
+    border-radius: var(--radius-lg) !important;
+    border: 1px solid var(--border-muted) !important;
+}
+
+.breadcrumb-item {
+    color: var(--text-secondary) !important;
+    text-decoration: none !important;
+    font-size: 0.875rem !important;
+    transition: var(--transition-fast) !important;
+}
+
+.breadcrumb-item:hover {
+    color: var(--primary-color) !important;
+}
+
+.breadcrumb-item.active {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+}
+
+.breadcrumb-separator {
+    color: var(--text-muted) !important;
+    font-size: 0.75rem !important;
+}
+
+/* ===================================================
+   FLOATING ELEMENTS CONSISTENCY
+   ================================================= */
+
+.floating-home-btn {
+    position: fixed !important;
+    bottom: 2rem !important;
+    right: 2rem !important;
+    z-index: var(--z-fixed) !important;
+}
+
+.home-btn {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    background: var(--primary-color) !important;
+    color: white !important;
+    border: none !important;
+    cursor: pointer !important;
+    box-shadow: var(--shadow-xl) !important;
+    transition: var(--transition-fast) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+}
+
+.home-btn:hover {
+    background: var(--primary-dark) !important;
+    transform: scale(1.1) !important;
+}
+
+/* ===================================================
+   MOBILE RESPONSIVE FIXES
+   ================================================= */
+
+@media (max-width: 768px) {
+    /* Navigation Mobile */
+    .nav-container {
+        flex-wrap: wrap !important;
+        padding: var(--space-sm) var(--space-md) !important;
+    }
+    
+    .nav-links {
+        display: none !important;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: var(--bg-card) !important;
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+        padding: var(--space-lg) !important;
+        box-shadow: var(--shadow-xl) !important;
+        z-index: var(--z-dropdown) !important;
+        flex-direction: column !important;
+        gap: var(--space-sm) !important;
+        border: 1px solid var(--border-secondary) !important;
+        border-top: none !important;
+    }
+    
+    .nav-links.mobile-active {
+        display: flex !important;
+    }
+    
+    .mobile-menu-btn {
+        display: flex !important;
+        position: absolute !important;
+        top: 1rem !important;
+        right: 1rem !important;
+        z-index: var(--z-fixed) !important;
+    }
+    
+    .nav-time {
+        display: none !important;
+    }
+    
+    /* Container Mobile */
+    .main-container,
+    .container,
+    .order-main-container,
+    .dashboard-container {
+        padding: var(--space-md) var(--space-sm) !important;
+        margin-top: 1rem !important;
+    }
+    
+    /* Grid Mobile */
+    .kpi-grid,
+    .power-grid {
+        grid-template-columns: 1fr !important;
+        gap: var(--space-md) !important;
+    }
+    
+    /* Section Mobile */
+    .dashboard-section {
+        padding: var(--space-lg) !important;
+        margin-bottom: var(--space-xl) !important;
+    }
+    
+    .section-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: var(--space-md) !important;
+    }
+    
+    /* Typography Mobile */
+    .section-title {
+        font-size: 1.25rem !important;
+    }
+    
+    .kpi-value {
+        font-size: 1.5rem !important;
+    }
+    
+    /* Floating Button Mobile */
+    .floating-home-btn {
+        bottom: 1rem !important;
+        right: 1rem !important;
+    }
+    
+    .home-btn {
+        width: 48px !important;
+        height: 48px !important;
+        font-size: 18px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-container,
+    .container {
+        padding: var(--space-sm) !important;
+    }
+    
+    .dashboard-section {
+        padding: var(--space-md) !important;
+    }
+    
+    .kpi-card,
+    .chart-card,
+    .metric-card {
+        padding: var(--space-md) !important;
+    }
+}
+
+/* ===================================================
+   PERFORMANCE OPTIMIZATIONS
+   ================================================= */
+
+/* Reduce animations on low-end devices */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* GPU acceleration for smooth animations */
+.nav-link,
+.btn,
+.kpi-card,
+.chart-card,
+.metric-card {
+    will-change: transform !important;
+    transform: translateZ(0) !important;
+}
+
+/* ===================================================
+   ACCESSIBILITY IMPROVEMENTS
+   ================================================= */
+
+/* Focus indicators */
+*:focus {
+    outline: 2px solid var(--primary-color) !important;
+    outline-offset: 2px !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --border-secondary: rgba(255, 255, 255, 0.3) !important;
+        --border-primary: rgba(59, 130, 246, 0.5) !important;
+    }
+}
+
+/* ===================================================
+   PRINT STYLES
+   ================================================= */
+
+@media print {
+    .floating-home-btn,
+    .mobile-menu-btn,
+    .nav-time {
+        display: none !important;
+    }
+    
+    .main-container {
+        max-width: none !important;
+        padding: 0 !important;
+    }
+    
+    .dashboard-section {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+}
