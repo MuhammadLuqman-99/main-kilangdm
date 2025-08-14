@@ -1096,29 +1096,63 @@ async function fetchAllData() {
 
 // DENGAN INI:
 function populateAgentFilter() {
-    // Get unique agents from sales team data - include all possible field names
-    const agents = [...new Set(allData.salesteam
-        .map(item => item.agent || item.team || item.agent_name)
-        .filter(Boolean)
-    )].sort();
+    // Get unique agents from all data sources - more comprehensive
+    const agents = new Set();
     
-    console.log('📊 Populating agent filter with agents:', agents);
-    
-    // Populate old agent filter if exists
-    const agentSelect = document.getElementById('agent-filter');
-    if (agentSelect) {
-        agentSelect.innerHTML = '<option value="">Semua Agent</option>';
-        agents.forEach(agent => {
-            const option = document.createElement('option');
-            option.value = agent;
-            option.textContent = agent;
-            agentSelect.appendChild(option);
+    // Extract from salesteam data
+    if (allData.salesteam && Array.isArray(allData.salesteam)) {
+        allData.salesteam.forEach(item => {
+            const agent = item.agent || item.team || item.agent_name || item.sales_agent;
+            if (agent && typeof agent === 'string' && agent.trim() && agent !== 'undefined') {
+                agents.add(agent.trim());
+            }
         });
     }
     
-    // Populate enhanced agent filter if available
+    // Extract from marketing data
+    if (allData.marketing && Array.isArray(allData.marketing)) {
+        allData.marketing.forEach(item => {
+            const agent = item.agent || item.team || item.agent_name || item.sales_agent || item.team_sale;
+            if (agent && typeof agent === 'string' && agent.trim() && agent !== 'undefined') {
+                agents.add(agent.trim());
+            }
+        });
+    }
+    
+    // Extract from orders data
+    if (allData.orders && Array.isArray(allData.orders)) {
+        allData.orders.forEach(item => {
+            const agent = item.sales_agent || item.agent || item.team || item.agent_name;
+            if (agent && typeof agent === 'string' && agent.trim() && agent !== 'undefined') {
+                agents.add(agent.trim());
+            }
+        });
+    }
+    
+    const agentArray = Array.from(agents).sort();
+    console.log('📊 Populating agent filter with agents:', agentArray);
+    
+    // Populate ALL possible agent filter elements
+    const agentSelectors = ['agent-filter', 'agent-filter-enhanced', 'lead-team-filter'];
+    
+    agentSelectors.forEach(selectorId => {
+        const agentSelect = document.getElementById(selectorId);
+        if (agentSelect) {
+            // Clear and repopulate
+            agentSelect.innerHTML = '<option value="">Semua Agent</option>';
+            agentArray.forEach(agent => {
+                const option = document.createElement('option');
+                option.value = agent;
+                option.textContent = agent;
+                agentSelect.appendChild(option);
+            });
+            console.log(`✅ Populated ${selectorId} with ${agentArray.length} agents`);
+        }
+    });
+    
+    // Also try enhanced population if available
     if (window.populateEnhancedAgentFilter) {
-        window.populateEnhancedAgentFilter(agents);
+        window.populateEnhancedAgentFilter(agentArray);
     }
 }
 

@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(rm:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(firebase --version)",
+      "Bash(firebase projects:list:*)",
+      "Bash(npm run production-ready:*)",
+      "Bash(firebase deploy:*)",
+      "WebFetch(domain:kilangdm-v1.web.app)",
+      "Bash(npm test)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": [],

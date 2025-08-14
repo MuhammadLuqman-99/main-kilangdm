@@ -305,12 +305,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // ORIENTATION CHANGE HANDLER
     // ===================================================
     function handleOrientationChange() {
-        // Small delay to ensure viewport has updated
-        setTimeout(() => {
-            adjustGridsForViewport();
-            makeChartsResponsive();
-            adjustTextForViewport();
-        }, 100);
+        // Use requestAnimationFrame for better performance
+        requestAnimationFrame(() => {
+            // Small delay to ensure viewport has updated
+            setTimeout(() => {
+                adjustGridsForViewport();
+                makeChartsResponsive();
+                adjustTextForViewport();
+            }, 50); // Reduced delay
+        });
     }
     
     // ===================================================

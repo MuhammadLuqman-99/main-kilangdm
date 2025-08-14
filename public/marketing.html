@@ -428,12 +428,12 @@
         document.getElementById('lead-semasa-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            kilangDMEnhancements.showLoading('Menyimpan data lead semasa...');
+            console.log('💾 Menyimpan data lead semasa...');
             
             // Simulate save process
             setTimeout(() => {
-                kilangDMEnhancements.hideLoading();
-                kilangDMEnhancements.showNotification('Lead semasa berjaya disimpan!', 'success');
+                // Loading hidden
+                console.log('✅ Lead semasa berjaya disimpan!');
                 this.reset();
             }, 2000);
         });
@@ -441,12 +441,12 @@
         document.getElementById('detail-ads-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            kilangDMEnhancements.showLoading('Menyimpan detail ads...');
+            console.log('💾 Menyimpan detail ads...');
             
             // Simulate save process  
             setTimeout(() => {
-                kilangDMEnhancements.hideLoading();
-                kilangDMEnhancements.showNotification('Detail ads berjaya disimpan!', 'success');
+                // Loading hidden
+                console.log('✅ Detail ads berjaya disimpan!');
                 this.reset();
             }, 2500);
         });
@@ -465,7 +465,7 @@
             if (impressions > 0 && clicks > 0) {
                 const ctr = (clicks / impressions * 100).toFixed(2);
                 document.getElementById('ctr').value = ctr;
-                kilangDMEnhancements.showNotification(`CTR auto-calculated: ${ctr}%`, 'info', 2000);
+                console.log(`ℹ️ CTR auto-calculated: ${ctr}%`);
             }
             
             // Auto-calculate CPC

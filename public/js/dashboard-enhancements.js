@@ -20,12 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Success notification when page loads
-    setTimeout(() => {
-        if (typeof kilangDMEnhancements !== 'undefined') {
-            kilangDMEnhancements.showNotification('Dashboard loaded successfully!', 'success', 3000);
-        }
-    }, 1000);
+    // Dashboard loaded successfully - removed notification
+    console.log('✅ Dashboard loaded successfully');
 });
 
 // Export functionality integration
@@ -36,7 +32,7 @@ document.addEventListener('click', (e) => {
         const source = option.getAttribute('data-source');
         
         if (typeof kilangDMEnhancements !== 'undefined') {
-            kilangDMEnhancements.showNotification(`Exporting ${source} data as ${format.toUpperCase()}...`, 'info');
+            console.log(`📊 Exporting ${source} data as ${format.toUpperCase()}...`);
         }
         
         // Close dropdown

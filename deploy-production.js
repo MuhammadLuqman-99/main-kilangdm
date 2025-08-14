@@ -19,7 +19,6 @@ function validateEnvironment() {
         'public/dashboard.html',
         'public/ecommerce.html',
         'public/manifest.json',
-        'public/sw.js',
         'firebase.json',
         'package.json'
     ];
@@ -45,12 +44,7 @@ function optimizeForProduction() {
     manifest.start_url = '/dashboard.html?prod=true';
     fs.writeFileSync('public/manifest.json', JSON.stringify(manifest, null, 2));
 
-    // Update service worker cache version
-    let swContent = fs.readFileSync('public/sw.js', 'utf8');
-    swContent = swContent.replace(/kilangdm-dashboard-v3\.0/g, 'kilangdm-dashboard-v3.0-prod');
-    swContent = swContent.replace(/kilangdm-static-v3\.0/g, 'kilangdm-static-v3.0-prod');
-    swContent = swContent.replace(/kilangdm-dynamic-v3\.0/g, 'kilangdm-dynamic-v3.0-prod');
-    fs.writeFileSync('public/sw.js', swContent);
+    // Service worker removed for simplicity
 
     console.log('✅ Production optimizations applied');
 }
@@ -60,9 +54,9 @@ console.log('3️⃣  Validating Critical Files...');
 
 function validateCriticalFiles() {
     const criticalFiles = [
-        'public/js/production-logger.js',
-        'public/js/production-optimizations.js',
         'public/js/firebase-config.js',
+        'public/js/dashboard.js',
+        'public/js/chart-filters.js',
         'public/style/unified-theme.css'
     ];
 

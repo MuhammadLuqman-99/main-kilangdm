@@ -87,61 +87,15 @@ ErrorHandler.prototype.showUserError = function(type) {
 };
 
 ErrorHandler.prototype.showNotification = function(message, type) {
-    type = type || 'info';
-    
-    // Create notification element if it doesn't exist
-    var notification = document.getElementById('error-notification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'error-notification';
-        notification.style.cssText = 
-            'position: fixed;' +
-            'top: 20px;' +
-            'right: 20px;' +
-            'padding: 16px 24px;' +
-            'border-radius: 8px;' +
-            'color: white;' +
-            'font-family: "Inter", sans-serif;' +
-            'font-weight: 500;' +
-            'z-index: 10000;' +
-            'max-width: 400px;' +
-            'opacity: 0;' +
-            'transform: translateX(100%);' +
-            'transition: all 0.3s ease;';
-        document.body.appendChild(notification);
-    }
-
-    // Set notification style based on type
-    var colors = {
-        error: '#ef4444',
-        warning: '#f59e0b',
-        success: '#22c55e',
-        info: '#3b82f6'
+    // Just log to console instead of showing UI notification
+    type = type || 'error';
+    const emoji = {
+        error: '❌',
+        warning: '⚠️', 
+        info: 'ℹ️',
+        success: '✅'
     };
-
-    notification.style.backgroundColor = colors[type] || colors.info;
-    notification.innerHTML = 
-        '<div style="display: flex; align-items: center; gap: 12px;">' +
-            '<i class="fas fa-' + (type === 'error' ? 'exclamation-circle' : 'info-circle') + '"></i>' +
-            '<span>' + message + '</span>' +
-            '<button onclick="this.parentElement.parentElement.style.display=\'none\'" ' +
-                    'style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-left: auto;">' +
-                '&times;' +
-            '</button>' +
-        '</div>';
-
-    // Show notification
-    var self = this;
-    setTimeout(function() {
-        notification.style.opacity = '1';
-        notification.style.transform = 'translateX(0)';
-    }, 100);
-
-    // Auto-hide after 5 seconds
-    setTimeout(function() {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateX(100%)';
-    }, 5000);
+    console.log(`${emoji[type]} ${type.toUpperCase()}: ${message}`);
 };
 
 // Utility method for handling async operations safely

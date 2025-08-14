@@ -498,16 +498,16 @@
             const hot = parseInt(document.getElementById('lead-hot').value) || 0;
             
             if (cold + warm + hot !== total) {
-                kilangDMEnhancements.showNotification('Lead distribution tidak betul! Cold + Warm + Hot mesti sama dengan Total Lead.', 'error');
+                console.log('❌ Lead distribution tidak betul! Cold + Warm + Hot mesti sama dengan Total Lead.');
                 return;
             }
             
-            kilangDMEnhancements.showLoading('Menyimpan data lead...');
+            console.log('💾 Menyimpan data lead...');
             
             // Simulate save process
             setTimeout(() => {
-                kilangDMEnhancements.hideLoading();
-                kilangDMEnhancements.showNotification('Data lead berjaya disimpan!', 'success');
+                // Loading hidden
+                console.log('✅ Data lead berjaya disimpan!');
                 this.reset();
                 calculateLeadDistribution();
             }, 2000);
@@ -516,12 +516,12 @@
         document.getElementById('metrics-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            kilangDMEnhancements.showLoading('Menyimpan power metrics...');
+            console.log('💾 Menyimpan power metrics...');
             
             // Simulate save process
             setTimeout(() => {
-                kilangDMEnhancements.hideLoading();
-                kilangDMEnhancements.showNotification('Power metrics berjaya disimpan!', 'success');
+                // Loading hidden
+                console.log('✅ Power metrics berjaya disimpan!');
                 this.reset();
                 calculateConversionRate();
             }, 2500);
@@ -535,7 +535,7 @@
             
             // Welcome notification
             setTimeout(() => {
-                kilangDMEnhancements.showNotification('Sales Team dashboard loaded!', 'info', 3000);
+                console.log('ℹ️ Sales Team dashboard loaded!');
             }, 500);
         });
     </script>
