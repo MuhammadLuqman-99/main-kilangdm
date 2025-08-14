@@ -26,13 +26,9 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     
-    <!-- PWA Manifest -->
+    <!-- Basic manifest only -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="KilangDM">
     
     <!-- Firebase SDK - Local Files -->
     <script src="js/firebase-app.js"></script>
@@ -75,7 +71,7 @@
             
         } catch (error) {
             console.error('❌ Firebase initialization error:', error);
-            showFirebaseError(error.message);
+            console.error('❌ Firebase initialization error:', error.message);
         }
     }
 
@@ -91,93 +87,15 @@
                 initializeFirebaseImmediate();
             } else {
                 console.error('❌ Firebase scripts not loaded after timeout');
-                showFirebaseError('Firebase scripts not loaded');
+                console.error('❌ Firebase scripts not loaded');
             }
         }, 1000);
     });
 
+    // Firebase error handling simplified - no UI notifications
     function showFirebaseError(message) {
-        // Check if user is offline
-        const isOffline = !navigator.onLine;
-        const offlineMessage = isOffline ? ' (You are currently offline)' : '';
-        
-        // Wait for DOM to be available with better safety
-        function addErrorDiv() {
-            // Multiple fallback strategies for DOM elements
-            let targetElement = document.body;
-            
-            if (!targetElement) {
-                targetElement = document.documentElement;
-            }
-            
-            if (!targetElement) {
-                targetElement = document.head;
-            }
-            
-            if (!targetElement) {
-                console.log('⚠️ No DOM element available for error display - retrying in 100ms...');
-                setTimeout(addErrorDiv, 100);
-                return;
-            }
-            
-            // Avoid duplicate error indicators
-            const existingError = document.querySelector('[data-firebase-error="true"]');
-            if (existingError) {
-                console.log('🔥 Firebase error indicator already exists');
-                return;
-            }
-            
-            const errorContainer = document.createElement('div');
-            errorContainer.setAttribute('data-firebase-error', 'true');
-            errorContainer.style.cssText = 'padding: 1rem; background: #fee2e2; color: #b91c1c; margin: 1rem; border-radius: 0.5rem; position: fixed; top: 0; left: 0; right: 0; z-index: 10000; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);';
-            errorContainer.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.1rem;">${isOffline ? '📡' : '🔥'} ${isOffline ? 'Offline Mode' : 'Firebase Connection Issue'}</h3>
-                        <p style="margin: 0.5rem 0; font-size: 0.9rem;"><strong>Status:</strong> ${message}${offlineMessage}</p>
-                        <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">
-                            ${isOffline ? 'Check your internet connection' : 'Pastikan internet connection stable'}
-                        </p>
-                    </div>
-                    <div>
-                        <button onclick="window.location.reload()" 
-                                style="padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; font-size: 0.9rem;">
-                            🔄 Reload
-                        </button>
-                        <button onclick="this.parentElement.parentElement.remove()" 
-                                style="padding: 0.5rem; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
-                            ✕
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            // Safe insertion with multiple methods
-            try {
-                if (targetElement.prepend) {
-                    targetElement.prepend(errorContainer);
-                } else if (targetElement.insertBefore) {
-                    targetElement.insertBefore(errorContainer, targetElement.firstChild);
-                } else if (targetElement.appendChild) {
-                    targetElement.appendChild(errorContainer);
-                } else {
-                    targetElement.innerHTML = errorContainer.outerHTML + targetElement.innerHTML;
-                }
-                console.log('🔥 Firebase error indicator displayed');
-                
-                // Auto-remove after 15 seconds (longer for offline)
-                setTimeout(() => {
-                    if (errorContainer.parentElement) {
-                        errorContainer.remove();
-                    }
-                }, isOffline ? 15000 : 10000);
-                
-            } catch (error) {
-                console.warn('⚠️ Failed to display Firebase error indicator:', error);
-            }
-        }
-        
-        addErrorDiv();
+        console.error('🔥 Firebase error:', message);
+        // All Firebase errors now only logged to console
     }
 
     // Simple online/offline detection
@@ -192,8 +110,7 @@
     <!-- Core Scripts -->
     <script src="js/logger.js"></script>
     <script src="js/error-handler.js"></script>
-    <!-- MOBILE OPTIMIZATION - Must load early -->
-    <!-- Mobile optimization removed -->
+    <!-- Mobile optimization removed for consistency -->
 </head>
 
 <body>
