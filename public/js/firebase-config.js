@@ -106,45 +106,9 @@ class FirebaseManager {
     }
 
     showUserError() {
-        // Create error notification
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'firebase-error-notification';
-        errorDiv.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #ef4444;
-                color: white;
-                padding: 1rem;
-                border-radius: 8px;
-                z-index: 10000;
-                max-width: 300px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            ">
-                <h4 style="margin: 0 0 0.5rem 0;">⚠️ Connection Error</h4>
-                <p style="margin: 0 0 1rem 0; font-size: 0.9rem;">
-                    Unable to connect to database. Please refresh the page or try again later.
-                </p>
-                <button onclick="this.parentElement.remove()" style="
-                    background: white;
-                    color: #ef4444;
-                    border: none;
-                    padding: 0.5rem 1rem;
-                    border-radius: 4px;
-                    cursor: pointer;
-                ">Dismiss</button>
-            </div>
-        `;
-        
-        document.body.appendChild(errorDiv);
-        
-        // Auto-remove after 10 seconds
-        setTimeout(() => {
-            if (errorDiv.parentElement) {
-                errorDiv.remove();
-            }
-        }, 10000);
+        // Firebase errors only logged to console - no UI notifications
+        console.error('🔥 Firebase: Unable to connect to database');
+        // No UI notification shown
     }
 
     getDatabase() {

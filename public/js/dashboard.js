@@ -3168,47 +3168,13 @@ function updateEnhancedStatusIndicators(metrics) {
     }
 }
 
-// Show urgency alert for critical situations
+// Urgency alert simplified - no UI popups, console only
 function showUrgencyAlert(metrics) {
-    // Create or update alert banner
-    let alertBanner = document.getElementById('urgency-alert');
-    
-    if (!alertBanner) {
-        alertBanner = document.createElement('div');
-        alertBanner.id = 'urgency-alert';
-        alertBanner.className = 'fixed top-4 right-4 z-50 max-w-sm p-4 rounded-lg shadow-lg animate-pulse';
-        document.body.appendChild(alertBanner);
-    }
-
-    const alertColors = {
-        'URGENT': 'bg-orange-500 text-white',
-        'CRITICAL': 'bg-red-500 text-white'
-    };
-
-    const alertIcons = {
-        'URGENT': '⚡',
-        'CRITICAL': '🚨'
-    };
-
-    alertBanner.className = `fixed top-4 right-4 z-50 max-w-sm p-4 rounded-lg shadow-lg animate-pulse ${alertColors[metrics.urgencyLevel]}`;
-    alertBanner.innerHTML = `
-        <div class="flex items-start space-x-3">
-            <div class="text-2xl">${alertIcons[metrics.urgencyLevel]}</div>
-            <div>
-                <div class="font-bold text-sm">${metrics.urgencyLevel} - ${metrics.remainingWorkingDays} Days Left!</div>
-                <div class="text-xs mt-1">Need RM ${metrics.dynamicKpiHarian.toFixed(0)}/day to reach target</div>
-                <div class="text-xs mt-2 opacity-90">${metrics.recommendation}</div>
-            </div>
-            <button onclick="this.parentElement.parentElement.remove()" class="text-white hover:text-gray-200">×</button>
-        </div>
-    `;
-
-    // Auto remove after 10 seconds
-    setTimeout(() => {
-        if (alertBanner && alertBanner.parentElement) {
-            alertBanner.remove();
-        }
-    }, 10000);
+    // Log urgency information to console instead of showing popup
+    const urgencyIcon = metrics.urgencyLevel === 'CRITICAL' ? '🚨' : metrics.urgencyLevel === 'URGENT' ? '⚡' : 'ℹ️';
+    console.log(`${urgencyIcon} ${metrics.urgencyLevel} - ${metrics.remainingWorkingDays} Days Left!`);
+    console.log(`💰 Need RM ${metrics.dynamicKpiHarian.toFixed(0)}/day to reach target`);
+    console.log(`📝 ${metrics.recommendation}`);
 }
 
 // Integration instructions for dashboard.js

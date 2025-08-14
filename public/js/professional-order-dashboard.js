@@ -69,9 +69,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show user-friendly retry option
             setTimeout(() => {
-                if (confirm('Firebase connection timeout. Reload page to retry?')) {
-                    window.location.reload();
-                }
+                console.log('⏰ Firebase connection timeout detected');
+                // Auto retry removed - user can manually refresh if needed
             }, 2000);
         }
     }, 200);
@@ -1982,9 +1981,9 @@ function showFirebaseLoadError() {
 
 function checkNetworkStatus() {
     if (navigator.onLine) {
-        alert('✅ Internet connection is available. Try reloading the page.');
+        console.log('✅ Internet connection is available. Try reloading the page.');
     } else {
-        alert('❌ No internet connection detected. Check your network settings.');
+        console.log('❌ No internet connection detected. Check your network settings.');
     }
 }
 

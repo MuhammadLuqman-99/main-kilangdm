@@ -20,8 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Dashboard loaded successfully - removed notification
-    console.log('✅ Dashboard loaded successfully');
+    // Dashboard initialization completed - no console output needed
 });
 
 // Export functionality integration

@@ -63,27 +63,27 @@ ErrorHandler.prototype.handleError = function(type, errorInfo) {
 };
 
 ErrorHandler.prototype.handleFirebaseError = function(error) {
-    var userMessage = 'Connection issue. Please refresh the page.';
-    
+    // Firebase errors only logged to console now, no user notifications
     if (error.code === 'permission-denied') {
-        userMessage = 'Access denied. Please contact support.';
+        console.error('🔒 Firebase: Access denied');
     } else if (error.code === 'unavailable') {
-        userMessage = 'Service temporarily unavailable. Please try again.';
+        console.error('🔄 Firebase: Service temporarily unavailable');
+    } else {
+        console.error('🔥 Firebase: Connection issue');
     }
-
-    this.showNotification(userMessage, 'error');
+    // No user notification shown
 };
 
 ErrorHandler.prototype.showUserError = function(type) {
-    var message = 'Something went wrong. Please refresh the page.';
-    
+    // Error messages only logged to console now, no user notifications
     if (type === 'JavaScript Error') {
-        message = 'A technical issue occurred. Please refresh the page.';
+        console.error('❌ JavaScript Error detected');
     } else if (type === 'Unhandled Promise Rejection') {
-        message = 'Failed to load data. Please refresh the page.';
+        console.error('❌ Promise rejection detected'); 
+    } else {
+        console.error('❌ General error detected');
     }
-
-    this.showNotification(message, 'error');
+    // No user notification shown
 };
 
 ErrorHandler.prototype.showNotification = function(message, type) {

@@ -7,21 +7,25 @@
         position: absolute !important;
         top: 1rem !important;
         right: 1rem !important;
-        background: var(--accent-gradient, #3b82f6) !important;
+        background: #3b82f6 !important;
         color: white !important;
         border: none !important;
         border-radius: 8px !important;
         padding: 12px !important;
         font-size: 18px !important;
         cursor: pointer !important;
-        z-index: 9999 !important;
+        z-index: 10000 !important;
         width: 48px !important;
         height: 48px !important;
         min-height: 48px !important;
         min-width: 48px !important;
         touch-action: manipulation !important;
-        -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+        transition: all 0.2s ease !important;
+        outline: none !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
     }
     
     .mobile-menu-btn:active {
@@ -41,17 +45,33 @@
         top: 100% !important;
         left: 0 !important;
         right: 0 !important;
-        background: var(--card-bg, #1e293b) !important;
+        background: #1e293b !important;
+        background: rgba(30, 41, 59, 0.98) !important;
+        backdrop-filter: blur(10px) !important;
         border-radius: 0 0 12px 12px !important;
         padding: 1rem !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.25) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
         z-index: 9998 !important;
         flex-direction: column !important;
         gap: 0.5rem !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        margin-top: 4px !important;
     }
     
     .nav-links.mobile-active {
         display: flex !important;
+        animation: slideDown 0.3s ease !important;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .nav-link {

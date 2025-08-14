@@ -641,7 +641,7 @@ class AdvancedDashboardFilter {
         });
         
         // You can implement actual export logic here
-        alert(`Export data untuk tempoh: ${displayText}\nDari: ${startDate}\nHingga: ${endDate}`);
+        console.log(`📤 Export data untuk tempoh: ${displayText}\nDari: ${startDate}\nHingga: ${endDate}`);
     }
 
     // Public methods for external integration
