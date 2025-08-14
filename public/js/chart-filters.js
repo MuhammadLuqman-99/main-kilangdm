@@ -50,47 +50,60 @@ class ChartFiltersManager {
     extractTeamOptions(allData) {
         console.log('🔍 Extracting team options from data...');
         
+        // Clear existing options first
+        this.teamOptions.clear();
+        
         // From marketing data
-        if (allData.marketing) {
+        if (allData.marketing && Array.isArray(allData.marketing)) {
             allData.marketing.forEach(item => {
-                const team = item.team_sale || item.team || item.agent;
-                if (team && team.trim()) {
+                const team = item.team_sale || item.team || item.agent || item.sales_agent;
+                if (team && typeof team === 'string' && team.trim() && team !== 'undefined' && team !== 'null') {
                     this.teamOptions.add(team.trim());
                 }
             });
         }
         
         // From salesteam data
-        if (allData.salesteam) {
+        if (allData.salesteam && Array.isArray(allData.salesteam)) {
             allData.salesteam.forEach(item => {
-                const team = item.agent_name || item.team || item.agent;
-                if (team && team.trim()) {
+                const team = item.agent_name || item.team || item.agent || item.sales_agent;
+                if (team && typeof team === 'string' && team.trim() && team !== 'undefined' && team !== 'null') {
                     this.teamOptions.add(team.trim());
                 }
             });
         }
         
         // From orders data
-        if (allData.orders) {
+        if (allData.orders && Array.isArray(allData.orders)) {
             allData.orders.forEach(item => {
-                const team = item.sales_agent || item.agent || item.team;
-                if (team && team.trim()) {
+                const team = item.sales_agent || item.agent || item.team || item.agent_name;
+                if (team && typeof team === 'string' && team.trim() && team !== 'undefined' && team !== 'null') {
                     this.teamOptions.add(team.trim());
                 }
             });
         }
         
         // From ecommerce data
-        if (allData.ecommerce) {
+        if (allData.ecommerce && Array.isArray(allData.ecommerce)) {
             allData.ecommerce.forEach(item => {
-                const team = item.sales_agent || item.agent || item.team;
-                if (team && team.trim()) {
+                const team = item.sales_agent || item.agent || item.team || item.agent_name;
+                if (team && typeof team === 'string' && team.trim() && team !== 'undefined' && team !== 'null') {
                     this.teamOptions.add(team.trim());
                 }
             });
         }
         
         console.log(`📊 Found ${this.teamOptions.size} unique teams:`, Array.from(this.teamOptions));
+        
+        // Log warning if no teams found
+        if (this.teamOptions.size === 0) {
+            console.warn('⚠️ No valid team names found in data. Data structure:', {
+                marketing: allData.marketing?.length || 0,
+                salesteam: allData.salesteam?.length || 0,
+                orders: allData.orders?.length || 0,
+                ecommerce: allData.ecommerce?.length || 0
+            });
+        }
     }
 
     populateTeamFilters() {
@@ -107,18 +120,35 @@ class ChartFiltersManager {
                 return;
             }
 
+            // Store current selection
+            const currentValue = select.value;
+
             // Clear existing options (except "Semua Team")
             while (select.children.length > 1) {
                 select.removeChild(select.lastChild);
             }
 
-            // Add team options
-            Array.from(this.teamOptions).sort().forEach(team => {
-                const option = document.createElement('option');
-                option.value = team;
-                option.textContent = team;
-                select.appendChild(option);
+            // Ensure we have team options
+            if (this.teamOptions.size === 0) {
+                console.warn(`⚠️ No team options available for ${selectorId}`);
+                return;
+            }
+
+            // Add team options sorted alphabetically
+            const sortedTeams = Array.from(this.teamOptions).sort();
+            sortedTeams.forEach(team => {
+                if (team && team.trim()) {
+                    const option = document.createElement('option');
+                    option.value = team;
+                    option.textContent = team;
+                    select.appendChild(option);
+                }
             });
+
+            // Restore selection if it still exists
+            if (currentValue && sortedTeams.includes(currentValue)) {
+                select.value = currentValue;
+            }
 
             console.log(`✅ Populated ${selectorId} with ${this.teamOptions.size} teams`);
         });
@@ -556,10 +586,91 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📊 Chart Filters DOM ready - waiting for data...');
 });
 
+// Add visibility change listener to refresh filters when page becomes visible
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && window.allData && window.chartFiltersManager) {
+        setTimeout(() => {
+            console.log('👀 Page became visible, refreshing chart filters...');
+            window.refreshChartFilters();
+        }, 100);
+    }
+});
+
+// Add page show listener to handle browser back/forward navigation
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted && window.allData && window.chartFiltersManager) {
+        setTimeout(() => {
+            console.log('🔄 Page restored from cache, refreshing chart filters...');
+            window.refreshChartFilters();
+        }, 100);
+    }
+});
+
 // Initialize when data is available
 window.initChartFilters = function(allData) {
-    if (window.chartFiltersManager && !window.chartFiltersManager.isInitialized) {
+    if (window.chartFiltersManager) {
+        // Store timestamp for cache validation
+        lastDataTimestamp = Date.now();
+        
+        // Always re-initialize to ensure fresh data and options
+        window.chartFiltersManager.isInitialized = false;
+        window.chartFiltersManager.teamOptions.clear();
         window.chartFiltersManager.init(allData);
+        console.log('✅ Chart filters re-initialized with fresh data');
+        
+        // Validate initialization after delay
+        setTimeout(() => {
+            validateInitialization();
+        }, 2000);
+    }
+};
+
+// Validation function to ensure proper initialization
+function validateInitialization() {
+    console.log('🔍 Validating filter initialization...');
+    
+    const teamSelectors = ['cost-team-filter', 'roi-team-filter', 'timeline-team-filter'];
+    let emptyCount = 0;
+    
+    teamSelectors.forEach(selectorId => {
+        const select = document.getElementById(selectorId);
+        if (select && select.children.length <= 1) {
+            emptyCount++;
+        }
+    });
+    
+    if (emptyCount > 0 && window.allData) {
+        const hasData = (window.allData.marketing?.length > 0) || 
+                       (window.allData.salesteam?.length > 0) || 
+                       (window.allData.orders?.length > 0) || 
+                       (window.allData.ecommerce?.length > 0);
+        
+        if (hasData) {
+            console.warn(`⚠️ Initialization validation failed: ${emptyCount} empty filters with available data`);
+            
+            // Try one more aggressive refresh
+            window.chartFiltersManager.isInitialized = false;
+            window.chartFiltersManager.teamOptions.clear();
+            window.chartFiltersManager.extractTeamOptions(window.allData);
+            window.chartFiltersManager.populateTeamFilters();
+            
+            console.log('🔄 Applied aggressive re-initialization');
+        }
+    } else {
+        console.log('✅ Filter initialization validation passed');
+    }
+}
+
+// Function to force refresh chart filters with current data
+window.refreshChartFilters = function() {
+    if (window.allData && window.chartFiltersManager) {
+        console.log('🔄 Force refreshing chart filters...');
+        window.chartFiltersManager.isInitialized = false;
+        window.chartFiltersManager.teamOptions.clear();
+        window.chartFiltersManager.init(window.allData);
+        console.log('✅ Chart filters force refreshed');
+    } else {
+        console.warn('⚠️ Cannot refresh chart filters - data or manager not available');
     }
 };
 
@@ -589,4 +700,382 @@ window.debugTimelineFilters = function() {
     console.log('Expected: "Dari" should be today\'s date, "Hingga" should be today\'s date');
 };
 
-console.log('📊 Chart Filters Manager loaded');
+// Production-ready filter monitoring system
+let filterMonitorInterval = null;
+let filterRetryCount = 0;
+const MAX_RETRY_COUNT = 3;
+let lastDataTimestamp = null;
+let emergencyRefreshTriggered = false;
+
+// Enhanced periodic check with retry mechanism
+function startFilterMonitoring() {
+    if (filterMonitorInterval) {
+        clearInterval(filterMonitorInterval);
+    }
+    
+    filterMonitorInterval = setInterval(() => {
+        if (!window.allData || !window.chartFiltersManager) {
+            return;
+        }
+        
+        // Check if any filter dropdown is empty (except "Semua Team" option)
+        const teamSelectors = ['cost-team-filter', 'roi-team-filter', 'timeline-team-filter'];
+        let emptyFilters = [];
+        
+        teamSelectors.forEach(selectorId => {
+            const select = document.getElementById(selectorId);
+            if (select && select.children.length <= 1) {
+                emptyFilters.push(selectorId);
+            }
+        });
+        
+        // If filters are empty and we have data, attempt recovery
+        if (emptyFilters.length > 0 && window.allData && filterRetryCount < MAX_RETRY_COUNT) {
+            console.log(`🔄 Detected ${emptyFilters.length} empty filters, attempting recovery (attempt ${filterRetryCount + 1}/${MAX_RETRY_COUNT})...`);
+            filterRetryCount++;
+            
+            try {
+                window.refreshChartFilters();
+                
+                // Verify fix worked
+                setTimeout(() => {
+                    let stillEmpty = false;
+                    teamSelectors.forEach(selectorId => {
+                        const select = document.getElementById(selectorId);
+                        if (select && select.children.length <= 1) {
+                            stillEmpty = true;
+                        }
+                    });
+                    
+                    if (!stillEmpty) {
+                        console.log('✅ Filter recovery successful');
+                        filterRetryCount = 0; // Reset counter on success
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('❌ Filter recovery failed:', error);
+            }
+        }
+        
+        // If we've reached max retries, escalate to emergency measures
+        if (filterRetryCount >= MAX_RETRY_COUNT && emptyFilters.length > 0) {
+            console.warn('⚠️ Filter auto-recovery failed. Initiating emergency measures...');
+            
+            // Check if this is a persistent cache issue
+            if (!emergencyRefreshTriggered && window.allData && 
+                (window.allData.marketing?.length > 0 || window.allData.salesteam?.length > 0)) {
+                
+                console.log('🆘 Emergency: Data exists but filters empty. Triggering cache refresh...');
+                emergencyRefreshTriggered = true;
+                
+                // Show emergency notification
+                showFilterNotification('🆘 Mengesan masalah cache. Auto-refresh dalam 3 saat...', 'warning');
+                
+                // Trigger automatic hard refresh after delay
+                setTimeout(() => {
+                    console.log('🔄 Executing emergency cache refresh...');
+                    location.reload(true); // Force reload with cache bypass
+                }, 3000);
+                
+                return; // Don't show manual options yet
+            }
+            
+            // Show manual recovery options
+            const recoveryContainer = document.getElementById('filter-recovery-container');
+            if (recoveryContainer) {
+                recoveryContainer.style.display = 'flex';
+            }
+            
+            // Show notification with hard refresh option
+            showFilterNotification(`
+                ⚠️ Filter team tidak tersedia. 
+                <br><button onclick="location.reload(true)" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; margin-top: 8px; cursor: pointer;">
+                    🔄 Hard Refresh
+                </button>
+            `, 'warning');
+            
+            filterRetryCount = 0; // Reset for next cycle
+        }
+    }, 3000); // Check every 3 seconds
+}
+
+// Start monitoring
+startFilterMonitoring();
+
+// User notification system
+function showFilterNotification(message, type = 'info') {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('filter-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'filter-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            max-width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        `;
+        document.body.appendChild(notification);
+    }
+    
+    // Set style based on type
+    const styles = {
+        info: 'background: #3b82f6; color: white;',
+        success: 'background: #10b981; color: white;',
+        warning: 'background: #f59e0b; color: white;',
+        error: 'background: #ef4444; color: white;'
+    };
+    
+    notification.style.cssText += styles[type] || styles.info;
+    notification.innerHTML = message;
+    notification.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (notification) {
+            notification.style.display = 'none';
+        }
+    }, 5000);
+}
+
+// Add recovery button to page
+function addFilterRecoveryButton() {
+    // Only add if button doesn't exist
+    if (document.getElementById('filter-recovery-btn')) {
+        return;
+    }
+    
+    // Find a suitable location for the button
+    const chartContainer = document.querySelector('.chart-container') || 
+                          document.querySelector('.grid') || 
+                          document.querySelector('main') || 
+                          document.body;
+    
+    if (chartContainer) {
+        // Create container for multiple buttons
+        const buttonContainer = document.createElement('div');
+        buttonContainer.id = 'filter-recovery-container';
+        buttonContainer.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        `;
+        
+        // Soft refresh button
+        const recoveryBtn = document.createElement('button');
+        recoveryBtn.id = 'filter-recovery-btn';
+        recoveryBtn.innerHTML = '🔄 Refresh Filters';
+        recoveryBtn.style.cssText = `
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        `;
+        
+        recoveryBtn.addEventListener('click', () => {
+            manualRefreshFilters();
+        });
+        
+        // Hard refresh button
+        const hardRefreshBtn = document.createElement('button');
+        hardRefreshBtn.innerHTML = '⚡ Hard Refresh';
+        hardRefreshBtn.style.cssText = `
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        `;
+        
+        hardRefreshBtn.addEventListener('click', () => {
+            location.reload(true);
+        });
+        
+        buttonContainer.appendChild(recoveryBtn);
+        buttonContainer.appendChild(hardRefreshBtn);
+        document.body.appendChild(buttonContainer);
+    }
+}
+
+// Enhanced manual refresh function
+function manualRefreshFilters() {
+    console.log('🔧 Manual refresh requested by user');
+    
+    showFilterNotification('Sedang me-refresh filters...', 'info');
+    
+    if (window.allData) {
+        try {
+            window.refreshChartFilters();
+            
+            // Verify success
+            setTimeout(() => {
+                const teamSelectors = ['cost-team-filter', 'roi-team-filter', 'timeline-team-filter'];
+                let success = true;
+                
+                teamSelectors.forEach(selectorId => {
+                    const select = document.getElementById(selectorId);
+                    if (select && select.children.length <= 1) {
+                        success = false;
+                    }
+                });
+                
+                if (success) {
+                    showFilterNotification('✅ Filters berjaya di-refresh!', 'success');
+                    // Hide recovery buttons
+                    const recoveryContainer = document.getElementById('filter-recovery-container');
+                    if (recoveryContainer) recoveryContainer.style.display = 'none';
+                } else {
+                    showFilterNotification('⚠️ Masih ada masalah. Cuba refresh halaman.', 'warning');
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Manual refresh error:', error);
+            showFilterNotification('❌ Refresh gagal. Cuba refresh halaman.', 'error');
+        }
+    } else {
+        showFilterNotification('⏳ Data belum tersedia. Tunggu sebentar...', 'warning');
+        
+        // Try again after delay
+        setTimeout(() => {
+            if (window.allData) {
+                manualRefreshFilters();
+            }
+        }, 3000);
+    }
+}
+
+// Make function globally available
+window.manualRefreshFilters = manualRefreshFilters;
+
+// Add recovery button when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addFilterRecoveryButton);
+} else {
+    addFilterRecoveryButton();
+}
+
+// Cache version management
+const FILTER_CACHE_VERSION = '1.2.0';
+const CACHE_KEY = 'chartFilters_v' + FILTER_CACHE_VERSION;
+
+// Check for stale cache and clear if needed
+function checkAndClearStaleCache() {
+    try {
+        const stored = localStorage.getItem('filterCacheVersion');
+        if (stored !== FILTER_CACHE_VERSION) {
+            console.log('🗑️ Clearing stale filter cache...');
+            localStorage.removeItem('dashboardCache');
+            localStorage.removeItem('dashboardAllData');
+            localStorage.setItem('filterCacheVersion', FILTER_CACHE_VERSION);
+        }
+    } catch (error) {
+        console.warn('Cache cleanup failed:', error);
+    }
+}
+
+// Run cache check on load
+checkAndClearStaleCache();
+
+// Emergency fallback system
+function emergencyFallback() {
+    console.log('🆘 Activating emergency fallback system...');
+    
+    // Clear all caches
+    try {
+        localStorage.clear();
+        sessionStorage.clear();
+    } catch (error) {
+        console.warn('Cache clear failed:', error);
+    }
+    
+    // Show emergency notification
+    showFilterNotification(`
+        🆘 Sistem emergency aktif. Halaman akan di-reload dalam 3 saat...
+        <br><small>Jika masih bermasalah, hubungi admin</small>
+    `, 'error');
+    
+    // Force hard refresh
+    setTimeout(() => {
+        window.location.href = window.location.href + '?t=' + Date.now();
+    }, 3000);
+}
+
+// Make emergency function globally available
+window.emergencyFilterFix = emergencyFallback;
+
+// Add keyboard shortcut for quick filter refresh (Ctrl+Shift+F)
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        console.log('🎹 Keyboard shortcut triggered: Ctrl+Shift+F');
+        manualRefreshFilters();
+    }
+    
+    // Emergency shortcut (Ctrl+Shift+Alt+F)
+    if (e.ctrlKey && e.shiftKey && e.altKey && e.key === 'F') {
+        e.preventDefault();
+        console.log('🆘 Emergency shortcut triggered: Ctrl+Shift+Alt+F');
+        emergencyFallback();
+    }
+});
+
+// Add console helper for developers
+window.fixFilters = function() {
+    console.log('🛠️ Developer fix function called');
+    return manualRefreshFilters();
+};
+
+// Add data validation function
+window.validateFilterData = function() {
+    console.log('🔍 Validating filter data...');
+    
+    if (!window.allData) {
+        console.log('❌ No allData found');
+        return false;
+    }
+    
+    console.log('📊 Data summary:', {
+        marketing: window.allData.marketing?.length || 0,
+        salesteam: window.allData.salesteam?.length || 0,
+        orders: window.allData.orders?.length || 0,
+        ecommerce: window.allData.ecommerce?.length || 0
+    });
+    
+    if (window.chartFiltersManager) {
+        console.log('🎯 Team options found:', window.chartFiltersManager.teamOptions.size);
+        console.log('📝 Teams:', Array.from(window.chartFiltersManager.teamOptions));
+    }
+    
+    return true;
+};
+
+console.log('📊 Chart Filters Manager loaded with enhanced refresh capabilities');
+console.log('💡 User Tips:');
+console.log('   - Press Ctrl+Shift+F to refresh filters');
+console.log('   - Recovery buttons will appear if problems detected');
+console.log('   - Hard refresh button available for persistent issues');
+console.log('💡 Developer/Admin Tips:');
+console.log('   - Press Ctrl+Shift+Alt+F for emergency reset');
+console.log('   - Call window.fixFilters() in console');
+console.log('   - Call window.validateFilterData() to check data');
+console.log('   - Call window.emergencyFilterFix() for nuclear option');

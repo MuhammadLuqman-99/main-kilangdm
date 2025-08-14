@@ -761,6 +761,22 @@ async function initializeDashboard() {
         if (window.initChartFilters) {
             window.initChartFilters(allData);
             console.log('   ✅ Chart filters initialized');
+            
+            // Double-check filter population after initialization
+            setTimeout(() => {
+                if (window.chartFiltersManager && window.chartFiltersManager.teamOptions.size === 0) {
+                    console.log('🔄 Chart filters appear empty, attempting refresh...');
+                    window.refreshChartFilters();
+                    
+                    // If still empty after refresh, schedule additional attempts
+                    setTimeout(() => {
+                        if (window.chartFiltersManager && window.chartFiltersManager.teamOptions.size === 0) {
+                            console.log('🔄 Second attempt to refresh chart filters...');
+                            window.refreshChartFilters();
+                        }
+                    }, 2000);
+                }
+            }, 1000);
         } else {
             console.warn('   ⚠️ initChartFilters not available');
         }
