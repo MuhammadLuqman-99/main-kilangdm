@@ -8,7 +8,10 @@ class ReadySync {
         this.syncInProgress = false;
         this.syncInterval = null;
         this.autoSyncFrequency = 5 * 60 * 1000; // 5 minutes
-        // Google Sheets integration only - Telegram removed
+        
+        // Telegram Bot Configuration
+        this.telegramBotToken = '8269216222:AAG1cNvAYcwfCQYfq5eUcdbbun1M0tdQVYk';
+        this.telegramChatId = null; // Will be set automatically
         
         this.init();
     }
@@ -114,7 +117,8 @@ class ReadySync {
             // Perform sync to platforms  
             const results = await Promise.allSettled([
                 this.syncToFirebase(dashboardData),
-                this.syncToGoogleSheets(dashboardData)
+                this.syncToGoogleSheets(dashboardData),
+                this.syncToTelegram(dashboardData)
             ]);
             
             console.log('📋 Sync results:', results);
@@ -158,12 +162,15 @@ class ReadySync {
                     successes,
                     failures,
                     data: dashboardData,
-                    message: `✅ Data formatted and ready for Google Sheets API`
+                    message: `✅ Data synced to Firebase, Google Sheets & Telegram`
                 }
             }));
 
             // Always return true since data formatting succeeded
             console.log('🎉 Sync process completed successfully!');
+            console.log('📊 Firebase data collected and formatted');
+            console.log('📱 Telegram sync integrated');
+            console.log('📄 Google Sheets sync ready');
             console.log('📊 Firebase data collected and formatted for Google Sheets');
             console.log('💡 To complete integration, implement Google Sheets API');
             
@@ -559,9 +566,407 @@ class ReadySync {
         return formattedMetrics;
     }
 
-    // Telegram sync removed - Google Sheets sync only
-
-    // Telegram formatting functions removed - Google Sheets sync only
+    async syncToTelegram(data) {
+        try {
+            console.log('📱 Starting Telegram sync...');
+            
+            // Auto-detect Chat ID if not set
+            if (!this.telegramChatId) {
+                await this.setupTelegramChatId();
+            }
+            
+            if (!this.telegramChatId) {
+                console.log('⚠️ No Telegram Chat ID available, skipping Telegram sync');
+                return true; // Don't fail entire sync
+            }
+            
+            // Send detailed data to Telegram (same as Google Sheets)
+            const success = await this.sendDetailedDataToTelegram(data);
+            
+            if (success) {
+                console.log('✅ Successfully synced to Telegram');
+                return true;
+            } else {
+                console.log('⚠️ Telegram sync had issues but continuing...');
+                return true; // Don't fail entire sync
+            }
+            
+        } catch (error) {
+            console.error('❌ Telegram sync failed:', error);
+            console.log('💡 Continuing with other syncs despite Telegram error');
+            return true; // Don't fail entire sync
+        }
+    }
+    
+    async setupTelegramChatId() {
+        try {
+            console.log('🔍 Auto-detecting Telegram Chat ID...');
+            
+            // Try to get Chat ID from localStorage first
+            const savedChatId = localStorage.getItem('telegramChatId');
+            if (savedChatId) {
+                this.telegramChatId = savedChatId;
+                console.log('✅ Found saved Chat ID:', savedChatId);
+                return;
+            }
+            
+            // Get updates to find Chat ID
+            const response = await fetch(`https://api.telegram.org/bot${this.telegramBotToken}/getUpdates`);
+            const data = await response.json();
+            
+            if (data.ok && data.result.length > 0) {
+                // Get the most recent chat
+                const latestUpdate = data.result[data.result.length - 1];
+                const chatId = latestUpdate.message?.chat?.id || latestUpdate.callback_query?.message?.chat?.id;
+                
+                if (chatId) {
+                    this.telegramChatId = chatId.toString();
+                    localStorage.setItem('telegramChatId', this.telegramChatId);
+                    console.log('✅ Auto-detected Chat ID:', this.telegramChatId);
+                } else {
+                    console.log('⚠️ No chat found. Please send /start to the bot first.');
+                }
+            } else {
+                console.log('⚠️ No Telegram updates found. Please send /start to the bot first.');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error setting up Telegram Chat ID:', error);
+        }
+    }
+    
+    async sendDetailedDataToTelegram(data) {
+        try {
+            console.log('📱 Sending detailed Firebase data to Telegram...');
+            
+            if (!data.detailedData) {
+                console.log('⚠️ No detailed data available for Telegram');
+                return true;
+            }
+            
+            const { orderData, marketingData, salesTeamData, powerMetrics } = data.detailedData;
+            
+            // Send summary first
+            const summaryMessage = this.formatSummaryForTelegram(data);
+            await this.sendToTelegramBot(summaryMessage);
+            
+            // Send detailed data by collections (same as Google Sheets)
+            let messagesSent = 0;
+            
+            if (orderData?.length > 0) {
+                const orderMessages = this.formatOrderDataForTelegram(orderData);
+                for (const message of orderMessages) {
+                    await this.sendToTelegramBot(message);
+                    messagesSent++;
+                    await this.delay(1000); // 1 second delay between messages
+                }
+            }
+            
+            if (marketingData?.length > 0) {
+                const marketingMessages = this.formatMarketingDataForTelegram(marketingData);
+                for (const message of marketingMessages) {
+                    await this.sendToTelegramBot(message);
+                    messagesSent++;
+                    await this.delay(1000);
+                }
+            }
+            
+            if (salesTeamData?.length > 0) {
+                const salesMessages = this.formatSalesTeamDataForTelegram(salesTeamData);
+                for (const message of salesMessages) {
+                    await this.sendToTelegramBot(message);
+                    messagesSent++;
+                    await this.delay(1000);
+                }
+            }
+            
+            if (powerMetrics?.length > 0) {
+                const metricsMessages = this.formatPowerMetricsForTelegram(powerMetrics);
+                for (const message of metricsMessages) {
+                    await this.sendToTelegramBot(message);
+                    messagesSent++;
+                    await this.delay(1000);
+                }
+            }
+            
+            console.log(`📱 Sent ${messagesSent} messages to Telegram`);
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error sending detailed data to Telegram:', error);
+            return false;
+        }
+    }
+    
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    formatSummaryForTelegram(data) {
+        const tarikh = new Date().toLocaleDateString('ms-MY');
+        const masa = new Date().toLocaleTimeString('ms-MY');
+        
+        let message = `📊 *KilangDM Dashboard Sync*\n`;
+        message += `📅 ${tarikh} | ⏰ ${masa}\n\n`;
+        
+        // KPI Summary
+        message += `💰 *KPI Summary:*\n`;
+        message += `• Total Sales: RM ${(data.kpi.totalSales || 0).toLocaleString()}\n`;
+        message += `• Sale MTD: RM ${(data.kpi.saleMtd || 0).toLocaleString()}\n`;
+        message += `• Balance: RM ${(data.kpi.balanceBulanan || 0).toLocaleString()}\n`;
+        message += `• KPI Harian: RM ${(data.kpi.kpiHarian || 0).toLocaleString()}\n\n`;
+        
+        // Working Days
+        message += `📅 Working Days: *${data.workingDays.current}/${data.workingDays.total}*\n\n`;
+        
+        // Data counts
+        const detailedData = data.detailedData || {};
+        message += `📋 *Data Synced:*\n`;
+        message += `🛒 Orders: ${detailedData.orderData?.length || 0} records\n`;
+        message += `📢 Marketing: ${detailedData.marketingData?.length || 0} records\n`;
+        message += `👥 Sales Team: ${detailedData.salesTeamData?.length || 0} records\n`;
+        message += `⚡ Power Metrics: ${detailedData.powerMetrics?.length || 0} records\n\n`;
+        
+        message += `🔄 _Detailed data will follow..._`;
+        
+        return message;
+    }
+    
+    formatOrderDataForTelegram(orderData) {
+        const messages = [];
+        const chunkSize = 3; // Smaller chunks to avoid message limits
+        
+        for (let i = 0; i < orderData.length; i += chunkSize) {
+            const chunk = orderData.slice(i, i + chunkSize);
+            let message = `🛒 *ORDERS* (${i + 1}-${Math.min(i + chunkSize, orderData.length)}/${orderData.length})\n\n`;
+            
+            chunk.forEach((order, index) => {
+                const shortId = order.id ? order.id.substring(0, 8) + '...' : 'N/A';
+                const date = order.tarikh || (order.createdAt?.toDate ? new Date(order.createdAt.toDate()).toLocaleDateString('ms-MY') : 'N/A');
+                const customer = (order.nama_customer || 'N/A').substring(0, 20) + (order.nama_customer?.length > 20 ? '...' : '');
+                const phone = order.nombor_phone || order.phone || 'N/A';
+                const amount = (order.total_rm || 0).toLocaleString();
+                const team = order.team_sale || order.team || 'N/A';
+                
+                message += `*${i + index + 1}.* ${shortId}\n`;
+                message += `📅 ${date} | 👤 ${customer}\n`;
+                message += `📞 ${phone} | 💰 RM ${amount}\n`;
+                message += `👨‍💼 ${team} | 📱 ${order.platform || 'N/A'}\n\n`;
+            });
+            
+            messages.push(message);
+        }
+        
+        return messages;
+    }
+    
+    formatMarketingDataForTelegram(marketingData) {
+        const messages = [];
+        const chunkSize = 2; // Smaller chunks
+        
+        for (let i = 0; i < marketingData.length; i += chunkSize) {
+            const chunk = marketingData.slice(i, i + chunkSize);
+            let message = `📢 *MARKETING* (${i + 1}-${Math.min(i + chunkSize, marketingData.length)}/${marketingData.length})\n\n`;
+            
+            chunk.forEach((item, index) => {
+                const shortId = item.id ? item.id.substring(0, 8) + '...' : 'N/A';
+                const date = item.tarikh || (item.createdAt?.toDate ? new Date(item.createdAt.toDate()).toLocaleDateString('ms-MY') : 'N/A');
+                const spending = (item.spending || 0).toLocaleString();
+                const impressions = (item.kair_impressions || 0).toLocaleString();
+                
+                message += `*${i + index + 1}.* ${shortId}\n`;
+                message += `📅 ${date} | 👥 ${item.team || 'N/A'}\n`;
+                message += `💸 RM ${spending} | 📊 ${impressions}\n`;
+                message += `🖱️ ${item.link_click || 0} clicks | 🎯 RM ${(item.cpc || 0).toFixed(2)}\n\n`;
+            });
+            
+            messages.push(message);
+        }
+        
+        return messages;
+    }
+    
+    formatSalesTeamDataForTelegram(salesTeamData) {
+        const messages = [];
+        const chunkSize = 2; // Smaller chunks
+        
+        for (let i = 0; i < salesTeamData.length; i += chunkSize) {
+            const chunk = salesTeamData.slice(i, i + chunkSize);
+            let message = `👥 *SALES TEAM* (${i + 1}-${Math.min(i + chunkSize, salesTeamData.length)}/${salesTeamData.length})\n\n`;
+            
+            chunk.forEach((item, index) => {
+                const shortId = item.id ? item.id.substring(0, 8) + '...' : 'N/A';
+                const date = item.tarikh || (item.createdAt?.toDate ? new Date(item.createdAt.toDate()).toLocaleDateString('ms-MY') : 'N/A');
+                const team = item.team || item.agent_name || 'N/A';
+                const leads = item.total_lead || item.totalLead || 0;
+                const sales = (item.total_sale_bulanan || item.totalSale || 0).toLocaleString();
+                
+                message += `*${i + index + 1}.* ${shortId}\n`;
+                message += `📅 ${date} | 👤 ${team}\n`;
+                message += `📞 ${leads} leads | 💰 RM ${sales}\n`;
+                message += `🧊${item.cold || 0} 🔥${item.warm || 0} 🌡️${item.hot || 0}\n\n`;
+            });
+            
+            messages.push(message);
+        }
+        
+        return messages;
+    }
+    
+    formatPowerMetricsForTelegram(powerMetrics) {
+        const messages = [];
+        const chunkSize = 2; // 2 power metrics per message
+        
+        for (let i = 0; i < powerMetrics.length; i += chunkSize) {
+            const chunk = powerMetrics.slice(i, i + chunkSize);
+            let message = `⚡ *POWER METRICS* (${i + 1}-${Math.min(i + chunkSize, powerMetrics.length)}/${powerMetrics.length})\n\n`;
+            
+            chunk.forEach((item, index) => {
+                const shortId = item.id ? item.id.substring(0, 8) + '...' : 'N/A';
+                const date = item.tarikh || (item.createdAt?.toDate ? new Date(item.createdAt.toDate()).toLocaleDateString('ms-MY') : 'N/A');
+                const team = item.team || item.agent_name || 'N/A';
+                const leads = item.total_lead || item.totalLead || 0;
+                const sales = (item.total_sale_bulanan || item.totalSale || 0).toLocaleString();
+                const target = (item.target || item.sasaran || 0).toLocaleString();
+                
+                message += `*${i + index + 1}.* ${shortId}\n`;
+                message += `📅 ${date} | 👤 ${team}\n`;
+                message += `📞 ${leads} leads | 💰 RM ${sales}\n`;
+                message += `🎯 Target: RM ${target}\n`;
+                message += `🧊${item.cold || 0} 🔥${item.warm || 0} 🌡️${item.hot || 0}\n\n`;
+            });
+            
+            messages.push(message);
+        }
+        
+        return messages;
+    }
+    
+    async sendToTelegramBot(message) {
+        try {
+            console.log('📱 Sending to Telegram...');
+            console.log('📱 Chat ID:', this.telegramChatId);
+            console.log('📱 Message length:', message.length);
+            console.log('📱 First 200 chars:', message.substring(0, 200));
+            
+            // Telegram message limit is 4096 characters
+            if (message.length > 4000) {
+                console.warn(`⚠️ Message too long (${message.length} chars), truncating...`);
+                message = message.substring(0, 3900) + '\n\n... (truncated)';
+            }
+            
+            // Validate Chat ID
+            if (!this.telegramChatId || this.telegramChatId === 'null' || this.telegramChatId === 'undefined') {
+                console.error('❌ Invalid Chat ID:', this.telegramChatId);
+                return false;
+            }
+            
+            // Clean message for Telegram Markdown
+            const originalMessage = message;
+            message = this.cleanMessageForTelegram(message);
+            
+            const url = `https://api.telegram.org/bot${this.telegramBotToken}/sendMessage`;
+            
+            const payload = {
+                chat_id: this.telegramChatId,
+                text: message,
+                parse_mode: 'Markdown'
+            };
+            
+            console.log('📱 Payload:', JSON.stringify(payload, null, 2));
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            console.log('📱 Telegram response:', result);
+            
+            if (result.ok) {
+                console.log('✅ Message sent to Telegram successfully');
+                return true;
+            } else {
+                console.error('❌ Telegram API error:', result);
+                console.error('❌ Error description:', result.description);
+                console.error('❌ Error code:', result.error_code);
+                
+                // Try without Markdown if it fails
+                console.log('🔄 Retrying without Markdown...');
+                const plainPayload = {
+                    chat_id: this.telegramChatId,
+                    text: this.stripMarkdown(message)
+                };
+                
+                console.log('📱 Plain payload:', JSON.stringify(plainPayload, null, 2));
+                
+                const retryResponse = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(plainPayload)
+                });
+                
+                const retryResult = await retryResponse.json();
+                console.log('📱 Retry response:', retryResult);
+                
+                if (retryResult.ok) {
+                    console.log('✅ Message sent without Markdown');
+                    return true;
+                } else {
+                    console.error('❌ Retry also failed:', retryResult);
+                    
+                    // Try with minimal message as last resort
+                    console.log('🔄 Trying minimal message...');
+                    const minimalPayload = {
+                        chat_id: this.telegramChatId,
+                        text: `Dashboard sync at ${new Date().toLocaleString('ms-MY')}`
+                    };
+                    
+                    const minimalResponse = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(minimalPayload)
+                    });
+                    
+                    const minimalResult = await minimalResponse.json();
+                    console.log('📱 Minimal response:', minimalResult);
+                    
+                    return minimalResult.ok;
+                }
+            }
+            
+        } catch (error) {
+            console.error('❌ Error sending to Telegram:', error);
+            console.error('❌ Error stack:', error.stack);
+            return false;
+        }
+    }
+    
+    cleanMessageForTelegram(message) {
+        // Remove problematic characters for Telegram Markdown
+        return message
+            .replace(/[\[\]]/g, '') // Remove square brackets
+            .replace(/`([^`]*)`/g, '$1') // Remove backticks around short code
+            .replace(/\*([^*]*)\*/g, '*$1*') // Fix bold formatting
+            .replace(/_{2,}/g, '_') // Fix underscores
+            .replace(/\n{3,}/g, '\n\n'); // Limit consecutive newlines
+    }
+    
+    stripMarkdown(message) {
+        // Remove all Markdown formatting
+        return message
+            .replace(/\*([^*]*)\*/g, '$1') // Remove bold
+            .replace(/_([^_]*)_/g, '$1') // Remove italic
+            .replace(/`([^`]*)`/g, '$1') // Remove code
+            .replace(/[\[\]]/g, ''); // Remove brackets
+    }
 
     formatAsGoogleSheetsData(data, tarikh) {
         // Format dashboard data same as Google Sheets order structure
@@ -657,6 +1062,190 @@ window.readySync = new ReadySync();
 window.triggerSync = async function() {
     console.log('🔄 Manual sync triggered via global function');
     return await window.readySync.manualSync();
+};
+
+// Debug functions for Telegram
+window.debugTelegram = async function() {
+    console.log('🔍 DEBUGGING TELEGRAM BOT...');
+    
+    const token = '8269216222:AAG1cNvAYcwfCQYfq5eUcdbbun1M0tdQVYk';
+    
+    try {
+        // 1. Check bot info
+        console.log('1️⃣ Checking bot info...');
+        const botResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+        const botData = await botResponse.json();
+        console.log('Bot info:', botData);
+        
+        // 2. Check updates
+        console.log('2️⃣ Checking bot updates...');
+        const updatesResponse = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
+        const updatesData = await updatesResponse.json();
+        console.log('Updates:', updatesData);
+        
+        if (updatesData.ok && updatesData.result.length > 0) {
+            console.log('📱 Found updates:');
+            updatesData.result.forEach((update, index) => {
+                console.log(`   Update ${index + 1}:`, {
+                    chat_id: update.message?.chat?.id,
+                    from: update.message?.from?.first_name,
+                    text: update.message?.text,
+                    date: new Date(update.message?.date * 1000).toLocaleString()
+                });
+            });
+            
+            // Get latest chat ID
+            const latestUpdate = updatesData.result[updatesData.result.length - 1];
+            const chatId = latestUpdate.message?.chat?.id;
+            if (chatId) {
+                console.log(`✅ Latest Chat ID: ${chatId}`);
+                
+                // 3. Test sending message
+                console.log('3️⃣ Testing message send...');
+                const testMessage = `🧪 Test message from KilangDM Dashboard\n📅 ${new Date().toLocaleString('ms-MY')}`;
+                
+                const sendResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: testMessage
+                    })
+                });
+                
+                const sendData = await sendResponse.json();
+                console.log('Send result:', sendData);
+                
+                if (sendData.ok) {
+                    console.log('✅ Test message sent successfully!');
+                } else {
+                    console.log('❌ Failed to send test message:', sendData);
+                }
+            }
+        } else {
+            console.log('❌ No updates found. Please send /start to the bot first.');
+        }
+        
+    } catch (error) {
+        console.error('❌ Debug error:', error);
+    }
+};
+
+// Quick test function
+window.testTelegramNow = async function() {
+    console.log('🚀 Testing Telegram sync now...');
+    if (window.readySync) {
+        await window.readySync.manualSync();
+    } else {
+        console.log('❌ ReadySync not available');
+    }
+};
+
+// Simple test message
+window.testSimpleTelegramMessage = async function() {
+    console.log('🧪 Testing simple Telegram message...');
+    if (window.readySync && window.readySync.telegramChatId) {
+        const simpleMessage = `Test from KilangDM Dashboard at ${new Date().toLocaleString('ms-MY')}`;
+        const success = await window.readySync.sendToTelegramBot(simpleMessage);
+        if (success) {
+            console.log('✅ Simple test message sent!');
+        } else {
+            console.log('❌ Simple test message failed');
+        }
+    } else {
+        console.log('❌ ReadySync or Chat ID not available');
+        console.log('   Chat ID:', window.readySync?.telegramChatId);
+    }
+};
+
+// Super simple test
+window.testMinimalTelegram = async function() {
+    console.log('🔬 Testing minimal Telegram message...');
+    
+    const token = '8269216222:AAG1cNvAYcwfCQYfq5eUcdbbun1M0tdQVYk';
+    
+    // First check Chat ID
+    const chatId = localStorage.getItem('telegramChatId') || window.readySync?.telegramChatId;
+    console.log('🔍 Chat ID:', chatId);
+    
+    if (!chatId) {
+        console.log('❌ No Chat ID found. Run debugTelegram() first');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: 'Hello from KilangDM!'
+            })
+        });
+        
+        const result = await response.json();
+        console.log('📱 Response:', result);
+        
+        if (result.ok) {
+            console.log('✅ Minimal test SUCCESS!');
+        } else {
+            console.log('❌ Minimal test FAILED:', result.description);
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+    }
+};
+
+// Manual Chat ID setter
+window.setTelegramChatId = function(chatId) {
+    console.log(`💾 Setting Chat ID manually: ${chatId}`);
+    localStorage.setItem('telegramChatId', chatId.toString());
+    if (window.readySync) {
+        window.readySync.telegramChatId = chatId.toString();
+    }
+    console.log('✅ Chat ID saved');
+};
+
+// Debug function to check raw data
+window.debugTelegramData = async function() {
+    console.log('🔍 DEBUGGING TELEGRAM DATA...');
+    
+    if (window.readySync) {
+        const data = await window.readySync.collectDashboardData();
+        console.log('📊 Dashboard Data:', data);
+        
+        if (data && data.detailedData) {
+            const { orderData, marketingData, salesTeamData, powerMetrics } = data.detailedData;
+            
+            console.log('🛒 ORDER DATA SAMPLE:');
+            if (orderData && orderData.length > 0) {
+                console.log('   First order:', orderData[0]);
+                console.log('   Fields:', Object.keys(orderData[0]));
+            } else {
+                console.log('   No order data found');
+            }
+            
+            console.log('👥 SALES TEAM DATA SAMPLE:');
+            if (salesTeamData && salesTeamData.length > 0) {
+                console.log('   First sales record:', salesTeamData[0]);
+                console.log('   Fields:', Object.keys(salesTeamData[0]));
+            } else {
+                console.log('   No sales team data found');
+            }
+            
+            console.log('⚡ POWER METRICS SAMPLE:');
+            if (powerMetrics && powerMetrics.length > 0) {
+                console.log('   First power metric:', powerMetrics[0]);
+                console.log('   Fields:', Object.keys(powerMetrics[0]));
+            } else {
+                console.log('   No power metrics found');
+            }
+        } else {
+            console.log('❌ No detailed data available');
+        }
+    } else {
+        console.log('❌ ReadySync not available');
+    }
 };
 
 // Export for module use

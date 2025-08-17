@@ -77,6 +77,19 @@
             border: 1px solid #3b82f6;
         }
         
+        .working-days-display {
+            background: rgba(34, 197, 94, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #22c55e;
+            color: #22c55e;
+            font-weight: 600;
+        }
+        
+        .working-days-display i {
+            margin-right: 0.5rem;
+        }
+        
         .current-date {
             color: #94a3b8;
             font-weight: 500;
@@ -441,6 +454,10 @@
             <h1>Balance Monitor - Team Sales</h1>
         </div>
         <div class="header-info">
+            <div class="working-days-display" id="working-days-display">
+                <i class="fas fa-calendar-week"></i>
+                <span id="working-days-text">Hari Bekerja: <strong id="working-days-count">0 / 0</strong></span>
+            </div>
             <div class="current-date" id="current-date">-</div>
             <div class="current-time" id="current-time">
                 <i class="fas fa-clock"></i>
@@ -914,6 +931,61 @@
             console.log('   Now run: forceLoadFromLocalStorage()');
         };
         
+        // Calculate working days in current month (EXACT same logic as power metrics dashboard)
+        function calculateWorkingDays() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth(); // 0-based month
+            const currentDay = now.getDate();
+            
+            // Use same working days pattern as dashboard: [0,1,2,3,4,6] = Sun-Thu + Sat (Friday off only)
+            const customWorkingDays = [0, 1, 2, 3, 4, 6]; // Sunday to Thursday + Saturday
+            
+            // Get first and last day of month (same as dashboard)
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const currentDate = new Date(year, month, currentDay);
+            
+            let totalWorkingDays = 0;
+            let passedWorkingDays = 0;
+            
+            // Count total working days in month (EXACT same logic as dashboard getWorkingDaysInMonth)
+            for (let day = new Date(firstDay); day <= lastDay; day.setDate(day.getDate() + 1)) {
+                const dayOfWeek = day.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+                
+                // Use EXACT same working days pattern as dashboard
+                if (customWorkingDays.includes(dayOfWeek)) {
+                    totalWorkingDays++;
+                }
+            }
+            
+            // Count working days from start of month to current date (EXACT same logic as dashboard getWorkingDaysToDate)
+            for (let day = new Date(firstDay); day <= currentDate; day.setDate(day.getDate() + 1)) {
+                const dayOfWeek = day.getDay();
+                
+                // Use EXACT same working days pattern as dashboard
+                if (customWorkingDays.includes(dayOfWeek)) {
+                    passedWorkingDays++;
+                }
+            }
+            
+            return {
+                passed: passedWorkingDays,
+                total: totalWorkingDays,
+                remaining: Math.max(0, totalWorkingDays - passedWorkingDays)
+            };
+        }
+        
+        // Update working days display
+        function updateWorkingDays() {
+            const workingDays = calculateWorkingDays();
+            const workingDaysElement = document.getElementById('working-days-count');
+            
+            if (workingDaysElement) {
+                workingDaysElement.textContent = `${workingDays.passed} / ${workingDays.total}`;
+            }
+        }
+        
         // Update current time and date
         function updateDateTime() {
             const now = new Date();
@@ -935,6 +1007,9 @@
                 day: 'numeric'
             });
             document.getElementById('current-date').textContent = dateString;
+            
+            // Update working days
+            updateWorkingDays();
         }
         
         // Format currency
