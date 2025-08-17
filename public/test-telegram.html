@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Telegram Bot Integration</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #f9fafb;
+        }
+        
+        .test-section h3 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #4b5563, #374151);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+        
+        .log-area {
+            background: #1f2937;
+            color: #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .status {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .inline-form {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        
+        .inline-form input {
+            flex: 1;
+        }
+        
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background: #10b981;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Test Telegram Bot Integration</h1>
+        
+        <div class="status info">
+            <div class="connection-status">
+                Status: <span class="status-dot" id="connectionDot"></span>
+                <span id="connectionStatus">Checking connection...</span>
+            </div>
+        </div>
+        
+        <!-- Bot Configuration -->
+        <div class="test-section">
+            <h3>⚙️ Bot Configuration</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label for="chatId">Chat ID:</label>
+                    <div class="inline-form">
+                        <input type="text" id="chatId" placeholder="Masukkan Chat ID Telegram">
+                        <button onclick="setChatId()">Set Chat ID</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Bot Status:</label>
+                    <div>
+                        <button onclick="toggleBot()" id="toggleBotBtn">Enable Bot</button>
+                        <button onclick="testConnection()" class="btn-secondary">Test Connection</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Message Testing -->
+        <div class="test-section">
+            <h3>💬 Message Testing</h3>
+            <div class="form-group">
+                <label for="testMessage">Test Message:</label>
+                <textarea id="testMessage" rows="3" placeholder="Masukkan pesan test...">🧪 Test message dari dashboard KilangDM!</textarea>
+            </div>
+            <div class="form-group">
+                <button onclick="sendTestMessage()" class="btn-success">Send Test Message</button>
+                <button onclick="sendFormattedMessage()" class="btn-secondary">Send Formatted Message</button>
+            </div>
+        </div>
+        
+        <!-- Dashboard Data Simulation -->
+        <div class="test-section">
+            <h3>📊 Dashboard Data Simulation</h3>
+            <div class="grid">
+                <div>
+                    <div class="form-group">
+                        <label for="orderAmount">Order Amount (RM):</label>
+                        <input type="number" id="orderAmount" value="299" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerName">Customer Name:</label>
+                        <input type="text" id="customerName" value="Ahmad Bin Ali">
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label for="productName">Product Name:</label>
+                        <input type="text" id="productName" value="Premium Package">
+                    </div>
+                    <div class="form-group">
+                        <label for="agentName">Agent Name:</label>
+                        <input type="text" id="agentName" value="Sarah">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <button onclick="simulateNewOrder()" class="btn-success">Simulate New Order</button>
+                <button onclick="simulatePayment()" class="btn-success">Simulate Payment</button>
+                <button onclick="simulateDailySummary()" class="btn-secondary">Simulate Daily Summary</button>
+            </div>
+        </div>
+        
+        <!-- Sync Testing -->
+        <div class="test-section">
+            <h3>🔄 Sync Testing</h3>
+            <div class="form-group">
+                <button onclick="triggerManualSync()" class="btn-success">Manual Sync Now</button>
+                <button onclick="toggleAutoSync()" id="autoSyncBtn" class="btn-secondary">Enable Auto Sync</button>
+                <button onclick="sendTestSummary()" class="btn-secondary">Send Test Summary</button>
+            </div>
+        </div>
+        
+        <!-- Logs -->
+        <div class="test-section">
+            <h3>📝 Logs</h3>
+            <div class="log-area" id="logs"></div>
+            <div style="margin-top: 1rem;">
+                <button onclick="clearLogs()" class="btn-secondary">Clear Logs</button>
+                <button onclick="exportLogs()" class="btn-secondary">Export Logs</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Telegram Bot Scripts -->
+    <script src="js/telegram-bot.js"></script>
+    <script src="js/telegram-sync.js"></script>
+    
+    <script>
+        let logs = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push(logEntry);
+            
+            const logArea = document.getElementById('logs');
+            const logElement = document.createElement('div');
+            logElement.textContent = logEntry;
+            logElement.style.color = type === 'error' ? '#ef4444' : 
+                                   type === 'success' ? '#10b981' : '#e5e7eb';
+            logArea.appendChild(logElement);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function updateConnectionStatus() {
+            const dot = document.getElementById('connectionDot');
+            const status = document.getElementById('connectionStatus');
+            
+            if (window.telegramBot && window.telegramBot.isEnabledCheck()) {
+                dot.classList.add('connected');
+                status.textContent = 'Connected';
+                log('✅ Telegram bot connected', 'success');
+            } else {
+                dot.classList.remove('connected');
+                status.textContent = 'Disconnected';
+                log('❌ Telegram bot disconnected', 'error');
+            }
+        }
+        
+        async function testConnection() {
+            log('🔍 Testing bot connection...');
+            try {
+                if (window.telegramBot) {
+                    const result = await window.telegramBot.testConnection();
+                    log(`✅ Connection test successful: ${result.username}`, 'success');
+                } else {
+                    log('❌ Telegram bot not initialized', 'error');
+                }
+            } catch (error) {
+                log(`❌ Connection test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function setChatId() {
+            const chatId = document.getElementById('chatId').value.trim();
+            if (!chatId) {
+                log('❌ Please enter a Chat ID', 'error');
+                return;
+            }
+            
+            if (window.telegramBot) {
+                window.telegramBot.setChatId(chatId);
+                log(`✅ Chat ID set to: ${chatId}`, 'success');
+            } else {
+                log('❌ Telegram bot not available', 'error');
+            }
+        }
+        
+        function toggleBot() {
+            const btn = document.getElementById('toggleBotBtn');
+            if (window.telegramBot) {
+                const isEnabled = window.telegramBot.isEnabledCheck();
+                window.telegramBot.setEnabled(!isEnabled);
+                btn.textContent = !isEnabled ? 'Disable Bot' : 'Enable Bot';
+                log(`${!isEnabled ? '✅ Bot enabled' : '❌ Bot disabled'}`);
+                updateConnectionStatus();
+            }
+        }
+        
+        async function sendTestMessage() {
+            const message = document.getElementById('testMessage').value.trim();
+            if (!message) {
+                log('❌ Please enter a test message', 'error');
+                return;
+            }
+            
+            log('📤 Sending test message...');
+            try {
+                if (window.telegramBot) {
+                    await window.telegramBot.sendMessage(message);
+                    log('✅ Test message sent successfully', 'success');
+                } else {
+                    log('❌ Telegram bot not available', 'error');
+                }
+            } catch (error) {
+                log(`❌ Failed to send message: ${error.message}`, 'error');
+            }
+        }
+        
+        async function sendFormattedMessage() {
+            const message = `🎯 <b>Test Dashboard Update</b>\n\n` +
+                           `📅 Masa: ${new Date().toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur', hour12: true })}\n` +
+                           `💰 Sales: RM1,234\n` +
+                           `👥 Leads: 15\n` +
+                           `📈 Progress: 67%\n\n` +
+                           `✅ System berfungsi dengan baik!`;
+            
+            log('📤 Sending formatted message...');
+            try {
+                if (window.telegramBot) {
+                    await window.telegramBot.sendMessage(message, null, { parseMode: 'HTML' });
+                    log('✅ Formatted message sent successfully', 'success');
+                } else {
+                    log('❌ Telegram bot not available', 'error');
+                }
+            } catch (error) {
+                log(`❌ Failed to send formatted message: ${error.message}`, 'error');
+            }
+        }
+        
+        async function simulateNewOrder() {
+            const orderData = {
+                type: 'new_order',
+                payload: {
+                    orderId: 'ORD' + Date.now(),
+                    amount: document.getElementById('orderAmount').value,
+                    customer: document.getElementById('customerName').value,
+                    product: document.getElementById('productName').value,
+                    agent: document.getElementById('agentName').value
+                },
+                timestamp: new Date()
+            };
+            
+            log('🛒 Simulating new order...');
+            try {
+                if (window.telegramBot) {
+                    await window.telegramBot.sendDashboardNotification(orderData);
+                    log('✅ New order notification sent', 'success');
+                } else {
+                    log('❌ Telegram bot not available', 'error');
+                }
+            } catch (error) {
+                log(`❌ Failed to send order notification: ${error.message}`, 'error');
+            }
+        }
+        
+        async function simulatePayment() {
+            const paymentData = {
+                type: 'payment_received',
+                payload: {
+                    paymentId: 'PAY' + Date.now(),
+                    amount: document.getElementById('orderAmount').value,
+                    customer: document.getElementById('customerName').value
+                },
+                timestamp: new Date()
+            };
+            
+            log('💳 Simulating payment...');
+            try {
+                if (window.telegramBot) {
+                    await window.telegramBot.sendDashboardNotification(paymentData);
+                    log('✅ Payment notification sent', 'success');
+                } else {
+                    log('❌ Telegram bot not available', 'error');
+                }
+            } catch (error) {
+                log(`❌ Failed to send payment notification: ${error.message}`, 'error');
+            }
+        }
+        
+        async function simulateDailySummary() {
+            const summaryData = {
+                type: 'sales_summary',
+                payload: {
+                    totalSales: 5670,
+                    totalOrders: 23,
+                    newCustomers: 8
+                },
+                timestamp: new Date()
+            };
+            
+            log('📊 Simulating daily summary...');
+            try {
+                if (window.telegramBot) {
+                    await window.telegramBot.sendDashboardNotification(summaryData);
+                    log('✅ Daily summary sent', 'success');
+                } else {
+                    log('❌ Telegram bot not available', 'error');
+                }
+            } catch (error) {
+                log(`❌ Failed to send daily summary: ${error.message}`, 'error');
+            }
+        }
+        
+        async function triggerManualSync() {
+            log('🔄 Triggering manual sync...');
+            try {
+                if (window.telegramDataSync) {
+                    const success = await window.telegramDataSync.sendManualUpdate();
+                    if (success) {
+                        log('✅ Manual sync completed', 'success');
+                    } else {
+                        log('❌ Manual sync failed - bot not configured', 'error');
+                    }
+                } else {
+                    log('❌ Telegram sync not available', 'error');
+                }
+            } catch (error) {
+                log(`❌ Manual sync error: ${error.message}`, 'error');
+            }
+        }
+        
+        function toggleAutoSync() {
+            const btn = document.getElementById('autoSyncBtn');
+            if (window.telegramDataSync) {
+                const isEnabled = window.telegramDataSync.isAutoSyncEnabled;
+                window.telegramDataSync.setAutoSync(!isEnabled);
+                btn.textContent = !isEnabled ? 'Disable Auto Sync' : 'Enable Auto Sync';
+                log(`${!isEnabled ? '✅ Auto sync enabled' : '❌ Auto sync disabled'}`);
+            }
+        }
+        
+        async function sendTestSummary() {
+            log('📊 Sending test dashboard summary...');
+            try {
+                if (window.telegramDataSync) {
+                    await window.telegramDataSync.sendDailySummary();
+                    log('✅ Test summary sent', 'success');
+                } else {
+                    log('❌ Telegram sync not available', 'error');
+                }
+            } catch (error) {
+                log(`❌ Failed to send test summary: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLogs() {
+            logs = [];
+            document.getElementById('logs').innerHTML = '';
+            log('🧹 Logs cleared');
+        }
+        
+        function exportLogs() {
+            const logText = logs.join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `telegram-bot-logs-${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            log('💾 Logs exported');
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Telegram Bot Test Page Loaded');
+            
+            // Check connection status every 5 seconds
+            setInterval(updateConnectionStatus, 5000);
+            
+            // Initial status check
+            setTimeout(updateConnectionStatus, 2000);
+            
+            // Load saved chat ID
+            const savedChatId = localStorage.getItem('telegram_chat_id');
+            if (savedChatId) {
+                document.getElementById('chatId').value = savedChatId;
+                log(`📋 Loaded saved Chat ID: ${savedChatId}`);
+            }
+        });
+    </script>
+</body>
+</html>
