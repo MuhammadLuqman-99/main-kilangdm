@@ -209,7 +209,7 @@
         
         <!-- Sync Button -->
         <div class="floating-sync-btn">
-            <button id="syncBtn" class="sync-btn" onclick="triggerManualSync()" title="Sync data ke Firebase, Google Sheets & Telegram Bot">
+            <button id="syncBtn" class="sync-btn" onclick="window.triggerManualSync()" title="Sync data ke Firebase & Google Sheets">
                 <i class="fas fa-sync-alt"></i>
             </button>
         </div>
@@ -964,9 +964,7 @@
         </section>
     </main>
 
-    <!-- Telegram Bot Integration -->
-    <script src="js/telegram-bot.js?v=1.0"></script>
-    <script src="js/telegram-sync.js?v=1.0"></script>
+    <!-- Google Sheets Sync Only -->
     
     <!-- Load Dashboard JavaScript -->
     <script src="js/professional-charts-config.js?v=2.1"></script>
@@ -979,7 +977,7 @@
     <script src="js/dashboard-advanced-filter.js?v=4.0"></script>
     <!-- Dashboard Enhancement Scripts -->
     <script src="js/responsive-enhancements.js"></script>
-    <script src="js/improvements.js"></script>
+    <!-- <script src="js/improvements.js"></script> <!-- File not found, commented out -->
     <script src="js/dashboard-enhancements.js?v=4.0"></script>
     <script type="module" src="js/marketing-cost-per-team-chart.js?v=2.1"></script>
     <script type="module" src="js/marketing-roi-chart.js?v=2.1"></script>
@@ -1064,7 +1062,12 @@
                 display: flex;
                 flex-direction: column;
                 gap: 1rem;
-                z-index: 1000;
+                z-index: 9999;
+                pointer-events: none;
+            }
+            
+            .floating-action-buttons > div {
+                pointer-events: auto;
             }
             
             .floating-sync-btn {
@@ -1087,6 +1090,13 @@
                 justify-content: center;
                 position: relative;
                 overflow: hidden;
+                z-index: 10000;
+                pointer-events: auto;
+            }
+            
+            .sync-btn:focus {
+                outline: 2px solid #10b981;
+                outline-offset: 2px;
             }
             
             .sync-btn:hover {
@@ -1134,7 +1144,7 @@
         document.head.appendChild(styleSheet);
         
         // Sync control functions
-        async function triggerManualSync() {
+        window.triggerManualSync = async function() {
             console.log('🔄 Manual sync triggered - syncing to all platforms');
             
             // Add spinning animation to sync button
@@ -1146,17 +1156,17 @@
             
             try {
                 if (window.readySync) {
-                    showSyncMessage('🔄 Syncing to Firebase, Google Sheets & Telegram...', 'info');
+                    showSyncMessage('🔄 Syncing to Firebase & Google Sheets...', 'info');
                     
                     console.log('🔍 Checking readySync status:', window.readySync.getStatus());
                     
                     const success = await window.readySync.manualSync();
                     if (success) {
-                        console.log('✅ Multi-platform sync completed');
-                        showSyncMessage('✅ Data synced to all platforms!', 'success');
+                        console.log('✅ Sync completed successfully');
+                        showSyncMessage('✅ Data collected & formatted for Google Sheets!', 'success');
                     } else {
-                        console.log('❌ Multi-platform sync failed');
-                        showSyncMessage('❌ Sync failed. Check browser console for details.', 'error');
+                        console.log('❌ Sync failed completely');
+                        showSyncMessage('❌ Sync failed. Check console for details.', 'error');
                     }
                 } else {
                     console.error('❌ Ready sync not available. Check if ready-sync.js loaded properly.');
@@ -1172,17 +1182,81 @@
                     syncBtn.disabled = false;
                 }
             }
-        }
+        };
         
-        // Auto-setup Chat ID on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set Chat ID automatically when bot is ready
-            setTimeout(() => {
-                if (window.telegramBot) {
-                    window.telegramBot.setChatId('8269216222');
-                    console.log('✅ Telegram Chat ID set automatically');
+        // Alternative sync function without async (for debugging)
+        window.testSync = function() {
+            console.log('🧪 Test sync button clicked!');
+            alert('Sync button is working! Check console for details.');
+        };
+        
+        // Debug function to test sync step by step
+        window.debugSync = async function() {
+            console.log('🔍 Starting debug sync...');
+            
+            try {
+                console.log('1️⃣ Checking readySync availability...');
+                if (!window.readySync) {
+                    console.error('❌ window.readySync not found');
+                    return;
                 }
+                console.log('✅ readySync found');
+                
+                console.log('2️⃣ Getting readySync status...');
+                const status = window.readySync.getStatus();
+                console.log('📊 ReadySync status:', status);
+                
+                console.log('3️⃣ Attempting manual sync...');
+                const result = await window.readySync.manualSync();
+                console.log('📋 Manual sync result:', result);
+                
+                console.log('✅ Debug sync completed');
+                
+            } catch (error) {
+                console.error('❌ Debug sync failed:', error);
+                console.error('❌ Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+            }
+        };
+        
+        // Telegram functions removed - Google Sheets sync only
+        
+        // Auto-setup on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize sync system
+            setTimeout(() => {
+                console.log('✅ Sync system ready - Firebase & Google Sheets');
+                
+                // Listen for sync events
+                document.addEventListener('syncCompleted', function(event) {
+                    console.log('🎉 Sync completed event:', event.detail);
+                });
+                
+                document.addEventListener('syncFailed', function(event) {
+                    console.log('❌ Sync failed event:', event.detail);
+                });
+                
             }, 2000);
+            
+            // Debug: Check if sync button is properly loaded
+            setTimeout(() => {
+                const syncBtn = document.getElementById('syncBtn');
+                if (syncBtn) {
+                    console.log('✅ Sync button found and ready');
+                    
+                    // Add additional click event as backup
+                    syncBtn.addEventListener('click', function(e) {
+                        console.log('🔄 Sync button clicked via event listener');
+                        e.preventDefault();
+                        triggerManualSync();
+                    });
+                } else {
+                    console.error('❌ Sync button not found!');
+                }
+            }, 1000);
         });
         
         function showSyncMessage(message, type) {
