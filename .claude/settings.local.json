@@ -9,7 +9,8 @@
       "Bash(firebase deploy:*)",
       "WebFetch(domain:kilangdm-v1.web.app)",
       "Bash(npm test)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": [],

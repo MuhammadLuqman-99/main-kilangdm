@@ -1156,21 +1156,16 @@
             
             try {
                 if (window.readySync) {
-                    showSyncMessage('🔄 Syncing to Firebase & Google Sheets...', 'info');
+                    showSyncMessage('🔄 Starting sync to Firebase & Google Sheets...', 'info');
                     
                     console.log('🔍 Checking readySync status:', window.readySync.getStatus());
                     
                     const success = await window.readySync.manualSync();
-                    if (success) {
-                        console.log('✅ Sync completed successfully');
-                        showSyncMessage('✅ Data collected & formatted for Google Sheets!', 'success');
-                    } else {
-                        console.log('❌ Sync failed completely');
-                        showSyncMessage('❌ Sync failed. Check console for details.', 'error');
-                    }
+                    console.log('🔄 Sync function returned:', success);
+                    // Notifications will be handled by event listeners
                 } else {
                     console.error('❌ Ready sync not available. Check if ready-sync.js loaded properly.');
-                    showSyncMessage('❌ Sync system not loaded', 'error');
+                    showSyncMessage('❌ Sync system not ready. Please refresh the page.', 'error');
                 }
             } catch (error) {
                 console.error('❌ Sync error:', error);
@@ -1233,10 +1228,16 @@
                 // Listen for sync events
                 document.addEventListener('syncCompleted', function(event) {
                     console.log('🎉 Sync completed event:', event.detail);
+                    // Show success notification
+                    const message = event.detail.message || '✅ Data successfully synced to Firebase & Google Sheets!';
+                    showSyncMessage(message, 'success');
                 });
                 
                 document.addEventListener('syncFailed', function(event) {
                     console.log('❌ Sync failed event:', event.detail);
+                    // Show user-friendly error message
+                    const message = event.detail.userMessage || 'Sync had some issues but may have partially completed.';
+                    showSyncMessage(message, 'warning');
                 });
                 
             }, 2000);
@@ -1264,7 +1265,8 @@
             const notification = document.createElement('div');
             const bgColor = type === 'success' ? '#10b981' : 
                            type === 'error' ? '#ef4444' : 
-                           type === 'info' ? '#3b82f6' : '#6b7280';
+                           type === 'info' ? '#3b82f6' : 
+                           type === 'warning' ? '#f59e0b' : '#6b7280';
             
             notification.style.cssText = `
                 position: fixed;
