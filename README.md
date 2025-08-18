@@ -408,3 +408,8 @@ This will showcase:
 ---
 
 **Built with ❤️ by the KilangDM Team**
+
+BOT TELE ID
+- t.me/DesaMurniBatikKilang_bot   = 8269216222:AAG1cNvAYcwfCQYfq5eUcdbbun1M0tdQVYk
+- t.me/DataOrderDMBatikKilang_bot = 8266202137:AAGM6j90dDL0xkw0oRzI0SbcCL3Tl3aV1uw
+- t.me/DataMarketingDMBkilang_bot = 8354952211:AAG9O-_lhe8tIQvy_bnblRH8Mtdk6PSqd84

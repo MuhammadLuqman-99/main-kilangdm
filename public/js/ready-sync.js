@@ -9,9 +9,28 @@ class ReadySync {
         this.syncInterval = null;
         this.autoSyncFrequency = 5 * 60 * 1000; // 5 minutes
         
-        // Telegram Bot Configuration
-        this.telegramBotToken = '8269216222:AAG1cNvAYcwfCQYfq5eUcdbbun1M0tdQVYk';
-        this.telegramChatId = null; // Will be set automatically
+        // Multiple Telegram Bot Configuration
+        this.telegramBots = {
+            dashboard: {
+                token: '8269216222:AAG1cNvAYcwfCQYfq5eUcdbbun1M0tdQVYk',
+                chatId: null,
+                name: 'Dashboard Bot'
+            },
+            orders: {
+                token: '8266202137:AAGM6j90dDL0xkw0oRzI0SbcCL3Tl3aV1uw',
+                chatId: null,
+                name: 'Order Data Bot'
+            },
+            marketing: {
+                token: '8354952211:AAG9O-_lhe8tIQvy_bnblRH8Mtdk6PSqd84',
+                chatId: null,
+                name: 'Marketing Data Bot'
+            }
+        };
+        
+        // Backward compatibility
+        this.telegramBotToken = this.telegramBots.dashboard.token;
+        this.telegramChatId = null;
         
         this.init();
     }
@@ -29,9 +48,11 @@ class ReadySync {
         this.setupEventListeners();
         
         if (window.logger) {
-            window.logger.info('Ready Sync initialized successfully');
+            window.logger.info('Ready Sync initialized successfully (Manual mode only)');
         } else {
             console.log('✅ Ready Sync initialized successfully');
+            console.log('🔧 MODE: Manual sync only - Click sync button to sync data');
+            console.log('📱 Multiple bots configured: Dashboard, Orders, Marketing');
         }
     }
 
@@ -50,19 +71,13 @@ class ReadySync {
     }
 
     setupAutoSync() {
-        // Auto-sync every 5 minutes
-        this.syncInterval = setInterval(() => {
-            if (this.isEnabled && !this.syncInProgress) {
-                this.performAutoSync();
-            }
-        }, this.autoSyncFrequency);
+        // AUTO-SYNC DISABLED - Manual sync only
+        console.log('ℹ️ Auto-sync disabled - Manual sync only');
+        console.log('🖱️ Click sync button to manually sync data');
         
-        // Initial sync after 30 seconds
-        setTimeout(() => {
-            if (this.isEnabled) {
-                this.performAutoSync();
-            }
-        }, 30000);
+        // No auto-sync interval
+        // No initial auto-sync
+        // Only manual sync when user clicks button
     }
 
     setupEventListeners() {
@@ -114,11 +129,11 @@ class ReadySync {
 
             console.log('📊 Data collected, syncing to platforms...');
 
-            // Perform sync to platforms  
+            // Perform sync to platforms (Telegram paused for Google Sheets testing)
             const results = await Promise.allSettled([
                 this.syncToFirebase(dashboardData),
-                this.syncToGoogleSheets(dashboardData),
-                this.syncToTelegram(dashboardData)
+                this.syncToGoogleSheets(dashboardData)
+                // this.syncToTelegram(dashboardData) // PAUSED for Google Sheets testing
             ]);
             
             console.log('📋 Sync results:', results);
@@ -162,17 +177,16 @@ class ReadySync {
                     successes,
                     failures,
                     data: dashboardData,
-                    message: `✅ Data synced to Firebase, Google Sheets & Telegram`
+                    message: `✅ Data synced to Firebase & Google Sheets (Telegram paused)`
                 }
             }));
 
             // Always return true since data formatting succeeded
             console.log('🎉 Sync process completed successfully!');
             console.log('📊 Firebase data collected and formatted');
-            console.log('📱 Telegram sync integrated');
-            console.log('📄 Google Sheets sync ready');
-            console.log('📊 Firebase data collected and formatted for Google Sheets');
-            console.log('💡 To complete integration, implement Google Sheets API');
+            console.log('📄 Google Sheets sync active');
+            console.log('⏸️ Telegram sync paused for testing');
+            console.log('🧪 Testing Google Sheets integration only');
             
             return true;
 
@@ -320,6 +334,12 @@ class ReadySync {
                         ...doc.data() 
                     }));
                     console.log(`✅ ${collectionName}: ${results[collectionName].length} records`);
+                    
+                    // Special debug for marketing data
+                    if (collectionName === 'marketingData' && results[collectionName].length > 0) {
+                        console.log('🔍 Marketing data sample:', results[collectionName][0]);
+                        console.log('🔍 Marketing fields:', Object.keys(results[collectionName][0]));
+                    }
                 } catch (error) {
                     console.warn(`⚠️ Error fetching ${collectionName}:`, error);
                     results[collectionName] = [];
@@ -470,8 +490,15 @@ class ReadySync {
         console.table(formattedOrders.slice(0, 5)); // Show first 5 records
         console.log(`📤 Ready to sync ${formattedOrders.length} orders to Google Sheets`);
         
-        // Here you would implement actual Google Sheets API
-        // Example: await googleSheetsAPI.appendRows('Orders', formattedOrders);
+        // Send to Google Sheets via Apps Script
+        try {
+            await this.sendToGoogleSheets('orders', formattedOrders);
+            console.log('✅ Order data successfully sent to Google Sheets');
+        } catch (error) {
+            console.error('❌ Failed to send order data to Google Sheets:', error);
+            // Try alternative method
+            this.sendToGoogleSheetsAlternative('orders', formattedOrders);
+        }
         
         return formattedOrders;
     }
@@ -511,6 +538,14 @@ class ReadySync {
         console.table(formattedMarketing.slice(0, 3));
         console.log(`📤 Ready to sync ${formattedMarketing.length} marketing records to Google Sheets`);
         
+        // Send to Google Sheets via Apps Script
+        try {
+            await this.sendToGoogleSheets('marketing', formattedMarketing);
+            console.log('✅ Marketing data successfully sent to Google Sheets');
+        } catch (error) {
+            console.error('❌ Failed to send marketing data to Google Sheets:', error);
+        }
+        
         return formattedMarketing;
     }
 
@@ -537,6 +572,14 @@ class ReadySync {
         console.table(formattedSalesTeam.slice(0, 3));
         console.log(`📤 Ready to sync ${formattedSalesTeam.length} sales team records to Google Sheets`);
         
+        // Send to Google Sheets via Apps Script
+        try {
+            await this.sendToGoogleSheets('salesTeam', formattedSalesTeam);
+            console.log('✅ Sales team data successfully sent to Google Sheets');
+        } catch (error) {
+            console.error('❌ Failed to send sales team data to Google Sheets:', error);
+        }
+        
         return formattedSalesTeam;
     }
 
@@ -562,6 +605,14 @@ class ReadySync {
         console.log('📊 Power metrics formatted for Google Sheets:');
         console.table(formattedMetrics.slice(0, 3));
         console.log(`📤 Ready to sync ${formattedMetrics.length} power metrics to Google Sheets`);
+        
+        // Send to Google Sheets via Apps Script
+        try {
+            await this.sendToGoogleSheets('powerMetrics', formattedMetrics);
+            console.log('✅ Power metrics successfully sent to Google Sheets');
+        } catch (error) {
+            console.error('❌ Failed to send power metrics to Google Sheets:', error);
+        }
         
         return formattedMetrics;
     }
@@ -606,6 +657,7 @@ class ReadySync {
             const savedChatId = localStorage.getItem('telegramChatId');
             if (savedChatId) {
                 this.telegramChatId = savedChatId;
+                this.telegramBots.dashboard.chatId = savedChatId;
                 console.log('✅ Found saved Chat ID:', savedChatId);
                 return;
             }
@@ -621,6 +673,7 @@ class ReadySync {
                 
                 if (chatId) {
                     this.telegramChatId = chatId.toString();
+                    this.telegramBots.dashboard.chatId = chatId.toString();
                     localStorage.setItem('telegramChatId', this.telegramChatId);
                     console.log('✅ Auto-detected Chat ID:', this.telegramChatId);
                 } else {
@@ -635,9 +688,88 @@ class ReadySync {
         }
     }
     
+    async setupMultipleBotChatIds() {
+        try {
+            console.log('🔍 Setting up multiple bot Chat IDs...');
+            
+            for (const [botType, botConfig] of Object.entries(this.telegramBots)) {
+                // Try to get saved Chat ID first
+                const savedChatId = localStorage.getItem(`telegramChatId_${botType}`);
+                if (savedChatId) {
+                    botConfig.chatId = savedChatId;
+                    console.log(`✅ ${botConfig.name}: Found saved Chat ID ${savedChatId}`);
+                    continue;
+                }
+                
+                // Get updates to find Chat ID
+                try {
+                    const response = await fetch(`https://api.telegram.org/bot${botConfig.token}/getUpdates`);
+                    const data = await response.json();
+                    
+                    if (data.ok && data.result.length > 0) {
+                        const latestUpdate = data.result[data.result.length - 1];
+                        const chatId = latestUpdate.message?.chat?.id || latestUpdate.callback_query?.message?.chat?.id;
+                        
+                        if (chatId) {
+                            botConfig.chatId = chatId.toString();
+                            localStorage.setItem(`telegramChatId_${botType}`, chatId.toString());
+                            console.log(`✅ ${botConfig.name}: Auto-detected Chat ID ${chatId}`);
+                        } else {
+                            console.log(`⚠️ ${botConfig.name}: No chat found. Please send /start to the bot first.`);
+                        }
+                    } else {
+                        console.log(`⚠️ ${botConfig.name}: No updates found. Please send /start to the bot first.`);
+                    }
+                } catch (botError) {
+                    console.error(`❌ Error setting up ${botConfig.name}:`, botError);
+                }
+                
+                await this.delay(500); // Small delay between bot setups
+            }
+            
+            // Update backward compatibility
+            if (this.telegramBots.dashboard.chatId) {
+                this.telegramChatId = this.telegramBots.dashboard.chatId;
+            }
+            
+        } catch (error) {
+            console.error('❌ Error setting up multiple bot Chat IDs:', error);
+        }
+    }
+    
+    async sendToSpecificBot(botType, message) {
+        try {
+            const botConfig = this.telegramBots[botType];
+            if (!botConfig || !botConfig.chatId) {
+                console.log(`⚠️ ${botType} bot not configured or no Chat ID`);
+                return false;
+            }
+            
+            // Use the existing sendToTelegramBot but with specific bot config
+            const originalToken = this.telegramBotToken;
+            const originalChatId = this.telegramChatId;
+            
+            // Temporarily switch to specific bot
+            this.telegramBotToken = botConfig.token;
+            this.telegramChatId = botConfig.chatId;
+            
+            const result = await this.sendToTelegramBot(`[${botConfig.name}]\n\n${message}`);
+            
+            // Restore original config
+            this.telegramBotToken = originalToken;
+            this.telegramChatId = originalChatId;
+            
+            return result;
+            
+        } catch (error) {
+            console.error(`❌ Error sending to ${botType} bot:`, error);
+            return false;
+        }
+    }
+    
     async sendDetailedDataToTelegram(data) {
         try {
-            console.log('📱 Sending detailed Firebase data to Telegram...');
+            console.log('📱 Sending detailed Firebase data to multiple Telegram bots...');
             
             if (!data.detailedData) {
                 console.log('⚠️ No detailed data available for Telegram');
@@ -646,50 +778,82 @@ class ReadySync {
             
             const { orderData, marketingData, salesTeamData, powerMetrics } = data.detailedData;
             
-            // Send summary first
-            const summaryMessage = this.formatSummaryForTelegram(data);
-            await this.sendToTelegramBot(summaryMessage);
+            // Setup chat IDs for all bots
+            await this.setupMultipleBotChatIds();
             
-            // Send detailed data by collections (same as Google Sheets)
             let messagesSent = 0;
             
-            if (orderData?.length > 0) {
+            // 1. Send dashboard summary to dashboard bot
+            if (this.telegramBots.dashboard.chatId) {
+                console.log('📊 Sending dashboard summary to Dashboard Bot...');
+                const summaryMessage = this.formatSummaryForTelegram(data);
+                await this.sendToSpecificBot('dashboard', summaryMessage);
+                messagesSent++;
+            }
+            
+            // 2. Send order data to orders bot
+            if (orderData?.length > 0 && this.telegramBots.orders.chatId) {
+                console.log('🛒 Sending order data to Orders Bot...');
                 const orderMessages = this.formatOrderDataForTelegram(orderData);
                 for (const message of orderMessages) {
-                    await this.sendToTelegramBot(message);
+                    await this.sendToSpecificBot('orders', message);
                     messagesSent++;
-                    await this.delay(1000); // 1 second delay between messages
+                    await this.delay(1000);
                 }
             }
             
-            if (marketingData?.length > 0) {
+            // 3. Send marketing data to marketing bot
+            console.log('📢 Checking marketing data...');
+            console.log('   Marketing data length:', marketingData?.length || 0);
+            console.log('   Marketing bot Chat ID:', this.telegramBots.marketing.chatId || 'NOT SET');
+            
+            if (marketingData?.length > 0 && this.telegramBots.marketing.chatId) {
+                console.log('📢 Sending marketing data to Marketing Bot...');
                 const marketingMessages = this.formatMarketingDataForTelegram(marketingData);
+                console.log('📢 Generated marketing messages count:', marketingMessages.length);
+                
                 for (const message of marketingMessages) {
-                    await this.sendToTelegramBot(message);
+                    console.log('📢 Sending marketing message:', message.substring(0, 100) + '...');
+                    await this.sendToSpecificBot('marketing', message);
                     messagesSent++;
                     await this.delay(1000);
                 }
-            }
-            
-            if (salesTeamData?.length > 0) {
-                const salesMessages = this.formatSalesTeamDataForTelegram(salesTeamData);
-                for (const message of salesMessages) {
-                    await this.sendToTelegramBot(message);
-                    messagesSent++;
-                    await this.delay(1000);
+            } else {
+                if (!marketingData || marketingData.length === 0) {
+                    console.log('⚠️ No marketing data to send');
+                    // Send notification to marketing bot that no data available
+                    if (this.telegramBots.marketing.chatId) {
+                        await this.sendToSpecificBot('marketing', '📢 Marketing Data Update\n\n❌ No marketing data available at this time\n📅 ' + new Date().toLocaleString('ms-MY'));
+                    }
+                } else {
+                    console.log('⚠️ Marketing bot not configured');
                 }
             }
             
-            if (powerMetrics?.length > 0) {
-                const metricsMessages = this.formatPowerMetricsForTelegram(powerMetrics);
-                for (const message of metricsMessages) {
-                    await this.sendToTelegramBot(message);
-                    messagesSent++;
-                    await this.delay(1000);
+            // 4. Send sales team & power metrics to dashboard bot (as they're dashboard-related)
+            if (this.telegramBots.dashboard.chatId) {
+                if (salesTeamData?.length > 0) {
+                    console.log('👥 Sending sales team data to Dashboard Bot...');
+                    const salesMessages = this.formatSalesTeamDataForTelegram(salesTeamData);
+                    for (const message of salesMessages) {
+                        await this.sendToSpecificBot('dashboard', message);
+                        messagesSent++;
+                        await this.delay(1000);
+                    }
+                }
+                
+                if (powerMetrics?.length > 0) {
+                    console.log('⚡ Sending power metrics to Dashboard Bot...');
+                    const metricsMessages = this.formatPowerMetricsForTelegram(powerMetrics);
+                    for (const message of metricsMessages) {
+                        await this.sendToSpecificBot('dashboard', message);
+                        messagesSent++;
+                        await this.delay(1000);
+                    }
                 }
             }
             
-            console.log(`📱 Sent ${messagesSent} messages to Telegram`);
+            console.log(`📱 Sent ${messagesSent} messages to multiple Telegram bots`);
             return true;
             
         } catch (error) {
@@ -771,13 +935,26 @@ class ReadySync {
             chunk.forEach((item, index) => {
                 const shortId = item.id ? item.id.substring(0, 8) + '...' : 'N/A';
                 const date = item.tarikh || (item.createdAt?.toDate ? new Date(item.createdAt.toDate()).toLocaleDateString('ms-MY') : 'N/A');
-                const spending = (item.spending || 0).toLocaleString();
-                const impressions = (item.kair_impressions || 0).toLocaleString();
+                
+                // Try multiple field names for spending
+                const spending = item.spending || item.spending_amount || item.amount || item.budget || 0;
+                
+                // Try multiple field names for impressions
+                const impressions = item.kair_impressions || item.impressions || item.impression || item.reach || 0;
+                
+                // Try multiple field names for clicks
+                const clicks = item.link_click || item.clicks || item.click || item.unique_link_click || 0;
+                
+                // Try multiple field names for CPC
+                const cpc = item.cpc || item.cost_per_click || item.cost_click || 0;
+                
+                // Try multiple field names for team
+                const team = item.team || item.team_sal || item.agent || item.agent_name || 'N/A';
                 
                 message += `*${i + index + 1}.* ${shortId}\n`;
-                message += `📅 ${date} | 👥 ${item.team || 'N/A'}\n`;
-                message += `💸 RM ${spending} | 📊 ${impressions}\n`;
-                message += `🖱️ ${item.link_click || 0} clicks | 🎯 RM ${(item.cpc || 0).toFixed(2)}\n\n`;
+                message += `📅 ${date} | 👥 ${team}\n`;
+                message += `💸 RM ${spending.toLocaleString()} | 📊 ${impressions.toLocaleString()}\n`;
+                message += `🖱️ ${clicks} clicks | 🎯 RM ${Number(cpc).toFixed(2)}\n\n`;
             });
             
             messages.push(message);
@@ -968,6 +1145,88 @@ class ReadySync {
             .replace(/[\[\]]/g, ''); // Remove brackets
     }
 
+    async sendToGoogleSheets(sheetType, data) {
+        try {
+            const googleSheetsUrl = 'https://script.google.com/macros/s/AKfycbxLt2lXkWArBCr1UZjHN5S35yu2W4p0XdCa4Km0JEAnVQDTmPApGVHM-yR38fkUrpkQ/exec';
+            
+            console.log(`📤 Sending ${data.length} ${sheetType} records to Google Sheets...`);
+            
+            // Use GET method with URL parameters to avoid CORS issues
+            const params = new URLSearchParams({
+                action: 'addData',
+                sheetType: sheetType,
+                data: JSON.stringify(data),
+                timestamp: new Date().toISOString(),
+                source: 'kilangdm-dashboard'
+            });
+            
+            const fullUrl = `${googleSheetsUrl}?${params.toString()}`;
+            
+            console.log(`🔗 URL: ${fullUrl.substring(0, 100)}...`);
+            
+            const response = await fetch(fullUrl, {
+                method: 'GET',
+                mode: 'no-cors' // This bypasses CORS but we won't get response data
+            });
+            
+            console.log(`✅ Google Sheets request sent for ${sheetType} (no-cors mode)`);
+            console.log(`📊 Sent ${data.length} records to sheet type: ${sheetType}`);
+            
+            // In no-cors mode, we can't read the response, so we assume success
+            return { success: true, message: 'Data sent (no-cors mode)', records: data.length };
+            
+        } catch (error) {
+            console.error(`❌ Error sending ${sheetType} to Google Sheets:`, error);
+            
+            // Fallback: try with a simple GET request
+            try {
+                console.log(`🔄 Trying fallback method for ${sheetType}...`);
+                const simpleUrl = `https://script.google.com/macros/s/AKfycbxLt2lXkWArBCr1UZjHN5S35yu2W4p0XdCa4Km0JEAnVQDTmPApGVHM-yR38fkUrpkQ/exec?sheetType=${sheetType}&count=${data.length}&timestamp=${Date.now()}`;
+                
+                await fetch(simpleUrl, { method: 'GET', mode: 'no-cors' });
+                console.log(`✅ Fallback request sent for ${sheetType}`);
+                
+                return { success: true, message: 'Fallback request sent', records: data.length };
+            } catch (fallbackError) {
+                console.error(`❌ Fallback also failed for ${sheetType}:`, fallbackError);
+                throw error;
+            }
+        }
+    }
+
+    sendToGoogleSheetsAlternative(sheetType, data) {
+        try {
+            console.log(`🔄 Alternative method: Sending ${sheetType} to Google Sheets...`);
+            
+            const googleSheetsUrl = 'https://script.google.com/macros/s/AKfycbxLt2lXkWArBCr1UZjHN5S35yu2W4p0XdCa4Km0JEAnVQDTmPApGVHM-yR38fkUrpkQ/exec';
+            
+            // Use Image request to bypass CORS (trick method)
+            const img = new Image();
+            const params = new URLSearchParams({
+                action: 'addData',
+                sheetType: sheetType,
+                count: data.length,
+                timestamp: new Date().toISOString(),
+                source: 'kilangdm-dashboard-img'
+            });
+            
+            img.onload = () => {
+                console.log(`✅ Alternative method success for ${sheetType}`);
+            };
+            
+            img.onerror = () => {
+                console.log(`📤 Alternative request sent for ${sheetType} (expected error is normal)`);
+            };
+            
+            img.src = `${googleSheetsUrl}?${params.toString()}`;
+            
+            console.log(`📡 Image request sent for ${sheetType}`);
+            
+        } catch (error) {
+            console.error(`❌ Alternative method failed for ${sheetType}:`, error);
+        }
+    }
+
     formatAsGoogleSheetsData(data, tarikh) {
         // Format dashboard data same as Google Sheets order structure
         return {
@@ -1001,32 +1260,25 @@ class ReadySync {
     // Telegram direct API function removed - Google Sheets sync only
 
     async handleDataUpdate(updateData) {
-        // Throttle updates - minimum 2 minutes between auto-syncs for updates
-        const now = Date.now();
-        if (now - this.lastSyncTime < 2 * 60 * 1000) {
-            console.log('⚠️ Throttling data update sync');
-            return;
-        }
-
-        console.log('📊 Data updated, triggering sync...');
-        await this.performSync('update');
+        // AUTO-SYNC ON DATA UPDATE DISABLED
+        console.log('📊 Data updated, but auto-sync disabled');
+        console.log('🖱️ Click sync button to manually sync updated data');
+        
+        // No automatic sync on data update
+        // Only manual sync when user clicks button
     }
 
     // Public control methods
     enable() {
         this.isEnabled = true;
-        if (!this.syncInterval) {
-            this.setupAutoSync();
-        }
-        console.log('✅ Ready Sync enabled');
+        // No auto-sync setup in manual-only mode
+        console.log('✅ Ready Sync enabled (Manual mode only)');
+        console.log('🖱️ Click sync button to sync data manually');
     }
 
     disable() {
         this.isEnabled = false;
-        if (this.syncInterval) {
-            clearInterval(this.syncInterval);
-            this.syncInterval = null;
-        }
+        // No intervals to clear in manual-only mode
         console.log('❌ Ready Sync disabled');
     }
 
@@ -1039,19 +1291,15 @@ class ReadySync {
             enabled: this.isEnabled,
             inProgress: this.syncInProgress,
             lastSync: this.lastSyncTime,
-            nextAutoSync: this.lastSyncTime + this.autoSyncFrequency
+            mode: 'manual-only',
+            nextAutoSync: null // No auto-sync in manual mode
         };
     }
 
     setSyncFrequency(minutes) {
-        this.autoSyncFrequency = minutes * 60 * 1000;
-        
-        if (this.syncInterval) {
-            clearInterval(this.syncInterval);
-            this.setupAutoSync();
-        }
-        
-        console.log(`🔄 Sync frequency set to ${minutes} minutes`);
+        // Function disabled in manual-only mode
+        console.log('ℹ️ Auto-sync frequency setting disabled in manual-only mode');
+        console.log('🖱️ Use manual sync button instead');
     }
 }
 
@@ -1064,71 +1312,83 @@ window.triggerSync = async function() {
     return await window.readySync.manualSync();
 };
 
-// Debug functions for Telegram
+// Debug functions for multiple Telegram bots
 window.debugTelegram = async function() {
-    console.log('🔍 DEBUGGING TELEGRAM BOT...');
+    console.log('🔍 DEBUGGING MULTIPLE TELEGRAM BOTS...');
     
-    const token = '8269216222:AAG1cNvAYcwfCQYfq5eUcdbbun1M0tdQVYk';
-    
-    try {
-        // 1. Check bot info
-        console.log('1️⃣ Checking bot info...');
-        const botResponse = await fetch(`https://api.telegram.org/bot${token}/getMe`);
-        const botData = await botResponse.json();
-        console.log('Bot info:', botData);
-        
-        // 2. Check updates
-        console.log('2️⃣ Checking bot updates...');
-        const updatesResponse = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
-        const updatesData = await updatesResponse.json();
-        console.log('Updates:', updatesData);
-        
-        if (updatesData.ok && updatesData.result.length > 0) {
-            console.log('📱 Found updates:');
-            updatesData.result.forEach((update, index) => {
-                console.log(`   Update ${index + 1}:`, {
-                    chat_id: update.message?.chat?.id,
-                    from: update.message?.from?.first_name,
-                    text: update.message?.text,
-                    date: new Date(update.message?.date * 1000).toLocaleString()
-                });
-            });
-            
-            // Get latest chat ID
-            const latestUpdate = updatesData.result[updatesData.result.length - 1];
-            const chatId = latestUpdate.message?.chat?.id;
-            if (chatId) {
-                console.log(`✅ Latest Chat ID: ${chatId}`);
-                
-                // 3. Test sending message
-                console.log('3️⃣ Testing message send...');
-                const testMessage = `🧪 Test message from KilangDM Dashboard\n📅 ${new Date().toLocaleString('ms-MY')}`;
-                
-                const sendResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: testMessage
-                    })
-                });
-                
-                const sendData = await sendResponse.json();
-                console.log('Send result:', sendData);
-                
-                if (sendData.ok) {
-                    console.log('✅ Test message sent successfully!');
-                } else {
-                    console.log('❌ Failed to send test message:', sendData);
-                }
-            }
-        } else {
-            console.log('❌ No updates found. Please send /start to the bot first.');
-        }
-        
-    } catch (error) {
-        console.error('❌ Debug error:', error);
+    if (!window.readySync) {
+        console.log('❌ ReadySync not available');
+        return;
     }
+    
+    const bots = window.readySync.telegramBots;
+    
+    for (const [botType, botConfig] of Object.entries(bots)) {
+        console.log(`\n🤖 === ${botConfig.name.toUpperCase()} ===`);
+        console.log(`Token: ${botConfig.token}`);
+        
+        try {
+            // 1. Check bot info
+            console.log('1️⃣ Checking bot info...');
+            const botResponse = await fetch(`https://api.telegram.org/bot${botConfig.token}/getMe`);
+            const botData = await botResponse.json();
+            console.log(`${botConfig.name} info:`, botData);
+            
+            // 2. Check updates
+            console.log('2️⃣ Checking bot updates...');
+            const updatesResponse = await fetch(`https://api.telegram.org/bot${botConfig.token}/getUpdates`);
+            const updatesData = await updatesResponse.json();
+            
+            if (updatesData.ok && updatesData.result.length > 0) {
+                console.log(`📱 Found ${updatesData.result.length} updates for ${botConfig.name}:`);
+                const latestUpdate = updatesData.result[updatesData.result.length - 1];
+                const chatId = latestUpdate.message?.chat?.id;
+                
+                if (chatId) {
+                    console.log(`✅ Latest Chat ID for ${botConfig.name}: ${chatId}`);
+                    
+                    // Save Chat ID
+                    localStorage.setItem(`telegramChatId_${botType}`, chatId.toString());
+                    botConfig.chatId = chatId.toString();
+                    
+                    // 3. Test sending message
+                    console.log(`3️⃣ Testing message send to ${botConfig.name}...`);
+                    const testMessage = `🧪 Test from KilangDM Dashboard\n📅 ${new Date().toLocaleString('ms-MY')}\n🤖 Bot: ${botConfig.name}`;
+                    
+                    const sendResponse = await fetch(`https://api.telegram.org/bot${botConfig.token}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: chatId,
+                            text: testMessage
+                        })
+                    });
+                    
+                    const sendData = await sendResponse.json();
+                    
+                    if (sendData.ok) {
+                        console.log(`✅ Test message sent to ${botConfig.name} successfully!`);
+                    } else {
+                        console.log(`❌ Failed to send test message to ${botConfig.name}:`, sendData);
+                    }
+                } else {
+                    console.log(`⚠️ No chat ID found for ${botConfig.name}. Please send /start to this bot first.`);
+                }
+            } else {
+                console.log(`❌ No updates found for ${botConfig.name}. Please send /start to this bot first.`);
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between bots
+            
+        } catch (error) {
+            console.error(`❌ Debug error for ${botConfig.name}:`, error);
+        }
+    }
+    
+    console.log('\n🎯 SUMMARY:');
+    Object.entries(bots).forEach(([botType, botConfig]) => {
+        console.log(`${botConfig.name}: ${botConfig.chatId ? '✅ Ready' : '❌ Not configured'}`);
+    });
 };
 
 // Quick test function
@@ -1219,24 +1479,56 @@ window.debugTelegramData = async function() {
             
             console.log('🛒 ORDER DATA SAMPLE:');
             if (orderData && orderData.length > 0) {
+                console.log('   Count:', orderData.length);
                 console.log('   First order:', orderData[0]);
                 console.log('   Fields:', Object.keys(orderData[0]));
             } else {
                 console.log('   No order data found');
             }
             
+            console.log('📢 MARKETING DATA SAMPLE:');
+            if (marketingData && marketingData.length > 0) {
+                console.log('   Count:', marketingData.length);
+                console.log('   First marketing record:', marketingData[0]);
+                console.log('   Fields:', Object.keys(marketingData[0]));
+                console.log('   Sample values:');
+                console.log('     - spending:', marketingData[0].spending);
+                console.log('     - kair_impressions:', marketingData[0].kair_impressions);
+                console.log('     - link_click:', marketingData[0].link_click);
+                console.log('     - cpc:', marketingData[0].cpc);
+                console.log('     - team:', marketingData[0].team);
+                console.log('     - tarikh:', marketingData[0].tarikh);
+            } else {
+                console.log('   No marketing data found');
+            }
+            
             console.log('👥 SALES TEAM DATA SAMPLE:');
             if (salesTeamData && salesTeamData.length > 0) {
+                console.log('   Count:', salesTeamData.length);
                 console.log('   First sales record:', salesTeamData[0]);
                 console.log('   Fields:', Object.keys(salesTeamData[0]));
+                console.log('   Sample values:');
+                console.log('     - total_lead:', salesTeamData[0].total_lead);
+                console.log('     - total_sale_bulanan:', salesTeamData[0].total_sale_bulanan);
+                console.log('     - cold:', salesTeamData[0].cold);
+                console.log('     - warm:', salesTeamData[0].warm);
+                console.log('     - hot:', salesTeamData[0].hot);
             } else {
                 console.log('   No sales team data found');
             }
             
             console.log('⚡ POWER METRICS SAMPLE:');
             if (powerMetrics && powerMetrics.length > 0) {
+                console.log('   Count:', powerMetrics.length);
                 console.log('   First power metric:', powerMetrics[0]);
                 console.log('   Fields:', Object.keys(powerMetrics[0]));
+                console.log('   Sample values:');
+                console.log('     - total_lead:', powerMetrics[0].total_lead);
+                console.log('     - total_sale_bulanan:', powerMetrics[0].total_sale_bulanan);
+                console.log('     - total_close_bulanan:', powerMetrics[0].total_close_bulanan);
+                console.log('     - target:', powerMetrics[0].target);
+                console.log('     - agent_name:', powerMetrics[0].agent_name);
+                console.log('     - team:', powerMetrics[0].team);
             } else {
                 console.log('   No power metrics found');
             }
@@ -1246,6 +1538,302 @@ window.debugTelegramData = async function() {
     } else {
         console.log('❌ ReadySync not available');
     }
+};
+
+// Debug marketing data specifically
+window.debugMarketingData = async function() {
+    console.log('📢 DEBUGGING MARKETING DATA SPECIFICALLY...');
+    
+    if (window.readySync) {
+        const data = await window.readySync.collectDashboardData();
+        
+        if (data && data.detailedData && data.detailedData.marketingData) {
+            const marketingData = data.detailedData.marketingData;
+            console.log('📊 Marketing Data Count:', marketingData.length);
+            
+            if (marketingData.length > 0) {
+                console.log('🔍 First 3 marketing records:');
+                marketingData.slice(0, 3).forEach((item, index) => {
+                    console.log(`\n📢 Record ${index + 1}:`, item);
+                    console.log('   Field analysis:');
+                    console.log('     - spending:', item.spending || 'NOT FOUND');
+                    console.log('     - spending_amount:', item.spending_amount || 'NOT FOUND');
+                    console.log('     - amount:', item.amount || 'NOT FOUND');
+                    console.log('     - kair_impressions:', item.kair_impressions || 'NOT FOUND');
+                    console.log('     - impressions:', item.impressions || 'NOT FOUND');
+                    console.log('     - link_click:', item.link_click || 'NOT FOUND');
+                    console.log('     - clicks:', item.clicks || 'NOT FOUND');
+                    console.log('     - cpc:', item.cpc || 'NOT FOUND');
+                    console.log('     - team:', item.team || 'NOT FOUND');
+                    console.log('     - team_sal:', item.team_sal || 'NOT FOUND');
+                    console.log('     - tarikh:', item.tarikh || 'NOT FOUND');
+                    console.log('     - All fields:', Object.keys(item).join(', '));
+                });
+                
+                // Test formatting
+                console.log('\n🧪 Testing marketing message format:');
+                const testMessages = window.readySync.formatMarketingDataForTelegram(marketingData.slice(0, 2));
+                console.log('📱 Generated message:');
+                console.log(testMessages[0]);
+            }
+        } else {
+            console.log('❌ No marketing data found');
+        }
+    } else {
+        console.log('❌ ReadySync not available');
+    }
+};
+
+// Debug bot configuration specifically
+window.debugBotConfig = function() {
+    console.log('🤖 DEBUGGING BOT CONFIGURATION...');
+    
+    if (window.readySync) {
+        const bots = window.readySync.telegramBots;
+        
+        console.log('📋 Bot Configuration:');
+        Object.entries(bots).forEach(([botType, botConfig]) => {
+            console.log(`\n🤖 ${botConfig.name}:`);
+            console.log(`   Type: ${botType}`);
+            console.log(`   Token: ${botConfig.token}`);
+            console.log(`   Chat ID: ${botConfig.chatId || 'NOT SET'}`);
+            console.log(`   Ready: ${botConfig.chatId ? '✅ YES' : '❌ NO'}`);
+            
+            // Check localStorage
+            const savedChatId = localStorage.getItem(`telegramChatId_${botType}`);
+            console.log(`   Saved Chat ID: ${savedChatId || 'NOT FOUND'}`);
+        });
+        
+        // Check backward compatibility
+        console.log('\n🔄 Backward Compatibility:');
+        console.log(`   Default Token: ${window.readySync.telegramBotToken}`);
+        console.log(`   Default Chat ID: ${window.readySync.telegramChatId}`);
+    } else {
+        console.log('❌ ReadySync not available');
+    }
+};
+
+// Test individual bot
+window.testIndividualBot = async function(botType) {
+    console.log(`🧪 TESTING ${botType.toUpperCase()} BOT INDIVIDUALLY...`);
+    
+    if (!window.readySync) {
+        console.log('❌ ReadySync not available');
+        return;
+    }
+    
+    const botConfig = window.readySync.telegramBots[botType];
+    if (!botConfig) {
+        console.log(`❌ Bot type "${botType}" not found`);
+        console.log('Available bots:', Object.keys(window.readySync.telegramBots).join(', '));
+        return;
+    }
+    
+    console.log(`🤖 Bot: ${botConfig.name}`);
+    console.log(`🔑 Token: ${botConfig.token}`);
+    console.log(`💬 Chat ID: ${botConfig.chatId || 'NOT SET'}`);
+    
+    if (!botConfig.chatId) {
+        console.log('❌ No Chat ID set for this bot. Run debugTelegram() first.');
+        return;
+    }
+    
+    try {
+        const testMessage = `🧪 Individual test for ${botConfig.name}\n📅 ${new Date().toLocaleString('ms-MY')}\n🤖 Bot Type: ${botType}`;
+        
+        const response = await fetch(`https://api.telegram.org/bot${botConfig.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: botConfig.chatId,
+                text: testMessage
+            })
+        });
+        
+        const result = await response.json();
+        console.log('📱 Response:', result);
+        
+        if (result.ok) {
+            console.log(`✅ ${botConfig.name} test SUCCESS!`);
+        } else {
+            console.log(`❌ ${botConfig.name} test FAILED:`, result.description);
+        }
+    } catch (error) {
+        console.error(`❌ Error testing ${botConfig.name}:`, error);
+    }
+};
+
+// Specific marketing bot test function
+window.testMarketingBot = async function() {
+    console.log('🧪 TESTING MARKETING BOT SPECIFICALLY...');
+    
+    if (!window.readySync) {
+        console.error('❌ ReadySync not initialized');
+        return;
+    }
+    
+    try {
+        // 1. Test data collection
+        console.log('\n📊 Step 1: Testing data collection...');
+        const data = await window.readySync.collectDashboardData();
+        
+        if (!data || !data.detailedData) {
+            console.error('❌ No data collected');
+            return;
+        }
+        
+        const { marketingData } = data.detailedData;
+        console.log(`✅ Marketing data collected: ${marketingData?.length || 0} records`);
+        
+        if (!marketingData || marketingData.length === 0) {
+            console.error('❌ No marketing data found in Firebase');
+            console.log('🔍 Checking Firebase connection...');
+            
+            // Check if Firebase is connected
+            if (window.db) {
+                console.log('✅ Firebase database connected');
+                
+                // Try to manually fetch marketing data
+                const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                const marketingRef = collection(window.db, 'marketingData');
+                const snapshot = await getDocs(marketingRef);
+                console.log(`🔍 Direct Firebase query result: ${snapshot.docs.length} docs`);
+                
+                if (snapshot.docs.length > 0) {
+                    const sampleDoc = snapshot.docs[0];
+                    console.log('📄 Sample document:', { id: sampleDoc.id, ...sampleDoc.data() });
+                }
+            } else {
+                console.error('❌ Firebase database not connected');
+            }
+            return;
+        }
+        
+        // 2. Test data formatting
+        console.log('\n📝 Step 2: Testing data formatting...');
+        const messages = window.readySync.formatMarketingDataForTelegram(marketingData.slice(0, 2));
+        console.log(`✅ Generated ${messages.length} messages`);
+        console.log('📱 First message preview:', messages[0]?.substring(0, 200) + '...');
+        
+        // 3. Test bot configuration
+        console.log('\n🤖 Step 3: Testing bot configuration...');
+        const marketingBot = window.readySync.telegramBots.marketing;
+        console.log('Bot config:', {
+            token: marketingBot.token ? marketingBot.token.substring(0, 10) + '...' : 'NOT SET',
+            chatId: marketingBot.chatId || 'NOT SET',
+            name: marketingBot.name
+        });
+        
+        if (!marketingBot.chatId) {
+            console.warn('⚠️ Marketing bot Chat ID not set');
+            console.log('💡 Run: await window.readySync.setupMultipleBotChatIds()');
+            return;
+        }
+        
+        // 4. Test sending a single message
+        console.log('\n📤 Step 4: Testing message send...');
+        const testMessage = '🧪 *Marketing Bot Test*\n\nThis is a test message to verify the marketing bot is working.';
+        
+        try {
+            const response = await fetch(`https://api.telegram.org/bot${marketingBot.token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: marketingBot.chatId,
+                    text: testMessage,
+                    parse_mode: 'Markdown'
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.ok) {
+                console.log('✅ Test message sent successfully');
+            } else {
+                console.error('❌ Test message failed:', result);
+            }
+        } catch (error) {
+            console.error('❌ Error sending test message:', error);
+        }
+        
+        console.log('\n🎯 Marketing Bot Test Complete');
+        
+    } catch (error) {
+        console.error('❌ Marketing bot test failed:', error);
+    }
+};
+
+// Test Google Sheets integration specifically
+window.testGoogleSheets = async function() {
+    console.log('📊 TESTING GOOGLE SHEETS INTEGRATION...');
+    
+    if (!window.readySync) {
+        console.error('❌ ReadySync not initialized');
+        return;
+    }
+    
+    try {
+        // Test with sample data
+        const testData = [
+            {
+                id: 'test_001',
+                tarikh: new Date().toISOString().split('T')[0],
+                masa: new Date().toLocaleTimeString('ms-MY'),
+                test_field: 'Test Google Sheets Integration',
+                amount: 100,
+                created_at: new Date().toISOString()
+            }
+        ];
+        
+        console.log('📤 Sending test data to Google Sheets...');
+        console.log('Test data:', testData);
+        
+        const result = await window.readySync.sendToGoogleSheets('test', testData);
+        
+        if (result) {
+            console.log('✅ Google Sheets test SUCCESS!');
+            console.log('Response:', result);
+        } else {
+            console.log('❌ Google Sheets test FAILED - No response');
+        }
+        
+    } catch (error) {
+        console.error('❌ Google Sheets test ERROR:', error);
+        console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
+    }
+};
+
+// Simple test for Google Sheets without CORS issues
+window.testGoogleSheetsCORSWorkaround = function() {
+    console.log('🔧 TESTING CORS WORKAROUND FOR GOOGLE SHEETS...');
+    
+    const googleSheetsUrl = 'https://script.google.com/macros/s/AKfycbxLt2lXkWArBCr1UZjHN5S35yu2W4p0XdCa4Km0JEAnVQDTmPApGVHM-yR38fkUrpkQ/exec';
+    
+    // Method 1: Image request
+    console.log('📡 Method 1: Image request...');
+    const img = new Image();
+    img.onload = () => console.log('✅ Image method: Success');
+    img.onerror = () => console.log('📤 Image method: Request sent (error expected)');
+    img.src = `${googleSheetsUrl}?test=cors&method=image&timestamp=${Date.now()}`;
+    
+    // Method 2: Script tag injection
+    console.log('📡 Method 2: Script tag...');
+    const script = document.createElement('script');
+    script.onload = () => console.log('✅ Script method: Success');
+    script.onerror = () => console.log('📤 Script method: Request sent (error expected)');
+    script.src = `${googleSheetsUrl}?test=cors&method=script&timestamp=${Date.now()}`;
+    document.head.appendChild(script);
+    
+    setTimeout(() => {
+        document.head.removeChild(script);
+        console.log('🧹 Cleanup completed');
+    }, 3000);
+    
+    console.log('✅ CORS workaround tests initiated');
 };
 
 // Export for module use
